@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --w360-bg: #FBF8F4;
+  --w360-bg-raised: #FFFFFF;
+  --w360-bg-warm: #F5EFE8;
+  --w360-text: #171310;
+  --w360-text-muted: #665A4E;
+  --w360-border: #E2D9CF;
+  --w360-accent: #6B1D30;
+  --w360-accent-strong: #521626;
+  --w360-focus: #9A2C45;
+  --w360-radius-card: 8px;
+}
+
+.dark {
+  --w360-bg: #15100E;
+  --w360-bg-raised: #1E1815;
+  --w360-bg-warm: #251E19;
+  --w360-text: #F5EFE8;
+  --w360-text-muted: #B8AA9C;
+  --w360-border: #372E28;
+  --w360-accent: #D0899A;
+  --w360-accent-strong: #E6BFC9;
+  --w360-focus: #D0899A;
+}
+
+* { border-color: var(--w360-border); }
+
+html, body, #root { height: 100%; }
+
+body {
+  background-color: var(--w360-bg);
+  color: var(--w360-text);
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+::selection { background: var(--w360-accent); color: var(--w360-bg-warm); }
+
+:focus-visible {
+  outline: 2px solid var(--w360-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---- Senior Mode: structural scale, not a cosmetic zoom ---- */
+.senior {
+  --w360-radius-card: 14px;
+  font-size: 19px;
+}
+.senior body, .senior { line-height: 1.6; }
+
+.w360-divider { border-top: 1px solid var(--w360-border); }
+
+.w360-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.w360-scrollbar::-webkit-scrollbar-thumb { background: var(--w360-border); border-radius: 8px; }
+
+.tabular-nums { font-variant-numeric: tabular-nums; }
