@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { LoadingState } from "@/components/ui/states";
 import { insightsService } from "@/services/insightsService";
-import type { mockInsights } from "@/mock/seed";
+import type { InsightsSummary } from "@/types";
 import { ScatterChart, Scatter, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 
 export default function InsightsPage() {
-  const [data, setData] = useState<typeof mockInsights | null>(null);
+  const [data, setData] = useState<InsightsSummary | null>(null);
 
   useEffect(() => {
     insightsService.getSummary().then(setData);

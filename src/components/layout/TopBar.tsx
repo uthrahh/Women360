@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { notificationService } from "@/services/notificationService";
-import type { AppNotification } from "@/mock/seed";
+import type { AppNotification } from "@/types";
 import clsx from "clsx";
 
 export function TopBar() {

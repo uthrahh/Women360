@@ -3,7 +3,7 @@ import {
   Target, TrendingUp, FileBarChart2, BookOpen, MessageCircle, Settings,
   Pill, CalendarClock, Phone,
 } from "lucide-react";
-import type { SeniorEssentialKey } from "@/types";
+import type { SeniorEssential, SeniorEssentialKey } from "@/types";
 
 export interface NavItem {
   to: string;
@@ -46,3 +46,17 @@ export const seniorNavMap: Record<SeniorEssentialKey, NavItem & { plainLabel: st
   cycle: { to: "/app/cycle", label: "My cycle", plainLabel: "My cycle", icon: CalendarHeart },
   emergency: { to: "/app/settings?tab=emergency", label: "Emergency contact", plainLabel: "Emergency contact", icon: Phone },
 };
+
+// A new user's Senior Mode "Customize essentials" selection before they
+// change anything in Settings.
+export const defaultSeniorEssentials: SeniorEssential[] = [
+  { key: "health", label: "My health", enabled: true },
+  { key: "medicines", label: "My medicines", enabled: true },
+  { key: "appointments", label: "My appointments", enabled: true },
+  { key: "activity", label: "My activity", enabled: true },
+  { key: "sleep", label: "My sleep", enabled: true },
+  { key: "nutrition", label: "My nutrition", enabled: false },
+  { key: "messages", label: "My messages", enabled: true },
+  { key: "cycle", label: "My cycle", enabled: false },
+  { key: "emergency", label: "Emergency contact", enabled: true },
+];
