@@ -99,6 +99,17 @@ Known concrete defects to fix as part of any related work:
 - `DashboardPage.tsx`'s greeting is hardcoded to "Sarah" regardless of who
   is actually logged in — a leftover from the mock-user era, now visibly
   wrong for any other account.
+- `DashboardPage.tsx`'s "Mood" tile and both "Trends worth noticing" cards
+  are still hardcoded copy ("Good", "+18% vs last week's average", "Bedtime
+  has shifted later this week") rather than derived from real
+  `wellbeingService`/`activityService`/`sleepService` data — unlike every
+  other tile on this page, which is now real. Fixing Mood properly needs
+  the wellbeing service to expose which entry is actually "today's" (its
+  current mapper only returns weekday labels, chosen to match the weekly
+  chart, which drops that information); fixing the trend cards needs an
+  actual week-over-week comparison, which doesn't exist anywhere yet —
+  both are real feature work, not a mechanical service swap, so left
+  flagged rather than half-fixed.
 - `SettingsPage.tsx`'s "Save changes" and "Save emergency contact" only
   show a toast — nothing is actually persisted (not even to
   `localStorage`), since there's no service call behind either handler.
