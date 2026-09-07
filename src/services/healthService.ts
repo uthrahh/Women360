@@ -1,18 +1,25 @@
-import { delay } from "./apiClient";
-import { mockAppointments, mockMedications, mockVitals } from "@/mock/seed";
+import { request } from "./apiClient";
 import type { VitalMeasurement } from "@/types";
+import { toBackendVitalType, toFrontendAppointment, toFrontendMedication, toFrontendVital } from "./mappers";
 
 export const healthService = {
   async getAppointments() {
-    return delay(mockAppointments);
+    const apiAppointments = await request<Parameters<typeof toFrontendAppointment>[0][]>("/health/appointments");
+    return apiAppointments.map(toFrontendAppointment);
   },
   async getMedications() {
-    return delay(mockMedications);
+    const apiMedications = await request<Parameters<typeof toFrontendMedication>[0][]>("/health/medications");
+    return apiMedications.map(toFrontendMedication);
   },
   async getVitals() {
-    return delay(mockVitals);
+    const apiVitals = await request<Parameters<typeof toFrontendVital>[0][]>("/health/vitals");
+    return apiVitals.map(toFrontendVital);
   },
   async addVital(entry: Omit<VitalMeasurement, "id">): Promise<VitalMeasurement> {
-    return delay({ ...entry, id: `v_${Date.now()}` }, 350);
+    const apiVital = await request<Parameters<typeof toFrontendVital>[0]>("/health/vitals", {
+      method: "POST",
+      body: JSON.stringify({ ...entry, type: toBackendVitalType(entry.type) }),
+    });
+    return toFrontendVital(apiVital);
   },
 };

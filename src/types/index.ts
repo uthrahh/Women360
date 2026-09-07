@@ -165,3 +165,16 @@ export interface ReportRecord {
   generatedOn: string;
   range: string;
 }
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  detail: string;
+  time: string;
+  read: boolean;
+}
+
+export interface InsightsSummary {
+  sleepMood: { sleep: number; mood: number }[];
+  cards: { q: string; a: string }[];
+}

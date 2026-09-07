@@ -1,11 +1,16 @@
-import { delay } from "./apiClient";
-import { mockReports } from "@/mock/seed";
+import { request } from "./apiClient";
+import { rangeLabelToDays, toFrontendReportRecord } from "./mappers";
 
 export const reportService = {
   async list() {
-    return delay(mockReports);
+    const apiReports = await request<Parameters<typeof toFrontendReportRecord>[0][]>("/reports");
+    return apiReports.map(toFrontendReportRecord);
   },
   async generate(title: string, range: string) {
-    return delay({ id: `r_${Date.now()}`, title, range, generatedOn: new Date().toISOString().slice(0, 10) }, 900);
+    const apiReport = await request<Parameters<typeof toFrontendReportRecord>[0]>("/reports", {
+      method: "POST",
+      body: JSON.stringify({ title, rangeLabel: range, rangeDays: rangeLabelToDays(range) }),
+    });
+    return toFrontendReportRecord(apiReport);
   },
 };

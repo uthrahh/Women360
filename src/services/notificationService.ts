@@ -1,8 +1,10 @@
-import { delay } from "./apiClient";
-import { mockNotifications, type AppNotification } from "@/mock/seed";
+import { request } from "./apiClient";
+import type { AppNotification } from "@/types";
+import { toFrontendNotification } from "./mappers";
 
 export const notificationService = {
   async list(): Promise<AppNotification[]> {
-    return delay(mockNotifications);
+    const apiNotifications = await request<Parameters<typeof toFrontendNotification>[0][]>("/notifications");
+    return apiNotifications.map(toFrontendNotification);
   },
 };

@@ -1,8 +1,9 @@
-import { delay } from "./apiClient";
-import { mockMessages } from "@/mock/seed";
+import { request } from "./apiClient";
+import { toFrontendMessage } from "./mappers";
 
 export const messageService = {
   async list() {
-    return delay(mockMessages);
+    const apiMessages = await request<Parameters<typeof toFrontendMessage>[0][]>("/messages");
+    return apiMessages.map(toFrontendMessage);
   },
 };

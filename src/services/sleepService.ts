@@ -1,9 +1,8 @@
-import { delay } from "./apiClient";
-import { mockSleep } from "@/mock/seed";
+import { request } from "./apiClient";
 import type { SleepSummary } from "@/types";
 
 export const sleepService = {
   async getSummary(): Promise<SleepSummary> {
-    return delay(mockSleep);
+    return request<SleepSummary>("/sleep/summary");
   },
 };

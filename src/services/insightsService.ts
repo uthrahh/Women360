@@ -1,8 +1,8 @@
-import { delay } from "./apiClient";
-import { mockInsights } from "@/mock/seed";
+import { request } from "./apiClient";
+import type { InsightsSummary } from "@/types";
 
 export const insightsService = {
-  async getSummary() {
-    return delay(mockInsights);
+  async getSummary(): Promise<InsightsSummary> {
+    return request<InsightsSummary>("/insights");
   },
 };
