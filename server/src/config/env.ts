@@ -17,7 +17,6 @@ const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
   // Fail fast and loud rather than booting with an invalid/insecure config.
-  // eslint-disable-next-line no-console
   console.error("Invalid environment configuration:", parsed.error.flatten().fieldErrors);
   process.exit(1);
 }

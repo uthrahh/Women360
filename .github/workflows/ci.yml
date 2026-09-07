@@ -53,7 +53,7 @@ jobs:
       - run: npm run build
 
   frontend:
-    name: Frontend (typecheck, build)
+    name: Frontend (lint, typecheck, build)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,7 +63,5 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm install
-      # NOTE: `npm run lint` is intentionally not run here yet — the
-      # frontend's lint script has no eslint dependency/config installed
-      # (see the repository audit). Add it back here once that's fixed.
+      - run: npm run lint
       - run: npm run build

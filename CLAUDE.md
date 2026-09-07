@@ -64,29 +64,45 @@ card. A section can be typography + spacing + a divider.
 
 ## 3. Current architecture (as of the last audit)
 
-Frontend-only React 18 + TypeScript + Vite + Tailwind + React Router SPA.
-Every feature calls a function in `src/services/*.ts`, which currently
-resolves against `src/mock/seed.ts` through `src/services/apiClient.ts`
-(a `delay()` shim). **No backend, no real API, no database, no auth
-server, no file storage, no tests, no CI/CD, no lint config exist yet** —
-this is the single largest gap against the SRS and against
-production-readiness. `README.md` documents the intended cutover path:
-implement `request()` in `apiClient.ts` against a real REST API, replace
-each service body, delete `mock/seed.ts`. No component or page should need
-to change when that happens — preserve that contract.
+Monorepo: a React 18 + TypeScript + Vite + Tailwind + React Router SPA at
+the repository root, and a Node/Express + TypeScript + Prisma/PostgreSQL
+API in `server/`. **The two are not yet connected.** Every frontend
+feature calls a function in `src/services/*.ts`, which still resolves
+against `src/mock/seed.ts` through `src/services/apiClient.ts` (a
+`delay()` shim) — this is the single largest gap against the SRS and
+against production-readiness. `README.md` documents the intended cutover
+path: implement `request()` in `apiClient.ts` against `server/`'s
+`/api/v1`, replace each service body, delete `mock/seed.ts`. No component
+or page should need to change when that happens — preserve that contract.
+Cutover also requires reconciling naming (backend enums are
+`UPPER_SNAKE_CASE`; frontend types use lowercase string literals, plus a
+few field renames) and adding auth token storage/refresh on the frontend
+— see `README.md`'s Backend section for specifics.
+
+`server/` has its own ESLint/TypeScript/Vitest tooling, 21 passing tests,
+and has been installed, linted, typechecked, built, and boot-tested
+end-to-end (see `server/README.md`'s Verification status section) — but
+never against a real Postgres instance, and it has no committed Prisma
+migration yet. Root-level CI lives at `.github/workflows/ci.yml` and runs
+both packages' lint/typecheck/test/build (the server job against a
+Postgres service container).
 
 Known concrete defects to fix as part of any related work:
-- `package.json` has a `lint` script (`eslint .`) but no `eslint` package
-  in devDependencies and no `eslint.config.js` — the script currently
-  cannot run.
-- No test runner (vitest/RTL/playwright) is installed — `README.md`
-  correctly discloses "no test suite yet."
-- No `.env.example`, no CI workflow, no `robots.txt`/`sitemap.xml`, no
-  favicon files, no legal pages (privacy/terms/cookies), no SEO metadata
-  per route (single static `<title>` in `index.html`).
+- No test runner (vitest/RTL/playwright) is installed for the **frontend**
+  — `README.md` correctly discloses "no test suite yet." (The backend has
+  its own Vitest suite, unrelated to this gap.)
+- No `robots.txt`/`sitemap.xml`, no favicon files, no legal pages
+  (privacy/terms/cookies), no SEO metadata per route (single static
+  `<title>` in `index.html`).
 - Auth (`authService`) accepts any email/password and fabricates a session
   client-side — correct for this mock-only phase, but must never ship to a
-  public deployment without a real backend behind it.
+  public deployment without the real backend's JWT auth behind it.
+- `SettingsPage.tsx`'s "Save changes" and "Save emergency contact" only
+  show a toast — nothing is actually persisted (not even to
+  `localStorage`), since there's no service call behind either handler.
+- No role-selection UI anywhere in registration/onboarding — `Role` (woman
+  /coach/admin) is fully modeled and enforced server-side in `server/`,
+  but the frontend can currently only ever create a "woman" account.
 
 ## 4. SRS constraints that override generic assumptions
 

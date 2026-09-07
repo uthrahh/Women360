@@ -100,5 +100,10 @@ A real API is being built in [`server/`](./server/README.md): Node/Express +
 TypeScript + Prisma on PostgreSQL, with JWT auth, server-side role-based
 access control, and one module per domain modeled on the SRS's data
 requirements. It has not been cut over to yet — the frontend above still
-talks to `src/services/*.ts`'s mock layer. See `server/README.md` for setup,
-and the repository's audit document for the full cutover plan.
+talks to `src/services/*.ts`'s mock layer. See `server/README.md` for setup.
+Cutover still needs: implementing `apiClient.ts`'s `request()` against
+`/api/v1`, unwrapping the `{ok, data}` response envelope, adding auth
+token storage/refresh, and reconciling naming (backend enums are
+`UPPER_SNAKE_CASE`, e.g. `Role.WOMAN`; frontend types use lowercase
+string literals, e.g. `"woman"` — plus a few field renames such as
+`protein`/`fibre` vs `proteinG`/`fibreG`).

@@ -24,7 +24,7 @@ interface VitalInput {
   date: string;
 }
 
-async function assertOwner<T extends { userId: string } | null>(
+function assertOwner<T extends { userId: string } | null>(
   record: T,
   userId: string,
   notFoundMessage: string

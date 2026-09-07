@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { Role } from "@prisma/client";
+import type { Prisma, Role } from "@prisma/client";
 
 /**
  * Records that something happened, never what it contained. `metadata`
@@ -21,7 +21,7 @@ export async function recordAudit(input: {
       action: input.action,
       targetType: input.targetType,
       targetId: input.targetId,
-      metadata: input.metadata,
+      metadata: input.metadata as Prisma.InputJsonValue | undefined,
     },
   });
 }
