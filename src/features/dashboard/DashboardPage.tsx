@@ -13,7 +13,8 @@ import { sleepService } from "@/services/sleepService";
 import { activityService } from "@/services/activityService";
 import { nutritionService } from "@/services/nutritionService";
 import { healthService } from "@/services/healthService";
-import type { CycleSummary, SleepSummary, ActivitySummary, NutritionSummary, Appointment } from "@/types";
+import { goalService } from "@/services/goalService";
+import type { CycleSummary, SleepSummary, ActivitySummary, NutritionSummary, Appointment, Goal } from "@/types";
 import { Droplet, Moon, Activity as ActivityIcon, Smile, CalendarHeart, CalendarClock, Plus, type LucideIcon } from "lucide-react";
 
 export default function DashboardPage() {
@@ -29,6 +30,7 @@ function StandardDashboard() {
   const [activity, setActivity] = useState<ActivitySummary | null>(null);
   const [nutrition, setNutrition] = useState<NutritionSummary | null>(null);
   const [appts, setAppts] = useState<Appointment[]>([]);
+  const [goals, setGoals] = useState<Goal[] | null>(null);
 
   useEffect(() => {
     cycleService.getSummary().then(setCycle);
@@ -36,9 +38,10 @@ function StandardDashboard() {
     activityService.getSummary().then(setActivity);
     nutritionService.getToday().then(setNutrition);
     healthService.getAppointments().then(setAppts);
+    goalService.list().then(setGoals);
   }, []);
 
-  const loaded = cycle && sleep && activity && nutrition;
+  const loaded = cycle && sleep && activity && nutrition && goals;
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
@@ -85,7 +88,13 @@ function StandardDashboard() {
             sub={cycle!.phase ?? "Get started"}
             to="/app/cycle"
           />
-          <SnapshotTile icon={CalendarClock} label="Goals" value="3/4" sub="on track" to="/app/goals" />
+          <SnapshotTile
+            icon={CalendarClock}
+            label="Goals"
+            value={goals!.length ? `${goals!.filter((g) => g.completed).length}/${goals!.length}` : "No goals yet"}
+            sub={goals!.length ? "on track" : "Add one"}
+            to="/app/goals"
+          />
         </div>
       </section>
 

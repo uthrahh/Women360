@@ -357,7 +357,11 @@ interface ApiVitalMeasurement {
 }
 
 export function toFrontendVital(apiVital: ApiVitalMeasurement): VitalMeasurement {
-  return { ...apiVital, type: VITAL_TYPE_TO_FRONTEND[apiVital.type] ?? lower(apiVital.type) };
+  return {
+    ...apiVital,
+    type: VITAL_TYPE_TO_FRONTEND[apiVital.type] ?? lower(apiVital.type),
+    date: toRelativeDay(apiVital.date),
+  };
 }
 
 export function toBackendVitalType(type: VitalMeasurement["type"]): string {
