@@ -1,0 +1,22 @@
+# Local development only — this is not a production deployment topology.
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: women360
+      POSTGRES_PASSWORD: women360
+      POSTGRES_DB: women360
+    ports:
+      - "5432:5432"
+    volumes:
+      - women360_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U women360"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  women360_pg_data:
