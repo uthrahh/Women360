@@ -66,20 +66,16 @@ card. A section can be typography + spacing + a divider.
 
 Monorepo: a React 18 + TypeScript + Vite + Tailwind + React Router SPA at
 the repository root, and a Node/Express + TypeScript + Prisma/PostgreSQL
-API in `server/`. **The two are partially connected.** Authentication
-(register/login/logout/refresh/password reset/onboarding) and two domain
-services — `cycleService`, `nutritionService` — are live against the real
-`/api/v1` API via `src/services/apiClient.ts`'s real `request()` (Bearer
-auth, shared refresh-and-retry on 401) and a shared `src/services/
-mappers.ts` that translates the backend's `UPPER_SNAKE_CASE` enums and a
-few renamed fields at the service boundary. The remaining ~11 services
-(`activity`, `sleep`, `wellbeing`, `goal`, `health`, `insights`, `report`,
-`learn`, `message`, `notification`) still resolve against `src/mock/
-seed.ts` through the same `apiClient.ts` (its `delay()` shim stays
-exported for exactly this) — finishing that migration using the identical
-pattern remains the single largest gap against the SRS and
-production-readiness. See `README.md`'s Backend section for the exact
-cutover status and remaining field-naming details.
+API in `server/`. **The two are fully connected** — every service in
+`src/services/*.ts` (auth, cycle, nutrition, activity, sleep, wellbeing,
+goals, health, insights, reports, learn, messages, notifications) is live
+against the real `/api/v1` API via `apiClient.ts`'s real `request()`
+(Bearer auth, shared refresh-and-retry on 401) and a shared
+`src/services/mappers.ts` that translates the backend's `UPPER_SNAKE_CASE`
+enums, a few renamed fields, and relative-time display formatting at the
+service boundary. `src/mock/seed.ts` has been deleted; `apiClient.ts` no
+longer exports a mock `delay()` shim. See `README.md`'s Backend section
+for the two deliberate, named page-level exceptions this required.
 
 `server/` has its own ESLint/TypeScript/Vitest tooling and has been
 installed, linted, typechecked, built, and run end-to-end against a real

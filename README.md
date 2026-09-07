@@ -101,15 +101,23 @@ A real API lives in [`server/`](./server/README.md): Node/Express + TypeScript
 and one module per domain modeled on the SRS's data requirements. See
 `server/README.md` for setup.
 
-**Cutover status:** authentication (register/login/logout/refresh/password
-reset/onboarding) and two domain services — `cycleService` and
-`nutritionService` — are live against the real API, via `src/services/
-apiClient.ts`'s real `request()` and a shared `src/services/mappers.ts` that
-translates the backend's `UPPER_SNAKE_CASE` enums and a few renamed fields
-(e.g. `proteinG`/`fibreG` vs `protein`/`fibre`) at the service boundary, so no
-page or component had to change except one deliberate exception: `CyclePage`
-gets a real empty state for a brand-new user's null cycle data, since
-fabricating a fake cycle day/phase would be misleading in a menstrual-health
-product. The remaining ~11 services (`activity`, `sleep`, `wellbeing`, `goal`,
-`health`, `insights`, `report`, `learn`, `message`, `notification`) still talk
-to `src/mock/seed.ts` and are a follow-up pass using the identical pattern.
+**Cutover status: complete.** Every service in `src/services/*.ts` — auth,
+cycle, nutrition, activity, sleep, wellbeing, goals, health, insights,
+reports, learn, messages, notifications — is live against the real API via
+`apiClient.ts`'s real `request()` (Bearer auth, shared refresh-and-retry on
+401) and a shared `src/services/mappers.ts` that translates the backend's
+`UPPER_SNAKE_CASE` enums, a few renamed fields (e.g. `proteinG`/`fibreG` vs
+`protein`/`fibre`), and relative-time/day/weekday display formatting (the
+mock era used phrases like "Today"/"Yesterday"/"2h ago" instead of raw
+timestamps, and no page formats these itself). `src/mock/seed.ts` has been
+deleted. No page or component had to change except two deliberate,
+named exceptions: `CyclePage` gets a real empty state for a brand-new
+user's null cycle data (fabricating a fake cycle day/phase would be
+misleading in a menstrual-health product), and `DashboardPage`'s Goals
+tile now derives its count from real data instead of a hardcoded "3/4".
+
+Known remaining gaps in this area (see `CLAUDE.md` §3 for the full list):
+`DashboardPage`'s greeting and its Mood tile/trend cards are still
+hardcoded copy — fixing those needs either per-user personalization or
+real week-over-week analytics that don't exist yet, not a mechanical
+service swap.
