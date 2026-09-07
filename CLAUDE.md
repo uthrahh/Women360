@@ -66,26 +66,28 @@ card. A section can be typography + spacing + a divider.
 
 Monorepo: a React 18 + TypeScript + Vite + Tailwind + React Router SPA at
 the repository root, and a Node/Express + TypeScript + Prisma/PostgreSQL
-API in `server/`. **The two are not yet connected.** Every frontend
-feature calls a function in `src/services/*.ts`, which still resolves
-against `src/mock/seed.ts` through `src/services/apiClient.ts` (a
-`delay()` shim) — this is the single largest gap against the SRS and
-against production-readiness. `README.md` documents the intended cutover
-path: implement `request()` in `apiClient.ts` against `server/`'s
-`/api/v1`, replace each service body, delete `mock/seed.ts`. No component
-or page should need to change when that happens — preserve that contract.
-Cutover also requires reconciling naming (backend enums are
-`UPPER_SNAKE_CASE`; frontend types use lowercase string literals, plus a
-few field renames) and adding auth token storage/refresh on the frontend
-— see `README.md`'s Backend section for specifics.
+API in `server/`. **The two are partially connected.** Authentication
+(register/login/logout/refresh/password reset/onboarding) and two domain
+services — `cycleService`, `nutritionService` — are live against the real
+`/api/v1` API via `src/services/apiClient.ts`'s real `request()` (Bearer
+auth, shared refresh-and-retry on 401) and a shared `src/services/
+mappers.ts` that translates the backend's `UPPER_SNAKE_CASE` enums and a
+few renamed fields at the service boundary. The remaining ~11 services
+(`activity`, `sleep`, `wellbeing`, `goal`, `health`, `insights`, `report`,
+`learn`, `message`, `notification`) still resolve against `src/mock/
+seed.ts` through the same `apiClient.ts` (its `delay()` shim stays
+exported for exactly this) — finishing that migration using the identical
+pattern remains the single largest gap against the SRS and
+production-readiness. See `README.md`'s Backend section for the exact
+cutover status and remaining field-naming details.
 
-`server/` has its own ESLint/TypeScript/Vitest tooling, 21 passing tests,
-and has been installed, linted, typechecked, built, and boot-tested
-end-to-end (see `server/README.md`'s Verification status section) — but
-never against a real Postgres instance, and it has no committed Prisma
-migration yet. Root-level CI lives at `.github/workflows/ci.yml` and runs
-both packages' lint/typecheck/test/build (the server job against a
-Postgres service container).
+`server/` has its own ESLint/TypeScript/Vitest tooling and has been
+installed, linted, typechecked, built, and run end-to-end against a real
+local Postgres instance (see `server/README.md`'s Verification status
+section) — 21/21 tests pass, and the first Prisma migration is committed
+at `server/prisma/migrations/`. Root-level CI lives at
+`.github/workflows/ci.yml` and runs both packages' lint/typecheck/test/
+build (the server job against a Postgres service container).
 
 Known concrete defects to fix as part of any related work:
 - No test runner (vitest/RTL/playwright) is installed for the **frontend**
@@ -94,9 +96,9 @@ Known concrete defects to fix as part of any related work:
 - No `robots.txt`/`sitemap.xml`, no favicon files, no legal pages
   (privacy/terms/cookies), no SEO metadata per route (single static
   `<title>` in `index.html`).
-- Auth (`authService`) accepts any email/password and fabricates a session
-  client-side — correct for this mock-only phase, but must never ship to a
-  public deployment without the real backend's JWT auth behind it.
+- `DashboardPage.tsx`'s greeting is hardcoded to "Sarah" regardless of who
+  is actually logged in — a leftover from the mock-user era, now visibly
+  wrong for any other account.
 - `SettingsPage.tsx`'s "Save changes" and "Save emergency contact" only
   show a toast — nothing is actually persisted (not even to
   `localStorage`), since there's no service call behind either handler.

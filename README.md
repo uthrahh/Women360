@@ -96,14 +96,20 @@ No component or page needs to change.
 
 ## Backend
 
-A real API is being built in [`server/`](./server/README.md): Node/Express +
-TypeScript + Prisma on PostgreSQL, with JWT auth, server-side role-based
-access control, and one module per domain modeled on the SRS's data
-requirements. It has not been cut over to yet — the frontend above still
-talks to `src/services/*.ts`'s mock layer. See `server/README.md` for setup.
-Cutover still needs: implementing `apiClient.ts`'s `request()` against
-`/api/v1`, unwrapping the `{ok, data}` response envelope, adding auth
-token storage/refresh, and reconciling naming (backend enums are
-`UPPER_SNAKE_CASE`, e.g. `Role.WOMAN`; frontend types use lowercase
-string literals, e.g. `"woman"` — plus a few field renames such as
-`protein`/`fibre` vs `proteinG`/`fibreG`).
+A real API lives in [`server/`](./server/README.md): Node/Express + TypeScript
++ Prisma on PostgreSQL, with JWT auth, server-side role-based access control,
+and one module per domain modeled on the SRS's data requirements. See
+`server/README.md` for setup.
+
+**Cutover status:** authentication (register/login/logout/refresh/password
+reset/onboarding) and two domain services — `cycleService` and
+`nutritionService` — are live against the real API, via `src/services/
+apiClient.ts`'s real `request()` and a shared `src/services/mappers.ts` that
+translates the backend's `UPPER_SNAKE_CASE` enums and a few renamed fields
+(e.g. `proteinG`/`fibreG` vs `protein`/`fibre`) at the service boundary, so no
+page or component had to change except one deliberate exception: `CyclePage`
+gets a real empty state for a brand-new user's null cycle data, since
+fabricating a fake cycle day/phase would be misleading in a menstrual-health
+product. The remaining ~11 services (`activity`, `sleep`, `wellbeing`, `goal`,
+`health`, `insights`, `report`, `learn`, `message`, `notification`) still talk
+to `src/mock/seed.ts` and are a follow-up pass using the identical pattern.
