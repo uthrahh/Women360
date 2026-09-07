@@ -14,7 +14,7 @@ import { activityService } from "@/services/activityService";
 import { nutritionService } from "@/services/nutritionService";
 import { healthService } from "@/services/healthService";
 import type { CycleSummary, SleepSummary, ActivitySummary, NutritionSummary, Appointment } from "@/types";
-import { Droplet, Moon, Activity as ActivityIcon, Smile, CalendarHeart, CalendarClock, Plus } from "lucide-react";
+import { Droplet, Moon, Activity as ActivityIcon, Smile, CalendarHeart, CalendarClock, Plus, type LucideIcon } from "lucide-react";
 
 export default function DashboardPage() {
   const { senior } = useApp();
@@ -179,7 +179,7 @@ function PriorityCard({ title, detail, to }: { title: string; detail: string; to
   );
 }
 
-function SnapshotTile({ icon: Icon, label, value, sub, to }: { icon: any; label: string; value: string; sub: string; to: string }) {
+function SnapshotTile({ icon: Icon, label, value, sub, to }: { icon: LucideIcon; label: string; value: string; sub: string; to: string }) {
   return (
     <Link to={to}>
       <Card className="hover:border-maroon-400 dark:hover:border-maroon-600 transition-colors h-full">
