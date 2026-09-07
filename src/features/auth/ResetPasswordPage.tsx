@@ -1,6 +1,6 @@
 import { FormEvent } from "react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { AuthLayout } from "./AuthLayout";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -8,6 +8,8 @@ import { authService } from "@/services/authService";
 
 export default function ResetPasswordPage() {
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -15,13 +17,19 @@ export default function ResetPasswordPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (password.length < 8) return setError("Use at least 8 characters.");
+    if (!token) return setError("This reset link is invalid or has expired. Please request a new one.");
+    if (password.length < 10) return setError("Use at least 10 characters.");
     if (password !== confirm) return setError("Passwords don't match.");
     setError("");
     setLoading(true);
-    await authService.resetPassword("mock-token", password);
-    setLoading(false);
-    nav("/login");
+    try {
+      await authService.resetPassword(token, password);
+      nav("/login");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't reset your password. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

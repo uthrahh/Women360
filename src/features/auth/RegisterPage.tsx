@@ -5,6 +5,7 @@ import { AuthLayout } from "./AuthLayout";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useApp } from "@/context/AppContext";
+import { ApiError } from "@/services/apiClient";
 
 export default function RegisterPage() {
   const { auth } = useApp();
@@ -21,11 +22,19 @@ export default function RegisterPage() {
     if (!name) errs.name = "Enter your full name.";
     if (!email.includes("@")) errs.email = "Enter a valid email.";
     if (!dob) errs.dob = "Enter your date of birth.";
-    if (password.length < 8) errs.password = "Use at least 8 characters.";
+    if (password.length < 10) errs.password = "Use at least 10 characters.";
     setErrors(errs);
     if (Object.keys(errs).length) return;
-    await auth.register(name, email, dob);
-    nav("/onboarding");
+    try {
+      await auth.register(name, email, password, dob);
+      nav("/onboarding");
+    } catch (err) {
+      if (err instanceof ApiError && err.code === "CONFLICT") {
+        setErrors({ email: "An account with this email already exists." });
+      } else {
+        setErrors({ password: err instanceof Error ? err.message : "Couldn't create your account. Please try again." });
+      }
+    }
   }
 
   return (
@@ -34,7 +43,7 @@ export default function RegisterPage() {
         <Input label="Full name" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} required />
         <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} required />
         <Input label="Date of birth" type="date" value={dob} onChange={(e) => setDob(e.target.value)} error={errors.dob} required />
-        <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} error={errors.password} hint="At least 8 characters." required />
+        <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} error={errors.password} hint="At least 10 characters." required />
         <Button type="submit" fullWidth disabled={auth.loading}>{auth.loading ? "Creating account…" : "Create account"}</Button>
       </form>
       <p className="text-sm text-[var(--w360-text-muted)] mt-6 text-center">

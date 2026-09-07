@@ -9,7 +9,7 @@ import { useApp } from "@/context/AppContext";
 export default function LoginPage() {
   const { auth } = useApp();
   const nav = useNavigate();
-  const [email, setEmail] = useState("sarah.menon@example.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
@@ -20,8 +20,12 @@ export default function LoginPage() {
       setError("Enter your email and password to continue.");
       return;
     }
-    const user = await auth.login(email, password);
-    nav(user.onboarded ? "/app/dashboard" : "/onboarding");
+    try {
+      const user = await auth.login(email, password);
+      nav(user.onboarded ? "/app/dashboard" : "/onboarding");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't log in. Please try again.");
+    }
   }
 
   return (
