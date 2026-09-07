@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useApp } from "@/context/AppContext";
+import { useToast } from "@/components/ui/Toast";
 import { Check } from "lucide-react";
 import clsx from "clsx";
 
@@ -13,11 +14,16 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const { auth } = useApp();
   const nav = useNavigate();
+  const toast = useToast();
   const isLast = step === STEPS.length - 1;
 
   async function finish() {
-    await auth.completeOnboarding();
-    nav("/app/dashboard");
+    try {
+      await auth.completeOnboarding();
+      nav("/app/dashboard");
+    } catch {
+      toast.show("Couldn't save that — please try again.");
+    }
   }
 
   return (
@@ -60,12 +66,13 @@ export default function OnboardingPage() {
 function StepContent({ step }: { step: number }) {
   const nav = useNavigate();
   const { auth } = useApp();
+  const toast = useToast();
 
   if (step === 0)
     return (
       <FormStep title="About you" subtitle="This helps us personalize your experience.">
         <Input label="Full name" placeholder="Your name" defaultValue={auth.user?.name} />
-        <Input label="Date of birth" type="date" defaultValue={auth.user?.dateOfBirth} />
+        <Input label="Date of birth" type="date" defaultValue={auth.user?.dateOfBirth ?? undefined} />
       </FormStep>
     );
 
@@ -123,8 +130,12 @@ function StepContent({ step }: { step: number }) {
       <Button
         className="mt-6"
         onClick={async () => {
-          await auth.completeOnboarding();
-          nav("/app/dashboard");
+          try {
+            await auth.completeOnboarding();
+            nav("/app/dashboard");
+          } catch {
+            toast.show("Couldn't save that — please try again.");
+          }
         }}
       >
         Go to my dashboard

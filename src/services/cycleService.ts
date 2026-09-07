@@ -1,12 +1,17 @@
-import { delay } from "./apiClient";
-import { mockCycle } from "@/mock/seed";
+import { request } from "./apiClient";
 import type { CycleSummary, CycleDay } from "@/types";
+import { toBackendCycleEntry, toFrontendCycleDay, toFrontendCycleSummary } from "./mappers";
 
 export const cycleService = {
   async getSummary(): Promise<CycleSummary> {
-    return delay(mockCycle);
+    const apiSummary = await request<Parameters<typeof toFrontendCycleSummary>[0]>("/cycle/summary");
+    return toFrontendCycleSummary(apiSummary);
   },
   async logDay(entry: Partial<CycleDay> & { date: string }): Promise<CycleDay> {
-    return delay(entry as CycleDay, 350);
+    const apiEntry = await request<Parameters<typeof toFrontendCycleDay>[0]>(`/cycle/entries/${entry.date}`, {
+      method: "PUT",
+      body: JSON.stringify(toBackendCycleEntry(entry)),
+    });
+    return toFrontendCycleDay(apiEntry);
   },
 };

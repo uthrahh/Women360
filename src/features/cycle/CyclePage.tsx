@@ -17,6 +17,15 @@ const PHASE_LABEL: Record<string, string> = {
 
 const SYMPTOM_OPTIONS = ["Cramps", "Fatigue", "Headache", "Bloating", "Tender breasts", "Backache"];
 
+// Once a woman has logged at least one entry, the backend fills in
+// currentDay/phase/nextPeriodDate — this narrows those three fields so
+// CycleRing/SeniorCycle never have to null-check them.
+type PopulatedCycleSummary = CycleSummary & {
+  currentDay: number;
+  phase: Exclude<CycleSummary["phase"], null>;
+  nextPeriodDate: string;
+};
+
 export default function CyclePage() {
   const { senior } = useApp();
   const [cycle, setCycle] = useState<CycleSummary | null>(null);
@@ -29,6 +38,8 @@ export default function CyclePage() {
 
   if (!cycle) return <LoadingState label="Loading your cycle" />;
 
+  const hasData = cycle.currentDay !== null && cycle.phase !== null && cycle.nextPeriodDate !== null;
+
   function handleLog(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -39,13 +50,10 @@ export default function CyclePage() {
     const today = new Date().toISOString().slice(0, 10);
 
     cycleService.logDay({ date: today, flow: flow || undefined, pain, symptoms, notes }).then(() => {
-      setCycle((c) => {
-        if (!c) return c;
-        const history = [...c.history];
-        const last = { ...history[history.length - 1] };
-        history[history.length - 1] = { ...last, isPeriod: !!flow, flow: flow || undefined, pain, symptoms, notes };
-        return { ...c, history };
-      });
+      // Re-fetch rather than hand-patch local state: logging the very
+      // first entry changes currentDay/phase/nextPeriodDate too, not just
+      // the last history item.
+      cycleService.getSummary().then(setCycle);
       setLogOpen(false);
       toast.show("Today's cycle entry saved");
     });
@@ -98,10 +106,25 @@ export default function CyclePage() {
     </Modal>
   );
 
+  if (!hasData) {
+    return (
+      <>
+        <EmptyState
+          title="Log your first entry to get started"
+          description="Once you log a period, flow, or symptom, Women360 will start showing your cycle day, phase, and predictions here."
+          action={<Button onClick={() => setLogOpen(true)}>Log today's flow & symptoms</Button>}
+        />
+        {logModal}
+      </>
+    );
+  }
+
+  const populated = cycle as PopulatedCycleSummary;
+
   if (senior.seniorMode) {
     return (
       <>
-        <SeniorCycle cycle={cycle} onLog={() => setLogOpen(true)} />
+        <SeniorCycle cycle={populated} onLog={() => setLogOpen(true)} />
         {logModal}
       </>
     );
@@ -114,7 +137,7 @@ export default function CyclePage() {
         <p className="text-[var(--w360-text-muted)] mt-1">A gentle picture of where you are in your cycle.</p>
       </div>
 
-      <CycleRing cycle={cycle} onLog={() => setLogOpen(true)} />
+      <CycleRing cycle={populated} onLog={() => setLogOpen(true)} />
 
       <Tabs
         tabs={[
@@ -128,7 +151,7 @@ export default function CyclePage() {
   );
 }
 
-function CycleRing({ cycle, onLog }: { cycle: CycleSummary; onLog: () => void }) {
+function CycleRing({ cycle, onLog }: { cycle: PopulatedCycleSummary; onLog: () => void }) {
   const size = 180;
   const stroke = 14;
   const r = (size - stroke) / 2;
@@ -171,9 +194,12 @@ function CycleRing({ cycle, onLog }: { cycle: CycleSummary; onLog: () => void })
 
 function OverviewTab({ cycle }: { cycle: CycleSummary }) {
   const recent = cycle.history.slice(-7);
+  const avgCycleLength = cycle.lastCycleLengths.length
+    ? `${Math.round(cycle.lastCycleLengths.reduce((a, b) => a + b, 0) / cycle.lastCycleLengths.length)} days`
+    : "Not enough data yet";
   return (
     <div className="grid sm:grid-cols-3 gap-3">
-      <Stat label="Average cycle length" value={`${Math.round(cycle.lastCycleLengths.reduce((a, b) => a + b, 0) / cycle.lastCycleLengths.length)} days`} />
+      <Stat label="Average cycle length" value={avgCycleLength} />
       <Stat label="Average period length" value={`${cycle.periodLength} days`} />
       <Stat label="Cycles tracked" value={`${cycle.lastCycleLengths.length}`} />
       <div className="sm:col-span-3">
@@ -264,7 +290,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SeniorCycle({ cycle, onLog }: { cycle: CycleSummary; onLog: () => void }) {
+function SeniorCycle({ cycle, onLog }: { cycle: PopulatedCycleSummary; onLog: () => void }) {
   return (
     <div className="max-w-xl mx-auto p-5 flex flex-col gap-5">
       <Card>

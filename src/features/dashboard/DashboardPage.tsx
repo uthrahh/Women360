@@ -55,11 +55,13 @@ function StandardDashboard() {
       <section>
         <SectionHeading title="Today's priorities" />
         <div className="grid sm:grid-cols-2 gap-3">
-          <PriorityCard
-            title="Your period may start soon"
-            detail={`Expected around ${new Date(cycle!.nextPeriodDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })} — day ${cycle!.currentDay} of your cycle now.`}
-            to="/app/cycle"
-          />
+          {cycle!.currentDay !== null && cycle!.nextPeriodDate !== null && (
+            <PriorityCard
+              title="Your period may start soon"
+              detail={`Expected around ${new Date(cycle!.nextPeriodDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })} — day ${cycle!.currentDay} of your cycle now.`}
+              to="/app/cycle"
+            />
+          )}
           <PriorityCard
             title="Catch up on hydration"
             detail={`${nutrition!.hydrationMl}ml of ${nutrition!.hydrationGoalMl}ml logged today.`}
@@ -76,7 +78,13 @@ function StandardDashboard() {
           <SnapshotTile icon={ActivityIcon} label="Activity" value={`${activity!.steps.toLocaleString()}`} sub="steps today" to="/app/activity" />
           <SnapshotTile icon={Droplet} label="Hydration" value={`${Math.round((nutrition!.hydrationMl / nutrition!.hydrationGoalMl) * 100)}%`} sub="of daily goal" to="/app/nutrition" />
           <SnapshotTile icon={Smile} label="Mood" value="Good" sub="logged this morning" to="/app/wellbeing" />
-          <SnapshotTile icon={CalendarHeart} label="Cycle" value={`Day ${cycle!.currentDay}`} sub={cycle!.phase} to="/app/cycle" />
+          <SnapshotTile
+            icon={CalendarHeart}
+            label="Cycle"
+            value={cycle!.currentDay !== null ? `Day ${cycle!.currentDay}` : "Log your cycle"}
+            sub={cycle!.phase ?? "Get started"}
+            to="/app/cycle"
+          />
           <SnapshotTile icon={CalendarClock} label="Goals" value="3/4" sub="on track" to="/app/goals" />
         </div>
       </section>

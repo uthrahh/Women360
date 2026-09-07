@@ -5,9 +5,9 @@ export interface User {
   name: string;
   email: string;
   role: Role;
-  dateOfBirth: string; // ISO date
+  dateOfBirth: string | null; // ISO date; null until the user provides one
   avatarInitials: string;
-  lifeStage: "reproductive" | "perimenopause" | "menopause" | "postmenopause";
+  lifeStage: "reproductive" | "perimenopause" | "menopause" | "postmenopause" | null;
   onboarded: boolean;
 }
 
@@ -40,11 +40,12 @@ export interface CycleDay {
 }
 
 export interface CycleSummary {
-  currentDay: number;
-  phase: "menstrual" | "follicular" | "ovulation" | "luteal";
+  // null for a brand-new user who hasn't logged any cycle data yet.
+  currentDay: number | null;
+  phase: "menstrual" | "follicular" | "ovulation" | "luteal" | null;
   cycleLength: number;
   periodLength: number;
-  nextPeriodDate: string;
+  nextPeriodDate: string | null;
   lastCycleLengths: number[];
   history: CycleDay[];
 }

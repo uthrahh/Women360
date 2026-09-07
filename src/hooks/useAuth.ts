@@ -3,11 +3,40 @@ import type { User } from "@/types";
 import { authService } from "@/services/authService";
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(() => authService.getSession());
+  const [user, setUser] = useState<User | null>(() => authService.getCachedUser());
+  const [bootstrapping, setBootstrapping] = useState(true);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setUser(authService.getSession());
+    let cancelled = false;
+
+    if (!authService.hasSession()) {
+      setUser(null);
+      setBootstrapping(false);
+    } else {
+      authService
+        .fetchCurrentUser()
+        .then((u) => {
+          if (!cancelled) setUser(u);
+        })
+        .catch(() => {
+          authService.logout();
+          if (!cancelled) setUser(null);
+        })
+        .finally(() => {
+          if (!cancelled) setBootstrapping(false);
+        });
+    }
+
+    function onSessionExpired() {
+      setUser(null);
+    }
+    window.addEventListener("w360:session-expired", onSessionExpired);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("w360:session-expired", onSessionExpired);
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -21,10 +50,10 @@ export function useAuth() {
     }
   }, []);
 
-  const register = useCallback(async (name: string, email: string, dob: string) => {
+  const register = useCallback(async (name: string, email: string, password: string, dob?: string) => {
     setLoading(true);
     try {
-      const u = await authService.register(name, email, dob);
+      const u = await authService.register(name, email, password, dob);
       setUser(u);
       return u;
     } finally {
@@ -43,5 +72,5 @@ export function useAuth() {
     setUser(null);
   }, []);
 
-  return { user, loading, login, register, completeOnboarding, logout };
+  return { user, bootstrapping, loading, login, register, completeOnboarding, logout };
 }

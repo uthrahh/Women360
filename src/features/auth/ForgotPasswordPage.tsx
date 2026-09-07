@@ -10,13 +10,20 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await authService.requestPasswordReset(email);
-    setLoading(false);
-    setSent(true);
+    setError("");
+    try {
+      await authService.requestPasswordReset(email);
+      setSent(true);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -27,7 +34,7 @@ export default function ForgotPasswordPage() {
         </div>
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} error={error || undefined} required />
           <Button type="submit" fullWidth disabled={loading}>{loading ? "Sending…" : "Send reset link"}</Button>
         </form>
       )}
