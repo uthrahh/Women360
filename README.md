@@ -1,11 +1,18 @@
-# Women360 — Frontend
+# Women360
 
-Production-quality frontend for **Women360**, a women's health & wellness SaaS
-(Cloud Computing course project). This phase covers the complete Woman/End
-User experience: authentication, onboarding, the full app shell, all core
-modules, theming, and the **Senior Mode** USP — built against a replaceable
-mock service layer so the real backend can be swapped in later without a UI
-rewrite.
+Women360 is a women's health & wellness platform spanning ages 18–100+,
+built to the standard set in [`CLAUDE.md`](./CLAUDE.md) — read that first
+before making a change of any size. This repository is a monorepo: the
+frontend lives at the repository root (below), and the API server lives in
+[`server/`](./server/README.md).
+
+## Frontend
+
+Production-quality frontend for Women360. This phase covers the complete
+Woman/End User experience: authentication, onboarding, the full app shell,
+all core modules, theming, and the **Senior Mode** USP — built against a
+replaceable mock service layer so the real backend can be swapped in
+without a UI rewrite.
 
 ## Stack
 
@@ -84,3 +91,14 @@ No component or page needs to change.
 - Forms use light custom validation; wiring `react-hook-form` + `zod` schemas
   per-form is the natural next step (both are already dependencies).
 - No test suite yet.
+- `npm run lint` currently has no ESLint config/dependency to run against —
+  tracked as a known gap, not yet fixed.
+
+## Backend
+
+A real API is being built in [`server/`](./server/README.md): Node/Express +
+TypeScript + Prisma on PostgreSQL, with JWT auth, server-side role-based
+access control, and one module per domain modeled on the SRS's data
+requirements. It has not been cut over to yet — the frontend above still
+talks to `src/services/*.ts`'s mock layer. See `server/README.md` for setup,
+and the repository's audit document for the full cutover plan.

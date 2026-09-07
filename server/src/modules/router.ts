@@ -1,0 +1,36 @@
+import { Router } from "express";
+import { authRouter } from "./auth/auth.routes";
+import { usersRouter } from "./users/users.routes";
+import { cycleRouter } from "./cycle/cycle.routes";
+import { nutritionRouter } from "./nutrition/nutrition.routes";
+import { activityRouter } from "./activity/activity.routes";
+import { sleepRouter } from "./sleep/sleep.routes";
+import { wellbeingRouter } from "./wellbeing/wellbeing.routes";
+import { goalsRouter } from "./goals/goals.routes";
+import { healthRouter } from "./health/health.routes";
+import { insightsRouter } from "./insights/insights.routes";
+import { reportsRouter } from "./reports/reports.routes";
+import { learnRouter } from "./learn/learn.routes";
+import { messagesRouter } from "./messages/messages.routes";
+import { notificationsRouter } from "./notifications/notifications.routes";
+import { coachRouter } from "./coach/coach.routes";
+import { adminRouter } from "./admin/admin.routes";
+
+export const router = Router();
+
+router.use("/auth", authRouter);
+router.use("/users", usersRouter);
+router.use("/cycle", cycleRouter);
+router.use("/nutrition", nutritionRouter);
+router.use("/activity", activityRouter);
+router.use("/sleep", sleepRouter);
+router.use("/wellbeing", wellbeingRouter);
+router.use("/goals", goalsRouter);
+router.use("/health", healthRouter);
+router.use("/insights", insightsRouter);
+router.use("/reports", reportsRouter);
+router.use("/learn", learnRouter);
+router.use("/messages", messagesRouter);
+router.use("/notifications", notificationsRouter);
+router.use("/coach", coachRouter);
+router.use("/admin", adminRouter);

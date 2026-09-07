@@ -1,0 +1,484 @@
+// Women360 — data model.
+//
+// Scope note: this models the entities the SRS (Documentation/SRS.pdf §6.1)
+// and the existing frontend (src/types/index.ts) actually use today. Per
+// SRS §15 ("Assumptions"), the first implementation may use a focused
+// subset of the full health-domain model while keeping an architecture
+// that can accommodate additional modules — new domains are added as new
+// models + a new module under src/modules, following the same pattern.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & access
+// ---------------------------------------------------------------------------
+
+enum Role {
+  WOMAN
+  COACH
+  ADMIN
+}
+
+enum LifeStage {
+  REPRODUCTIVE
+  PERIMENOPAUSE
+  MENOPAUSE
+  POSTMENOPAUSE
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String
+  name           String
+  dateOfBirth    DateTime? @db.Date
+  role           Role      @default(WOMAN)
+  lifeStage      LifeStage?
+  avatarInitials String?
+  onboarded      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  refreshTokens        RefreshToken[]
+  passwordResetTokens  PasswordResetToken[]
+  healthProfile        HealthProfile?
+  emergencyContact     EmergencyContact?
+  seniorEssentials     SeniorEssentialPreference[]
+  nutritionGoal        NutritionGoal?
+  activityGoal         ActivityGoal?
+  cycleProfile         CycleProfile?
+
+  cycleEntries      CycleEntry[]
+  mealEntries       MealEntry[]
+  hydrationLogs     HydrationLog[]
+  activityEntries   ActivityEntry[]
+  stepsLogs         StepsLog[]
+  sleepEntries      SleepEntry[]
+  wellbeingEntries  WellbeingEntry[]
+  goals             Goal[]
+  appointments      Appointment[]
+  medications       Medication[]
+  vitals            VitalMeasurement[]
+  reports           Report[]
+  notifications     Notification[]
+  receivedMessages  Message[]                @relation("MessageRecipient")
+
+  coachAssignmentsAsWoman CoachAssignment[] @relation("WomanAssignments")
+  coachAssignmentsAsCoach CoachAssignment[] @relation("CoachAssignments")
+  coachNotesAuthored      CoachNote[]       @relation("CoachNoteAuthor")
+  coachNotesAboutMe       CoachNote[]       @relation("CoachNoteSubject")
+
+  auditLogs AuditLog[]
+
+  @@index([role])
+}
+
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Health profile & preferences (Settings)
+// ---------------------------------------------------------------------------
+
+model HealthProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  allergies     String[] @default([])
+  conditions    String[] @default([])
+  familyHistory String?
+  notes         String?
+  updatedAt     DateTime @updatedAt
+}
+
+model EmergencyContact {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  phone        String
+  relationship String?
+  updatedAt    DateTime @updatedAt
+}
+
+enum SeniorEssentialKey {
+  HEALTH
+  MEDICINES
+  APPOINTMENTS
+  ACTIVITY
+  SLEEP
+  NUTRITION
+  MESSAGES
+  CYCLE
+  EMERGENCY
+}
+
+model SeniorEssentialPreference {
+  id      String             @id @default(cuid())
+  userId  String
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key     SeniorEssentialKey
+  enabled Boolean            @default(true)
+
+  @@unique([userId, key])
+}
+
+// ---------------------------------------------------------------------------
+// Menstrual & reproductive health
+// ---------------------------------------------------------------------------
+
+enum FlowLevel {
+  SPOTTING
+  LIGHT
+  MEDIUM
+  HEAVY
+}
+
+model CycleProfile {
+  id                  String @id @default(cuid())
+  userId              String @unique
+  user                User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  averageCycleLength  Int    @default(28)
+  averagePeriodLength Int    @default(5)
+}
+
+model CycleEntry {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime   @db.Date
+  isPeriod  Boolean    @default(false)
+  flow      FlowLevel?
+  pain      Int?
+  energy    Int?
+  mood      String?
+  symptoms  String[]   @default([])
+  notes     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+// ---------------------------------------------------------------------------
+// Nutrition
+// ---------------------------------------------------------------------------
+
+model NutritionGoal {
+  id             String @id @default(cuid())
+  userId         String @unique
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hydrationGoalMl Int   @default(2200)
+  proteinGoalG    Float @default(70)
+  fibreGoalG      Float @default(28)
+  fruitVegGoal    Int   @default(5)
+}
+
+model MealEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  time      String
+  name      String
+  calories  Int
+  proteinG  Float
+  fibreG    Float
+  servings  String
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model HydrationLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  amountMl  Int
+  loggedAt  DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+// ---------------------------------------------------------------------------
+// Activity & sleep
+// ---------------------------------------------------------------------------
+
+enum Intensity {
+  LOW
+  MODERATE
+  HIGH
+}
+
+model ActivityGoal {
+  id                  String @id @default(cuid())
+  userId              String @unique
+  user                User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stepsGoal           Int    @default(8000)
+  activeMinutesGoal   Int    @default(45)
+}
+
+model ActivityEntry {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String
+  durationMinutes Int
+  intensity       Intensity
+  notes           String?
+  date            DateTime  @db.Date
+  createdAt       DateTime  @default(now())
+
+  @@index([userId, date])
+}
+
+model StepsLog {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
+  steps  Int
+
+  @@unique([userId, date])
+}
+
+model SleepEntry {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime @db.Date
+  durationHours  Float
+  quality        Int
+  bedtime        String
+  wakeTime       String
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+// ---------------------------------------------------------------------------
+// Wellbeing & goals
+// ---------------------------------------------------------------------------
+
+model WellbeingEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  mood      Int
+  stress    Int
+  energy    Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+enum GoalCategory {
+  SLEEP
+  ACTIVITY
+  HYDRATION
+  NUTRITION
+  STRENGTH
+  CYCLE
+  MOBILITY
+}
+
+model Goal {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  category  GoalCategory
+  target    String
+  progress  Int          @default(0)
+  reminder  String?
+  completed Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Preventive care
+// ---------------------------------------------------------------------------
+
+enum AppointmentKind {
+  CHECKUP
+  SCREENING
+  VACCINATION
+  COACH
+}
+
+model Appointment {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  provider  String
+  date      DateTime
+  time      String
+  location  String
+  kind      AppointmentKind
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([userId, date])
+}
+
+model Medication {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  dose      String
+  schedule  String
+  remaining Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum VitalType {
+  WEIGHT
+  BLOOD_PRESSURE
+  RESTING_HR
+}
+
+model VitalMeasurement {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      VitalType
+  value     String
+  date      DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([userId, type])
+}
+
+// ---------------------------------------------------------------------------
+// Reports, notifications, messages, learn content
+// ---------------------------------------------------------------------------
+
+model Report {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  rangeLabel   String
+  generatedOn  DateTime @default(now())
+  dataSnapshot Json
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  detail    String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+model Message {
+  id            String    @id @default(cuid())
+  recipientId   String
+  recipient     User      @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  senderLabel   String
+  preview       String
+  body          String?
+  readAt        DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([recipientId, readAt])
+}
+
+model LearnArticle {
+  id          String    @id @default(cuid())
+  title       String
+  category    String
+  readMins    Int
+  dek         String
+  body        String?
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Wellness coach & administration
+// ---------------------------------------------------------------------------
+
+model CoachAssignment {
+  id        String   @id @default(cuid())
+  womanId   String
+  woman     User     @relation("WomanAssignments", fields: [womanId], references: [id], onDelete: Cascade)
+  coachId   String
+  coach     User     @relation("CoachAssignments", fields: [coachId], references: [id], onDelete: Cascade)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([womanId, coachId])
+}
+
+model CoachNote {
+  id             String   @id @default(cuid())
+  coachId        String
+  coach          User     @relation("CoachNoteAuthor", fields: [coachId], references: [id], onDelete: Cascade)
+  womanId        String
+  woman          User     @relation("CoachNoteSubject", fields: [womanId], references: [id], onDelete: Cascade)
+  note           String
+  visibleToWoman Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  @@index([womanId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorRole  Role?
+  action     String
+  targetType String?
+  targetId   String?
+  // Never store request/response bodies or health record contents here —
+  // only structural metadata (ids, counts, field names changed).
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+}
