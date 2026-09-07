@@ -8,13 +8,6 @@
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000/api/v1";
 
-const SIMULATED_LATENCY_MS = 280;
-
-// Still used by services not yet cut over to the real backend.
-export function delay<T>(value: T, ms: number = SIMULATED_LATENCY_MS): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms));
-}
-
 export class ApiError extends Error {
   constructor(message: string, public status = 500, public code?: string) {
     super(message);

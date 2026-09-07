@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import type { SeniorEssential } from "@/types";
-import { defaultSeniorEssentials } from "@/mock/seed";
+import { defaultSeniorEssentials } from "@/config/navigation";
 
 const MODE_KEY = "w360_senior_mode";
 const ESSENTIALS_KEY = "w360_senior_essentials";
