@@ -14,4 +14,7 @@ export const cycleService = {
     });
     return toFrontendCycleDay(apiEntry);
   },
+  async deleteEntry(date: string): Promise<void> {
+    await request(`/cycle/entries/${date}`, { method: "DELETE" });
+  },
 };

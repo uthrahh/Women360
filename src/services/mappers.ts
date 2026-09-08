@@ -18,6 +18,8 @@ import type {
   NutritionSummary,
   ReportRecord,
   Role,
+  SleepEntry,
+  SleepSummary,
   User,
   VitalMeasurement,
   WellbeingEntry,
@@ -33,6 +35,51 @@ export function upper<T extends string>(value: string): T {
 
 function toDateOnly(value: string | null): string | null {
   return value ? value.slice(0, 10) : null;
+}
+
+// A user's "today" in their own timezone — `.toISOString().slice(0,10)`
+// converts to UTC first, which silently shifts the date for anyone whose
+// local calendar day doesn't match UTC's (e.g. evenings west of it).
+export function localDateISO(d: Date = new Date()): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+// The backend's sleep consistency-score parser only understands a trailing
+// AM/PM marker — a native <input type="time">'s 24-hour "HH:MM" value must
+// be converted before it's sent, and converted back to pre-fill a form.
+export function to12Hour(hhmm: string): string {
+  const [hStr, mStr] = hhmm.split(":");
+  const h = Number(hStr);
+  const period = h >= 12 ? "PM" : "AM";
+  const displayHour = h % 12 === 0 ? 12 : h % 12;
+  return `${displayHour}:${mStr} ${period}`;
+}
+
+export function to24Hour(display: string): string {
+  const match = /(\d+):(\d+)\s*(AM|PM)/i.exec(display);
+  if (!match) return "00:00";
+  let h = Number(match[1]) % 12;
+  if (match[3].toUpperCase() === "PM") h += 12;
+  return `${String(h).padStart(2, "0")}:${match[2]}`;
+}
+
+// Handles midnight crossing: 23:00 -> 07:00 is 8 hours, not negative.
+export function calcSleepDuration(bedtime24: string, wake24: string): number {
+  const [bh, bm] = bedtime24.split(":").map(Number);
+  const [wh, wm] = wake24.split(":").map(Number);
+  let minutes = wh * 60 + wm - (bh * 60 + bm);
+  if (minutes <= 0) minutes += 24 * 60;
+  return Math.round((minutes / 60) * 10) / 10;
+}
+
+// Progress is always derived from real numbers, never trusted from a
+// separately-stored percentage that could drift out of sync.
+export function goalProgress(goal: Pick<Goal, "currentValue" | "targetValue">): number {
+  if (goal.targetValue <= 0) return 0;
+  return Math.max(0, Math.min(100, Math.round((goal.currentValue / goal.targetValue) * 100)));
 }
 
 function initialsFromName(name: string): string {
@@ -137,6 +184,9 @@ interface ApiMealEntry {
   proteinG: number;
   fibreG: number;
   servings: string;
+  carbsG: number | null;
+  fatG: number | null;
+  notes: string | null;
 }
 
 export function toFrontendMealEntry(apiMeal: ApiMealEntry): MealEntry {
@@ -148,6 +198,9 @@ export function toFrontendMealEntry(apiMeal: ApiMealEntry): MealEntry {
     protein: apiMeal.proteinG,
     fibre: apiMeal.fibreG,
     servings: apiMeal.servings,
+    carbs: apiMeal.carbsG ?? undefined,
+    fat: apiMeal.fatG ?? undefined,
+    notes: apiMeal.notes ?? undefined,
   };
 }
 
@@ -160,6 +213,9 @@ export function toBackendMealEntry(meal: Omit<MealEntry, "id">, date: string) {
     proteinG: meal.protein,
     fibreG: meal.fibre,
     servings: meal.servings,
+    carbsG: meal.carbs,
+    fatG: meal.fat,
+    notes: meal.notes,
   };
 }
 
@@ -199,7 +255,7 @@ export function toRelativeTime(iso: string): string {
 
 export function toRelativeDay(iso: string): string {
   const dateOnly = new Date(toDateOnly(iso) ?? iso);
-  const today = new Date(new Date().toISOString().slice(0, 10));
+  const today = new Date(localDateISO());
   const diffDays = Math.round((today.getTime() - dateOnly.getTime()) / 86_400_000);
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Yesterday";
@@ -290,8 +346,9 @@ interface ApiGoal {
   id: string;
   title: string;
   category: string;
-  target: string;
-  progress: number;
+  currentValue: number;
+  targetValue: number;
+  unit: string;
   reminder: string | null;
   completed: boolean;
 }
@@ -301,15 +358,30 @@ export function toFrontendGoal(apiGoal: ApiGoal): Goal {
     id: apiGoal.id,
     title: apiGoal.title,
     category: lower<Goal["category"]>(apiGoal.category),
-    target: apiGoal.target,
-    progress: apiGoal.progress,
+    currentValue: apiGoal.currentValue,
+    targetValue: apiGoal.targetValue,
+    unit: apiGoal.unit,
     reminder: apiGoal.reminder ?? undefined,
     completed: apiGoal.completed,
   };
 }
 
-export function toBackendGoalInput(input: { title: string; category: Goal["category"]; target: string; reminder?: string }) {
-  return { title: input.title, category: upper(input.category), target: input.target, reminder: input.reminder };
+export function toBackendGoalInput(input: {
+  title: string;
+  category: Goal["category"];
+  currentValue: number;
+  targetValue: number;
+  unit: string;
+  reminder?: string;
+}) {
+  return {
+    title: input.title,
+    category: upper(input.category),
+    currentValue: input.currentValue,
+    targetValue: input.targetValue,
+    unit: input.unit,
+    reminder: input.reminder,
+  };
 }
 
 // --- Health: appointments, medications, vitals -------------------------------
@@ -326,6 +398,10 @@ interface ApiAppointment {
 
 export function toFrontendAppointment(apiAppointment: ApiAppointment): Appointment {
   return { ...apiAppointment, kind: lower<Appointment["kind"]>(apiAppointment.kind) };
+}
+
+export function toBackendAppointment(appointment: Omit<Appointment, "id">) {
+  return { ...appointment, kind: upper(appointment.kind) };
 }
 
 interface ApiMedication {
@@ -429,4 +505,52 @@ export function toFrontendReportRecord(apiReport: ApiReportRecord): ReportRecord
 export function rangeLabelToDays(range: string): number {
   const match = /\d+/.exec(range);
   return match ? Number(match[0]) : 90;
+}
+
+// --- Sleep ------------------------------------------------------------
+
+interface ApiSleepEntry {
+  id: string;
+  date: string;
+  bedtime: string;
+  wakeTime: string;
+  durationHours: number;
+  quality: number;
+  notes: string | null;
+}
+
+export function toFrontendSleepEntry(entry: ApiSleepEntry): SleepEntry {
+  return {
+    id: entry.id,
+    date: toDateOnly(entry.date) ?? entry.date,
+    bedtime: entry.bedtime,
+    wakeTime: entry.wakeTime,
+    durationHours: entry.durationHours,
+    quality: entry.quality,
+    notes: entry.notes ?? undefined,
+  };
+}
+
+interface ApiSleepSummary {
+  durationHours: number;
+  quality: number;
+  bedtime: string;
+  wakeTime: string;
+  weeklyHours: { day: string; hours: number }[];
+  consistencyScore: number;
+  history: ApiSleepEntry[];
+}
+
+export function toFrontendSleepSummary(apiSummary: ApiSleepSummary): SleepSummary {
+  return { ...apiSummary, history: apiSummary.history.map(toFrontendSleepEntry) };
+}
+
+export function toBackendSleepEntry(entry: { bedtime24: string; wake24: string; quality: number; notes?: string }) {
+  return {
+    bedtime: to12Hour(entry.bedtime24),
+    wakeTime: to12Hour(entry.wake24),
+    durationHours: calcSleepDuration(entry.bedtime24, entry.wake24),
+    quality: entry.quality,
+    notes: entry.notes,
+  };
 }

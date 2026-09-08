@@ -1,10 +1,6 @@
 import { request } from "./apiClient";
 import type { ActivitySummary, ActivityEntry } from "@/types";
-import { toBackendActivityEntry, toFrontendActivityEntry, toFrontendActivitySummary } from "./mappers";
-
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { localDateISO, toBackendActivityEntry, toFrontendActivityEntry, toFrontendActivitySummary } from "./mappers";
 
 export const activityService = {
   async getSummary(): Promise<ActivitySummary> {
@@ -16,8 +12,11 @@ export const activityService = {
   async logActivity(entry: Omit<ActivityEntry, "id">): Promise<ActivityEntry> {
     const apiEntry = await request<Parameters<typeof toFrontendActivityEntry>[0]>("/activity/entries", {
       method: "POST",
-      body: JSON.stringify(toBackendActivityEntry(entry, todayISO())),
+      body: JSON.stringify(toBackendActivityEntry(entry, localDateISO())),
     });
     return toFrontendActivityEntry(apiEntry);
+  },
+  async deleteEntry(id: string): Promise<void> {
+    await request(`/activity/entries/${id}`, { method: "DELETE" });
   },
 };

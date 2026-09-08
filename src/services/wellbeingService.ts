@@ -1,10 +1,6 @@
 import { request } from "./apiClient";
 import type { WellbeingEntry } from "@/types";
-import { toBackendWellbeingEntry, toFrontendWellbeingEntry } from "./mappers";
-
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { localDateISO, toBackendWellbeingEntry, toFrontendWellbeingEntry } from "./mappers";
 
 export const wellbeingService = {
   // The backend returns the last 14 days; the UI expects roughly a week.
@@ -17,11 +13,11 @@ export const wellbeingService = {
   // by the real date instead of guessing from the (possibly empty) week.
   async getTodayMood(): Promise<WellbeingEntry | null> {
     const apiEntries = await request<Parameters<typeof toFrontendWellbeingEntry>[0][]>("/wellbeing/entries");
-    const todayEntry = apiEntries.find((e) => e.date.slice(0, 10) === todayISO());
+    const todayEntry = apiEntries.find((e) => e.date.slice(0, 10) === localDateISO());
     return todayEntry ? { ...toFrontendWellbeingEntry(todayEntry), date: "Today" } : null;
   },
   async logToday(entry: Omit<WellbeingEntry, "date">): Promise<WellbeingEntry> {
-    const apiEntry = await request<Parameters<typeof toFrontendWellbeingEntry>[0]>(`/wellbeing/entries/${todayISO()}`, {
+    const apiEntry = await request<Parameters<typeof toFrontendWellbeingEntry>[0]>(`/wellbeing/entries/${localDateISO()}`, {
       method: "PUT",
       body: JSON.stringify(toBackendWellbeingEntry(entry)),
     });
