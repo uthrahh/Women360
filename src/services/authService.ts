@@ -91,4 +91,8 @@ export const authService = {
     cacheUser(user);
     return user;
   },
+
+  // For pages (e.g. Settings) that update the user via a different service
+  // (userService) but still need the shared session cache/state to reflect it.
+  cacheUser,
 };

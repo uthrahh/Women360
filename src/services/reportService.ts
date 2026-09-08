@@ -13,4 +13,8 @@ export const reportService = {
     });
     return toFrontendReportRecord(apiReport);
   },
+  // Full detail, including the data snapshot the summary list doesn't return.
+  async getById(id: string): Promise<{ title: string; rangeLabel: string; generatedOn: string; dataSnapshot: unknown }> {
+    return request(`/reports/${id}`);
+  },
 };

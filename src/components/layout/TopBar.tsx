@@ -26,6 +26,12 @@ export function TopBar() {
 
   const unreadCount = notifs?.filter((n) => !n.read).length ?? 0;
 
+  function markRead(id: string) {
+    notificationService.markRead(id).then(() => {
+      setNotifs((list) => (list ? list.map((n) => (n.id === id ? { ...n, read: true } : n)) : list));
+    });
+  }
+
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 sm:px-6 h-16 border-b border-[var(--w360-border)] bg-[var(--w360-bg)]/90 backdrop-blur">
       <Link to="/app/dashboard" className="lg:hidden font-display text-lg font-semibold">Women360</Link>
@@ -70,14 +76,20 @@ export function TopBar() {
                   <p className="px-4 py-6 text-sm text-[var(--w360-text-muted)] text-center">You're all caught up.</p>
                 ) : (
                   notifs.map((n) => (
-                    <div key={n.id} className="px-4 py-3 flex items-start gap-2.5">
-                      {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-maroon-600 mt-1.5 shrink-0" />}
+                    <button
+                      key={n.id}
+                      onClick={() => !n.read && markRead(n.id)}
+                      disabled={n.read}
+                      aria-label={n.read ? `${n.title} (read)` : `${n.title} — mark as read`}
+                      className="w-full text-left px-4 py-3 flex items-start gap-2.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] disabled:cursor-default"
+                    >
+                      {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-maroon-600 mt-1.5 shrink-0" aria-hidden />}
                       <div className={n.read ? "pl-4" : ""}>
                         <p className="text-sm font-medium">{n.title}</p>
                         <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">{n.detail}</p>
                         <p className="text-[10px] text-[var(--w360-text-muted)] mt-1">{n.time}</p>
                       </div>
-                    </div>
+                    </button>
                   ))
                 )}
               </div>
