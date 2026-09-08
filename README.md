@@ -102,9 +102,10 @@ No component or page needs to change.
   this phase is scoped to the Woman/End User experience as instructed.
 - Forms use light custom validation; wiring `react-hook-form` + `zod` schemas
   per-form is the natural next step (both are already dependencies).
-- No test suite yet.
-- `npm run lint` currently has no ESLint config/dependency to run against —
-  tracked as a known gap, not yet fixed.
+- A minimal Vitest setup now exists (`npm test`, `vitest.config.ts`) covering
+  the pure display/calculation functions in `src/services/mappers.ts` — this
+  is a start, not full coverage; there's still no component/integration
+  testing (React Testing Library, Playwright) for the frontend.
 
 ## Backend
 
@@ -132,14 +133,31 @@ tile now derives its count from real data instead of a hardcoded "3/4".
 create/edit/delete with validation, empty states, and confirmation
 dialogs (`src/components/ui/ConfirmDialog.tsx`) — not just a read-only
 view or a form that silently discarded input. Activity, Health
-(medications/appointments), Notifications (mark as read), Reports (a
-real client-side download), and Settings (Profile/Emergency Contact via
-a new `userService.ts`) got the same treatment for whichever of their
-actions the backend already supported but the frontend never called.
+(medications/appointments), Notifications (mark as read), Reports, and
+Settings (Profile/Emergency Contact via a new `userService.ts`) got the
+same treatment for whichever of their actions the backend already
+supported but the frontend never called.
+
+**Data accuracy:** Sleep quality is a real 1-5 rating (1 Very poor .. 5
+Excellent) via a segmented control, never a 0-100 percentage. Nutrition
+values (calories, protein, carbs, fat, fibre) accept one decimal place,
+validated identically on both ends. The daily nutrition summary sums
+every nutrient — including fibre and calories, which previously weren't
+aggregated at all — directly from that day's logged meals, so it can
+never drift from what's actually recorded; "Fruit & veg" is a real
+quick-logged count instead of the hardcoded 0 it used to be.
+
+**Reports:** Generates a genuine branded PDF (`jspdf` +
+`jspdf-autotable`, see `src/lib/generateHealthReportPdf.ts`) for a
+chosen period (7/30/90 days) — not a JSON download — built from the same
+Nutrition/Sleep/Cycle/Activity/Wellbeing/Goals records the rest of the
+app reads from, with honest "no data logged" messaging for empty
+categories rather than fabricated zeros.
 
 Known remaining gaps in this area (see `CLAUDE.md` §3 for the full list
-and reasoning): `DashboardPage`'s two "Trends worth noticing" cards are
-still hardcoded copy — a real week-over-week comparison doesn't exist in
+and reasoning): `DashboardPage`'s "This week" section reports real,
+already-fetched numbers (days logged, sleep consistency) rather than a
+true week-over-week comparison, since that aggregation doesn't exist in
 the backend yet. Settings' Privacy & sharing toggles, Onboarding's
 step-by-step data capture, and Messages' two-way reply are all still
 non-functional; each needs either a product decision or new backend
