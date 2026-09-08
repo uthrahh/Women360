@@ -72,5 +72,13 @@ export function useAuth() {
     setUser(null);
   }, []);
 
-  return { user, bootstrapping, loading, login, register, completeOnboarding, logout };
+  // For pages that update the user through a different service (e.g.
+  // userService's profile save) but still need the shared session state
+  // (greeting, TopBar, etc.) to reflect the change immediately.
+  const refreshUser = useCallback((updated: User) => {
+    authService.cacheUser(updated);
+    setUser(updated);
+  }, []);
+
+  return { user, bootstrapping, loading, login, register, completeOnboarding, logout, refreshUser };
 }

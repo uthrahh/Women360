@@ -5,11 +5,12 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
-import { FileText, Download, Share2 } from "lucide-react";
+import { FileText, Download } from "lucide-react";
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<ReportRecord[] | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -18,10 +19,35 @@ export default function ReportsPage() {
 
   async function handleGenerate() {
     setGenerating(true);
-    const r = await reportService.generate("Health Report", "Last 30 days");
-    setReports((prev) => [r, ...(prev ?? [])]);
-    setGenerating(false);
-    toast.show("Report generated");
+    try {
+      const r = await reportService.generate("Health Report", "Last 30 days");
+      setReports((prev) => [r, ...(prev ?? [])]);
+      toast.show("Report generated");
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't generate that report. Please try again.", { tone: "error" });
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleDownload(r: ReportRecord) {
+    setDownloadingId(r.id);
+    try {
+      const full = await reportService.getById(r.id);
+      const blob = new Blob([JSON.stringify(full, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${r.title.replace(/[^\w-]+/g, "_")}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't download that report. Please try again.", { tone: "error" });
+    } finally {
+      setDownloadingId(null);
+    }
   }
 
   if (!reports) return <LoadingState label="Loading reports" />;
@@ -51,8 +77,9 @@ export default function ReportsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => toast.show("Downloaded (mock)")}> <Download size={14} /> Download</Button>
-                  <Button variant="ghost" size="sm" onClick={() => toast.show("Shared with coach")}> <Share2 size={14} /> Share</Button>
+                  <Button variant="secondary" size="sm" onClick={() => handleDownload(r)} disabled={downloadingId === r.id}>
+                    <Download size={14} /> {downloadingId === r.id ? "Downloading…" : "Download"}
+                  </Button>
                 </div>
               </CardBody>
             </Card>

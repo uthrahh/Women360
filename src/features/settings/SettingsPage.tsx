@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router-dom";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useApp } from "@/context/AppContext";
+import { userService, type EmergencyContact as EmergencyContactData } from "@/services/userService";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -16,14 +17,63 @@ export default function SettingsPage() {
   const [shareWithCoach, setShareWithCoach] = useState(true);
   const [emailReminders, setEmailReminders] = useState(true);
 
-  function handleSaveProfile(e: FormEvent<HTMLFormElement>) {
+  const [name, setName] = useState(auth.user?.name ?? "");
+  const [dob, setDob] = useState(auth.user?.dateOfBirth ?? "");
+  const [nameError, setNameError] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const [contact, setContact] = useState<EmergencyContactData>({ name: "", phone: "", relationship: "" });
+  const [contactErrors, setContactErrors] = useState<Record<string, string>>({});
+  const [savingContact, setSavingContact] = useState(false);
+  const [contactLoaded, setContactLoaded] = useState(false);
+
+  useEffect(() => {
+    userService.getEmergencyContact().then((c) => {
+      if (c) setContact({ name: c.name, phone: c.phone, relationship: c.relationship ?? "" });
+      setContactLoaded(true);
+    });
+  }, []);
+
+  async function handleSaveProfile(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    toast.show("Profile saved");
+    if (!name.trim()) {
+      setNameError("Enter your full name.");
+      return;
+    }
+    setNameError("");
+    setSavingProfile(true);
+    try {
+      const updated = await userService.updateProfile({ name: name.trim(), dateOfBirth: dob || undefined });
+      auth.refreshUser(updated);
+      toast.show("Profile saved");
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't save your profile. Please try again.", { tone: "error" });
+    } finally {
+      setSavingProfile(false);
+    }
   }
 
-  function handleSaveEmergency(e: FormEvent<HTMLFormElement>) {
+  async function handleSaveEmergency(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    toast.show("Emergency contact saved");
+    const errs: Record<string, string> = {};
+    if (!contact.name.trim()) errs.name = "Enter a contact name.";
+    if (!contact.phone.trim()) errs.phone = "Enter a phone number.";
+    setContactErrors(errs);
+    if (Object.keys(errs).length) return;
+
+    setSavingContact(true);
+    try {
+      await userService.updateEmergencyContact({
+        name: contact.name.trim(),
+        phone: contact.phone.trim(),
+        relationship: contact.relationship?.trim() || undefined,
+      });
+      toast.show("Emergency contact saved");
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't save that contact. Please try again.", { tone: "error" });
+    } finally {
+      setSavingContact(false);
+    }
   }
 
   return (
@@ -41,11 +91,11 @@ export default function SettingsPage() {
             content: (
               <Card><CardBody className="pt-5">
                 <form className="flex flex-col gap-4" onSubmit={handleSaveProfile}>
-                  <Input label="Full name" name="name" defaultValue={auth.user?.name ?? "Sarah Menon"} />
-                  <Input label="Email" name="email" defaultValue={auth.user?.email ?? "sarah.menon@example.com"} type="email" />
-                  <Input label="Date of birth" name="dob" type="date" defaultValue={auth.user?.dateOfBirth ?? "1969-04-12"} />
+                  <Input label="Full name" value={name} onChange={(e) => setName(e.target.value)} error={nameError} required />
+                  <Input label="Email" value={auth.user?.email ?? ""} type="email" disabled hint="Email can't be changed yet." />
+                  <Input label="Date of birth" type="date" value={dob ?? ""} onChange={(e) => setDob(e.target.value)} />
                   <div className="flex gap-2">
-                    <Button size="sm" type="submit">Save changes</Button>
+                    <Button size="sm" type="submit" disabled={savingProfile}>{savingProfile ? "Saving…" : "Save changes"}</Button>
                     <Button size="sm" variant="danger" type="button" onClick={() => { auth.logout(); nav("/login"); }}>Log out</Button>
                   </div>
                 </form>
@@ -96,11 +146,36 @@ export default function SettingsPage() {
             id: "emergency", label: "Emergency contact",
             content: (
               <Card><CardBody className="pt-5">
-                <form className="flex flex-col gap-4" onSubmit={handleSaveEmergency}>
-                  <Input label="Contact name" name="contactName" placeholder="e.g. Priya Menon (daughter)" />
-                  <Input label="Phone number" name="contactPhone" placeholder="+91 98xxxxxxx" type="tel" />
-                  <Button size="sm" type="submit" className="w-fit">Save emergency contact</Button>
-                </form>
+                {!contactLoaded ? (
+                  <p className="text-sm text-[var(--w360-text-muted)]">Loading…</p>
+                ) : (
+                  <form className="flex flex-col gap-4" onSubmit={handleSaveEmergency}>
+                    <Input
+                      label="Contact name"
+                      placeholder="e.g. Priya Menon (daughter)"
+                      value={contact.name}
+                      onChange={(e) => setContact((c) => ({ ...c, name: e.target.value }))}
+                      error={contactErrors.name}
+                    />
+                    <Input
+                      label="Phone number"
+                      placeholder="+91 98xxxxxxx"
+                      type="tel"
+                      value={contact.phone}
+                      onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))}
+                      error={contactErrors.phone}
+                    />
+                    <Input
+                      label="Relationship (optional)"
+                      placeholder="e.g. Daughter"
+                      value={contact.relationship ?? ""}
+                      onChange={(e) => setContact((c) => ({ ...c, relationship: e.target.value }))}
+                    />
+                    <Button size="sm" type="submit" className="w-fit" disabled={savingContact}>
+                      {savingContact ? "Saving…" : "Save emergency contact"}
+                    </Button>
+                  </form>
+                )}
               </CardBody></Card>
             ),
           },
@@ -126,6 +201,9 @@ export default function SettingsPage() {
                     toast.show(!emailReminders ? "Email reminders enabled" : "Email reminders turned off");
                   }}
                 />
+                <p className="text-xs text-[var(--w360-text-muted)]">
+                  These two preferences aren't saved to your account yet — they'll reset if you sign in elsewhere.
+                </p>
               </CardBody></Card>
             ),
           },

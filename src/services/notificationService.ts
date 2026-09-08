@@ -7,4 +7,10 @@ export const notificationService = {
     const apiNotifications = await request<Parameters<typeof toFrontendNotification>[0][]>("/notifications");
     return apiNotifications.map(toFrontendNotification);
   },
+  async markRead(id: string): Promise<AppNotification> {
+    const apiNotification = await request<Parameters<typeof toFrontendNotification>[0]>(`/notifications/${id}/read`, {
+      method: "PATCH",
+    });
+    return toFrontendNotification(apiNotification);
+  },
 };

@@ -7,14 +7,17 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
-import { LoadingState } from "@/components/ui/states";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { LoadingState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+import type { ActivityEntry } from "@/types";
 
 export default function ActivityPage() {
   const [data, setData] = useState<ActivitySummary | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ActivityEntry | null>(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -44,6 +47,20 @@ export default function ActivityPage() {
         setAddOpen(false);
         toast.show("Activity logged");
       });
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    try {
+      await activityService.deleteEntry(id);
+      setData((d) => (d ? { ...d, entries: d.entries.filter((e) => e.id !== id) } : d));
+      toast.show("Activity entry deleted");
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't delete that entry. Please try again.", { tone: "error" });
+    } finally {
+      setDeleteTarget(null);
+    }
   }
 
   return (
@@ -96,22 +113,33 @@ export default function ActivityPage() {
 
       <section>
         <h2 className="font-display text-lg font-semibold mb-3">Recent activity</h2>
-        <Card>
-          <CardBody className="p-0 divide-y divide-[var(--w360-border)]">
-            {data.entries.map((e) => (
-              <div key={e.id} className="flex items-center justify-between px-5 py-4">
-                <div>
-                  <p className="text-sm font-medium">{e.type}</p>
-                  <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">{e.date}{e.notes ? ` · ${e.notes}` : ""}</p>
+        {data.entries.length === 0 ? (
+          <EmptyState title="No activity logged yet" description="Log a workout or walk to see it here." />
+        ) : (
+          <Card>
+            <CardBody className="p-0 divide-y divide-[var(--w360-border)]">
+              {data.entries.map((e) => (
+                <div key={e.id} className="flex items-center justify-between gap-3 px-5 py-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{e.type}</p>
+                    <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">{e.date}{e.notes ? ` · ${e.notes}` : ""}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge tone={e.intensity === "high" ? "warning" : "neutral"}>{e.intensity}</Badge>
+                    <span className="text-sm tabular-nums text-[var(--w360-text-muted)]">{e.duration} min</span>
+                    <button
+                      onClick={() => setDeleteTarget(e)}
+                      aria-label={`Delete ${e.type} entry`}
+                      className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-[var(--w360-text-muted)] hover:text-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge tone={e.intensity === "high" ? "warning" : "neutral"}>{e.intensity}</Badge>
-                  <span className="text-sm tabular-nums text-[var(--w360-text-muted)]">{e.duration} min</span>
-                </div>
-              </div>
-            ))}
-          </CardBody>
-        </Card>
+              ))}
+            </CardBody>
+          </Card>
+        )}
       </section>
 
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add activity" size="sm">
@@ -134,6 +162,15 @@ export default function ActivityPage() {
           <Button type="submit">Save activity</Button>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete this activity entry?"
+        description={deleteTarget ? `"${deleteTarget.type}" will be removed.` : undefined}
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
