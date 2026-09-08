@@ -5,33 +5,48 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Guards against floating-point sums like 4.5 + 3.2 producing 7.699999999999999.
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
 export const nutritionService = {
   async getDailySummary(userId: string, date?: string) {
     const day = date ?? todayISO();
     const dayStart = new Date(day);
 
-    const [goal, meals, hydrationLogs] = await Promise.all([
+    const [goal, meals, hydrationLogs, fruitVegLogs] = await Promise.all([
       prisma.nutritionGoal.findUnique({ where: { userId } }),
       prisma.mealEntry.findMany({
         where: { userId, date: dayStart },
         orderBy: { time: "asc" },
       }),
       prisma.hydrationLog.findMany({ where: { userId, date: dayStart } }),
+      prisma.fruitVegLog.findMany({ where: { userId, date: dayStart } }),
     ]);
 
+    // Every nutrient total is a live sum over this day's actual meal rows —
+    // never a separately-maintained counter that could drift out of sync.
     const hydrationMl = hydrationLogs.reduce((sum, l) => sum + l.amountMl, 0);
-    const proteinG = meals.reduce((sum, m) => sum + m.proteinG, 0);
-    const fibreG = meals.reduce((sum, m) => sum + m.fibreG, 0);
+    const calories = round1(meals.reduce((sum, m) => sum + m.calories, 0));
+    const proteinG = round1(meals.reduce((sum, m) => sum + m.proteinG, 0));
+    const fibreG = round1(meals.reduce((sum, m) => sum + m.fibreG, 0));
+    const carbsG = round1(meals.reduce((sum, m) => sum + (m.carbsG ?? 0), 0));
+    const fatG = round1(meals.reduce((sum, m) => sum + (m.fatG ?? 0), 0));
+    const fruitVeg = fruitVegLogs.reduce((sum, l) => sum + l.servings, 0);
 
     return {
       date: day,
       hydrationMl,
       hydrationGoalMl: goal?.hydrationGoalMl ?? 2200,
+      calories,
       proteinG,
       proteinGoalG: goal?.proteinGoalG ?? 70,
+      carbsG,
+      fatG,
       fibreG,
       fibreGoalG: goal?.fibreGoalG ?? 28,
-      fruitVeg: 0, // requires a food-database lookup; not modeled yet — see roadmap
+      fruitVeg,
       fruitVegGoal: goal?.fruitVegGoal ?? 5,
       meals,
     };
@@ -39,6 +54,7 @@ export const nutritionService = {
 
   async addMeal(userId: string, input: {
     date: string; time: string; name: string; calories: number; proteinG: number; fibreG: number; servings: string;
+    carbsG?: number; fatG?: number; notes?: string;
   }) {
     return prisma.mealEntry.create({
       data: { userId, ...input, date: new Date(input.date) },
@@ -65,6 +81,12 @@ export const nutritionService = {
   async logHydration(userId: string, input: { date: string; amountMl: number }) {
     return prisma.hydrationLog.create({
       data: { userId, date: new Date(input.date), amountMl: input.amountMl },
+    });
+  },
+
+  async logFruitVeg(userId: string, input: { date: string; servings: number }) {
+    return prisma.fruitVegLog.create({
+      data: { userId, date: new Date(input.date), servings: input.servings },
     });
   },
 

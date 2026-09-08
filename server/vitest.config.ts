@@ -5,6 +5,11 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    // Running test files across worker threads in parallel crashes tinypool
+    // on this stack (Windows + shared Postgres connections) with an opaque
+    // "Worker exited unexpectedly" — the suite is small enough that running
+    // files sequentially costs a few seconds and is reliable instead.
+    fileParallelism: false,
     env: {
       NODE_ENV: "test",
       DATABASE_URL: "postgresql://women360:women360@localhost:5432/women360_test?schema=public",

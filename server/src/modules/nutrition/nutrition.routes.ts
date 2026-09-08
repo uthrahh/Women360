@@ -6,6 +6,7 @@ import { created, noContent, ok } from "@/lib/response";
 import { nutritionService } from "./nutrition.service";
 import {
   dateQuerySchema,
+  fruitVegLogSchema,
   hydrationLogSchema,
   idParamSchema,
   mealEntrySchema,
@@ -53,6 +54,12 @@ nutritionRouter.post(
   "/hydration",
   validate({ body: hydrationLogSchema }),
   asyncHandler(async (req, res) => created(res, await nutritionService.logHydration(req.user!.id, req.body)))
+);
+
+nutritionRouter.post(
+  "/fruit-veg",
+  validate({ body: fruitVegLogSchema }),
+  asyncHandler(async (req, res) => created(res, await nutritionService.logFruitVeg(req.user!.id, req.body)))
 );
 
 nutritionRouter.get(
