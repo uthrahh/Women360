@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, ResponsiveContainer, Tooltip, Legend } from "recharts";
-
-const MOOD_LABELS = ["Struggling", "Low", "Okay", "Good", "Great"];
+import { MOOD_LABELS } from "@/services/mappers";
 
 export default function WellbeingPage() {
   const [data, setData] = useState<WellbeingEntry[] | null>(null);

@@ -116,8 +116,9 @@ user's null cycle data (fabricating a fake cycle day/phase would be
 misleading in a menstrual-health product), and `DashboardPage`'s Goals
 tile now derives its count from real data instead of a hardcoded "3/4".
 
-Known remaining gaps in this area (see `CLAUDE.md` §3 for the full list):
-`DashboardPage`'s greeting and its Mood tile/trend cards are still
-hardcoded copy — fixing those needs either per-user personalization or
-real week-over-week analytics that don't exist yet, not a mechanical
-service swap.
+Known remaining gap in this area (see `CLAUDE.md` §3): `DashboardPage`'s
+two "Trends worth noticing" cards are still hardcoded copy — a real
+week-over-week comparison doesn't exist in the backend yet, so this is
+feature work, not a mechanical service swap. The greeting and Mood tile
+were fixed the same way as Goals: reading `auth.user.name` and a new
+`wellbeingService.getTodayMood()` respectively.

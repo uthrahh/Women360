@@ -211,6 +211,10 @@ export function toWeekdayLabel(iso: string): string {
   return new Date(toDateOnly(iso) ?? iso).toLocaleDateString(undefined, { weekday: "short" });
 }
 
+// Shared between WellbeingPage (the mood picker) and DashboardPage (the
+// Mood snapshot tile) so both speak the same vocabulary for a 0-4 score.
+export const MOOD_LABELS = ["Struggling", "Low", "Okay", "Good", "Great"];
+
 // --- Activity -------------------------------------------------------------
 
 interface ApiActivityEntry {
