@@ -58,6 +58,9 @@ export interface MealEntry {
   protein: number;
   fibre: number;
   servings: string;
+  carbs?: number;
+  fat?: number;
+  notes?: string;
 }
 
 export interface NutritionSummary {
@@ -91,6 +94,16 @@ export interface ActivitySummary {
   entries: ActivityEntry[];
 }
 
+export interface SleepEntry {
+  id: string;
+  date: string;
+  bedtime: string;
+  wakeTime: string;
+  durationHours: number;
+  quality: number; // 0-100
+  notes?: string;
+}
+
 export interface SleepSummary {
   durationHours: number;
   quality: number; // 0-100
@@ -98,6 +111,7 @@ export interface SleepSummary {
   wakeTime: string;
   weeklyHours: { day: string; hours: number }[];
   consistencyScore: number;
+  history: SleepEntry[];
 }
 
 export interface WellbeingEntry {
@@ -112,8 +126,9 @@ export interface Goal {
   id: string;
   title: string;
   category: "sleep" | "activity" | "hydration" | "nutrition" | "strength" | "cycle" | "mobility";
-  target: string;
-  progress: number; // 0-100
+  currentValue: number;
+  targetValue: number;
+  unit: string;
   reminder?: string;
   completed: boolean;
 }

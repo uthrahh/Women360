@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, forwardRef } from "react";
+import { InputHTMLAttributes, forwardRef, useId } from "react";
 import clsx from "clsx";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -9,7 +9,11 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, hint, className, id, ...props }, ref) => {
-    const inputId = id || props.name;
+    // Controlled inputs often skip `name`/`id` (value/onChange already
+    // identifies the field) — without a fallback, the <label> and <input>
+    // never associate, which breaks screen readers silently.
+    const generatedId = useId();
+    const inputId = id || props.name || generatedId;
     return (
       <div className="flex flex-col gap-1.5">
         {label && (

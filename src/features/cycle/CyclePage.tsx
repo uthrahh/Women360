@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { cycleService } from "@/services/cycleService";
+import { localDateISO } from "@/services/mappers";
 import type { CycleSummary } from "@/types";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -7,9 +8,11 @@ import { Badge } from "@/components/ui/Badge";
 import { Tabs } from "@/components/ui/Tabs";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useApp } from "@/context/AppContext";
+import { Trash2 } from "lucide-react";
 
 const PHASE_LABEL: Record<string, string> = {
   menstrual: "Menstrual", follicular: "Follicular", ovulation: "Ovulation", luteal: "Luteal",
@@ -29,7 +32,8 @@ type PopulatedCycleSummary = CycleSummary & {
 export default function CyclePage() {
   const { senior } = useApp();
   const [cycle, setCycle] = useState<CycleSummary | null>(null);
-  const [logOpen, setLogOpen] = useState(false);
+  const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [confirmDeleteDate, setConfirmDeleteDate] = useState<string | null>(null);
   const toast = useToast();
 
   useEffect(() => {
@@ -39,35 +43,64 @@ export default function CyclePage() {
   if (!cycle) return <LoadingState label="Loading your cycle" />;
 
   const hasData = cycle.currentDay !== null && cycle.phase !== null && cycle.nextPeriodDate !== null;
+  const existingDay = editingDate ? cycle.history.find((d) => d.date === editingDate) : undefined;
+  const isToday = editingDate === localDateISO();
 
   function handleLog(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!editingDate) return;
     const form = new FormData(e.currentTarget);
     const flow = String(form.get("flow") ?? "") as "spotting" | "light" | "medium" | "heavy" | "";
     const pain = Number(form.get("pain") ?? 0);
     const symptoms = SYMPTOM_OPTIONS.filter((s) => form.get(`symptom_${s}`));
     const notes = String(form.get("notes") ?? "");
-    const today = new Date().toISOString().slice(0, 10);
+    const date = editingDate;
 
-    cycleService.logDay({ date: today, flow: flow || undefined, pain, symptoms, notes }).then(() => {
-      // Re-fetch rather than hand-patch local state: logging the very
-      // first entry changes currentDay/phase/nextPeriodDate too, not just
-      // the last history item.
-      cycleService.getSummary().then(setCycle);
-      setLogOpen(false);
-      toast.show("Today's cycle entry saved");
-    });
+    cycleService.logDay({ date, flow: flow || undefined, pain, symptoms, notes }).then(
+      () => {
+        // Re-fetch rather than hand-patch local state: logging the very
+        // first entry changes currentDay/phase/nextPeriodDate too, not just
+        // one day's history item.
+        cycleService.getSummary().then(setCycle);
+        setEditingDate(null);
+        toast.show(existingDay ? "Cycle entry updated" : "Cycle entry saved");
+      },
+      (err) => toast.show(err instanceof Error ? err.message : "Couldn't save that entry. Please try again.", { tone: "error" })
+    );
   }
 
+  function handleDelete() {
+    if (!confirmDeleteDate) return;
+    const date = confirmDeleteDate;
+    cycleService.deleteEntry(date).then(
+      () => {
+        cycleService.getSummary().then(setCycle);
+        setConfirmDeleteDate(null);
+        setEditingDate(null);
+        toast.show("Cycle entry deleted");
+      },
+      (err) => {
+        toast.show(err instanceof Error ? err.message : "Couldn't delete that entry. Please try again.", { tone: "error" });
+        setConfirmDeleteDate(null);
+      }
+    );
+  }
+
+  const modalTitle = editingDate
+    ? isToday
+      ? "Log today's flow & symptoms"
+      : `${existingDay ? "Edit" : "Log"} entry for ${new Date(editingDate).toLocaleDateString(undefined, { month: "long", day: "numeric" })}`
+    : "";
+
   const logModal = (
-    <Modal open={logOpen} onClose={() => setLogOpen(false)} title="Log today's flow & symptoms" size="sm">
+    <Modal open={editingDate !== null} onClose={() => setEditingDate(null)} title={modalTitle} size="sm">
       <form className="flex flex-col gap-4" onSubmit={handleLog}>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="flow" className="text-sm font-medium senior:text-lg">Flow</label>
           <select
             id="flow"
             name="flow"
-            defaultValue=""
+            defaultValue={existingDay?.flow ?? ""}
             className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg senior:py-3.5"
           >
             <option value="">None today</option>
@@ -79,14 +112,14 @@ export default function CyclePage() {
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="pain" className="text-sm font-medium senior:text-lg">Pain level (0–4)</label>
-          <input id="pain" name="pain" type="range" min={0} max={4} defaultValue={0} className="accent-[#6B1D30]" />
+          <input id="pain" name="pain" type="range" min={0} max={4} defaultValue={existingDay?.pain ?? 0} className="accent-[#6B1D30]" />
         </div>
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-medium senior:text-lg">Symptoms</span>
           <div className="grid grid-cols-2 gap-2">
             {SYMPTOM_OPTIONS.map((s) => (
               <label key={s} className="flex items-center gap-2 text-sm senior:text-base">
-                <input type="checkbox" name={`symptom_${s}`} className="w-4 h-4 accent-[#6B1D30]" />
+                <input type="checkbox" name={`symptom_${s}`} defaultChecked={existingDay?.symptoms?.includes(s)} className="w-4 h-4 accent-[#6B1D30]" />
                 {s}
               </label>
             ))}
@@ -98,12 +131,37 @@ export default function CyclePage() {
             id="notes"
             name="notes"
             rows={2}
+            defaultValue={existingDay?.notes ?? ""}
             className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-sm senior:text-lg"
           />
         </div>
-        <Button type="submit" size="lg">Save entry</Button>
+        <div className="flex items-center justify-between gap-2">
+          {existingDay ? (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => editingDate && setConfirmDeleteDate(editingDate)}
+            >
+              <Trash2 size={15} /> Delete entry
+            </Button>
+          ) : (
+            <span />
+          )}
+          <Button type="submit" size="lg">Save entry</Button>
+        </div>
       </form>
     </Modal>
+  );
+
+  const deleteConfirm = (
+    <ConfirmDialog
+      open={confirmDeleteDate !== null}
+      title="Delete this cycle entry?"
+      description={confirmDeleteDate ? `The entry for ${new Date(confirmDeleteDate).toLocaleDateString()} will be removed.` : undefined}
+      confirmLabel="Delete"
+      onConfirm={handleDelete}
+      onCancel={() => setConfirmDeleteDate(null)}
+    />
   );
 
   if (!hasData) {
@@ -112,9 +170,10 @@ export default function CyclePage() {
         <EmptyState
           title="Log your first entry to get started"
           description="Once you log a period, flow, or symptom, Women360 will start showing your cycle day, phase, and predictions here."
-          action={<Button onClick={() => setLogOpen(true)}>Log today's flow & symptoms</Button>}
+          action={<Button onClick={() => setEditingDate(localDateISO())}>Log today's flow & symptoms</Button>}
         />
         {logModal}
+        {deleteConfirm}
       </>
     );
   }
@@ -124,8 +183,9 @@ export default function CyclePage() {
   if (senior.seniorMode) {
     return (
       <>
-        <SeniorCycle cycle={populated} onLog={() => setLogOpen(true)} />
+        <SeniorCycle cycle={populated} onLog={() => setEditingDate(localDateISO())} />
         {logModal}
+        {deleteConfirm}
       </>
     );
   }
@@ -137,16 +197,17 @@ export default function CyclePage() {
         <p className="text-[var(--w360-text-muted)] mt-1">A gentle picture of where you are in your cycle.</p>
       </div>
 
-      <CycleRing cycle={populated} onLog={() => setLogOpen(true)} />
+      <CycleRing cycle={populated} onLog={() => setEditingDate(localDateISO())} />
 
       <Tabs
         tabs={[
           { id: "overview", label: "Overview", content: <OverviewTab cycle={cycle} /> },
-          { id: "calendar", label: "Calendar", content: <CalendarTab cycle={cycle} /> },
+          { id: "calendar", label: "Calendar", content: <CalendarTab cycle={cycle} onSelectDay={setEditingDate} /> },
           { id: "trends", label: "Trends", content: <TrendsTab cycle={cycle} /> },
         ]}
       />
       {logModal}
+      {deleteConfirm}
     </div>
   );
 }
@@ -223,8 +284,10 @@ function OverviewTab({ cycle }: { cycle: CycleSummary }) {
   );
 }
 
-function CalendarTab({ cycle }: { cycle: CycleSummary }) {
+function CalendarTab({ cycle, onSelectDay }: { cycle: CycleSummary; onSelectDay: (date: string) => void }) {
   const days = cycle.history.slice(-35);
+  const today = localDateISO();
+
   return (
     <Card>
       <CardBody className="pt-5">
@@ -233,12 +296,14 @@ function CalendarTab({ cycle }: { cycle: CycleSummary }) {
           {days.map((d) => (
             <button
               key={d.date}
+              type="button"
+              onClick={() => onSelectDay(d.date)}
+              aria-label={`${d.date === today ? "Today, " : ""}${new Date(d.date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}${d.isPeriod ? ", period day" : ""}${d.symptoms?.length ? `, symptoms: ${d.symptoms.join(", ")}` : ""} — tap to log or edit`}
               className={`aspect-square rounded flex flex-col items-center justify-center text-xs gap-0.5 border transition-colors ${
                 d.isPeriod
                   ? "bg-maroon-600 text-white border-maroon-600"
                   : "border-[var(--w360-border)] hover:border-maroon-400"
-              }`}
-              title={d.symptoms?.join(", ")}
+              } ${d.date === today ? "ring-2 ring-offset-1 ring-maroon-400 dark:ring-offset-ink-900" : ""}`}
             >
               <span className="font-medium">{new Date(d.date).getDate()}</span>
               {d.symptoms && d.symptoms.length > 0 && <span className="w-1 h-1 rounded-full bg-current opacity-70" />}
