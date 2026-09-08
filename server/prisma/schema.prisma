@@ -59,6 +59,7 @@ model User {
   cycleEntries      CycleEntry[]
   mealEntries       MealEntry[]
   hydrationLogs     HydrationLog[]
+  fruitVegLogs      FruitVegLog[]
   activityEntries   ActivityEntry[]
   stepsLogs         StepsLog[]
   sleepEntries      SleepEntry[]
@@ -211,7 +212,7 @@ model MealEntry {
   date      DateTime @db.Date
   time      String
   name      String
-  calories  Int
+  calories  Float
   proteinG  Float
   fibreG    Float
   servings  String
@@ -229,6 +230,19 @@ model HydrationLog {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime @db.Date
   amountMl  Int
+  loggedAt  DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+// A single quick-log tap = one serving, mirroring HydrationLog's shape —
+// replaces what used to be a hardcoded-zero "not modeled yet" field.
+model FruitVegLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  servings  Int      @default(1)
   loggedAt  DateTime @default(now())
 
   @@index([userId, date])
