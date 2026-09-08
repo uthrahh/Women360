@@ -215,6 +215,9 @@ model MealEntry {
   proteinG  Float
   fibreG    Float
   servings  String
+  carbsG    Float?
+  fatG      Float?
+  notes     String?
   createdAt DateTime @default(now())
 
   @@index([userId, date])
@@ -282,6 +285,7 @@ model SleepEntry {
   quality        Int
   bedtime        String
   wakeTime       String
+  notes          String?
   createdAt      DateTime @default(now())
 
   @@unique([userId, date])
@@ -316,17 +320,18 @@ enum GoalCategory {
 }
 
 model Goal {
-  id        String       @id @default(cuid())
-  userId    String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String
-  category  GoalCategory
-  target    String
-  progress  Int          @default(0)
-  reminder  String?
-  completed Boolean      @default(false)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  category     GoalCategory
+  currentValue Float        @default(0)
+  targetValue  Float        @default(100)
+  unit         String       @default("")
+  reminder     String?
+  completed    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 }
 
 // ---------------------------------------------------------------------------
