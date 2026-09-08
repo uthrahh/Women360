@@ -75,6 +75,15 @@ export function calcSleepDuration(bedtime24: string, wake24: string): number {
   return Math.round((minutes / 60) * 10) / 10;
 }
 
+// Nutrition values support up to one decimal place (12 or 12.3, not
+// 12.34) — mirrors the backend's identical rule in
+// server/src/modules/nutrition/nutrition.validation.ts so a value that
+// would be rejected server-side is caught here first. Checking at *100
+// rather than a naive `% 0.1` sidesteps binary floating-point error.
+export function hasAtMostOneDecimal(value: number): boolean {
+  return Math.round(value * 100) % 10 === 0;
+}
+
 // Progress is always derived from real numbers, never trusted from a
 // separately-stored percentage that could drift out of sync.
 export function goalProgress(goal: Pick<Goal, "currentValue" | "targetValue">): number {
@@ -223,8 +232,11 @@ interface ApiNutritionSummary {
   date: string;
   hydrationMl: number;
   hydrationGoalMl: number;
+  calories: number;
   proteinG: number;
   proteinGoalG: number;
+  carbsG: number;
+  fatG: number;
   fibreG: number;
   fibreGoalG: number;
   fruitVeg: number;
@@ -497,14 +509,6 @@ interface ApiReportRecord {
 
 export function toFrontendReportRecord(apiReport: ApiReportRecord): ReportRecord {
   return { id: apiReport.id, title: apiReport.title, generatedOn: apiReport.generatedOn, range: apiReport.rangeLabel };
-}
-
-// The only range label the current UI ever sends is "Last 30 days" — this
-// extracts a day count from any "Last N days"-shaped label, defaulting to a
-// quarter if the label doesn't follow that pattern.
-export function rangeLabelToDays(range: string): number {
-  const match = /\d+/.exec(range);
-  return match ? Number(match[0]) : 90;
 }
 
 // --- Sleep ------------------------------------------------------------

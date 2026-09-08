@@ -1,7 +1,7 @@
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { nutritionService } from "@/services/nutritionService";
-import { to12Hour, to24Hour } from "@/services/mappers";
+import { hasAtMostOneDecimal, to12Hour, to24Hour } from "@/services/mappers";
 import type { MealEntry, NutritionSummary } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
-import { Droplet, Plus, Pencil, Trash2 } from "lucide-react";
+import { Droplet, Apple, Plus, Pencil, Trash2 } from "lucide-react";
 
 const HYDRATION_STEP_ML = 250;
 
@@ -80,11 +80,17 @@ export default function NutritionPage() {
     const calories = Number(values.calories);
     if (values.calories === "" || Number.isNaN(calories) || calories < 0) {
       errs.calories = "Enter calories as a number of 0 or more.";
+    } else if (!hasAtMostOneDecimal(calories)) {
+      errs.calories = "Use at most one decimal place, e.g. 420 or 420.5.";
     }
     for (const [field, label] of [["protein", "Protein"], ["fibre", "Fibre"], ["carbs", "Carbs"], ["fat", "Fat"]] as const) {
       const raw = values[field];
-      if (raw !== "" && (Number.isNaN(Number(raw)) || Number(raw) < 0)) {
+      if (raw === "") continue;
+      const num = Number(raw);
+      if (Number.isNaN(num) || num < 0) {
         errs[field] = `${label} can't be negative.`;
+      } else if (!hasAtMostOneDecimal(num)) {
+        errs[field] = `Use at most one decimal place, e.g. 12 or 12.3.`;
       }
     }
     return errs;
@@ -153,6 +159,17 @@ export default function NutritionPage() {
     }
   }
 
+  async function logFruitVeg() {
+    try {
+      await nutritionService.logFruitVeg(1);
+      const refreshed = await nutritionService.getToday();
+      setData(refreshed);
+      toast.show("Serving logged");
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't log that. Please try again.", { tone: "error" });
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
@@ -163,15 +180,26 @@ export default function NutritionPage() {
         <Button onClick={openAdd}><Plus size={16} /> Add meal</Button>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <Card>
+          <CardBody className="pt-5">
+            <p className="text-xs text-[var(--w360-text-muted)] mb-1">Calories</p>
+            <p className="text-xl font-display font-semibold tabular-nums">{data.calories} kcal</p>
+            <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">logged today · {data.proteinG}g protein · {data.carbsG}g carbs · {data.fatG}g fat</p>
+          </CardBody>
+        </Card>
         <MetricCard label="Hydration" value={`${data.hydrationMl}ml`} goal={`of ${data.hydrationGoalMl}ml`} pct={(data.hydrationMl / data.hydrationGoalMl) * 100} icon={<Droplet size={16} />}>
           <Button variant="secondary" size="sm" className="mt-3 w-fit" onClick={() => logHydration(HYDRATION_STEP_ML)}>
             <Plus size={14} /> {HYDRATION_STEP_ML}ml
           </Button>
         </MetricCard>
+        <MetricCard label="Fruit & veg" value={`${data.fruitVeg}`} goal={`of ${data.fruitVegGoal} servings`} pct={(data.fruitVeg / data.fruitVegGoal) * 100} icon={<Apple size={16} />}>
+          <Button variant="secondary" size="sm" className="mt-3 w-fit" onClick={logFruitVeg}>
+            <Plus size={14} /> 1 serving
+          </Button>
+        </MetricCard>
         <MetricCard label="Protein" value={`${data.proteinG}g`} goal={`of ${data.proteinGoalG}g`} pct={(data.proteinG / data.proteinGoalG) * 100} />
         <MetricCard label="Fibre" value={`${data.fibreG}g`} goal={`of ${data.fibreGoalG}g`} pct={(data.fibreG / data.fibreGoalG) * 100} />
-        <MetricCard label="Fruit & veg" value={`${data.fruitVeg}`} goal={`of ${data.fruitVegGoal} servings`} pct={(data.fruitVeg / data.fruitVegGoal) * 100} />
       </div>
 
       <section>
@@ -224,12 +252,12 @@ export default function NutritionPage() {
             <Input label="Time" type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))} error={errors.time} required />
             <Input label="Quantity" placeholder="e.g. 1 bowl" value={form.servings} onChange={(e) => setForm((f) => ({ ...f, servings: e.target.value }))} error={errors.servings} required />
           </div>
-          <Input label="Calories (kcal)" type="number" min={0} value={form.calories} onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))} error={errors.calories} required />
+          <Input label="Calories (kcal)" type="number" min={0} step={0.1} inputMode="decimal" value={form.calories} onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))} error={errors.calories} hint="Up to one decimal place, e.g. 420.5" required />
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Protein (g)" type="number" min={0} value={form.protein} onChange={(e) => setForm((f) => ({ ...f, protein: e.target.value }))} error={errors.protein} />
-            <Input label="Fibre (g)" type="number" min={0} value={form.fibre} onChange={(e) => setForm((f) => ({ ...f, fibre: e.target.value }))} error={errors.fibre} />
-            <Input label="Carbs (g)" type="number" min={0} value={form.carbs} onChange={(e) => setForm((f) => ({ ...f, carbs: e.target.value }))} error={errors.carbs} />
-            <Input label="Fat (g)" type="number" min={0} value={form.fat} onChange={(e) => setForm((f) => ({ ...f, fat: e.target.value }))} error={errors.fat} />
+            <Input label="Protein (g)" type="number" min={0} step={0.1} inputMode="decimal" value={form.protein} onChange={(e) => setForm((f) => ({ ...f, protein: e.target.value }))} error={errors.protein} />
+            <Input label="Fibre (g)" type="number" min={0} step={0.1} inputMode="decimal" value={form.fibre} onChange={(e) => setForm((f) => ({ ...f, fibre: e.target.value }))} error={errors.fibre} />
+            <Input label="Carbs (g)" type="number" min={0} step={0.1} inputMode="decimal" value={form.carbs} onChange={(e) => setForm((f) => ({ ...f, carbs: e.target.value }))} error={errors.carbs} />
+            <Input label="Fat (g)" type="number" min={0} step={0.1} inputMode="decimal" value={form.fat} onChange={(e) => setForm((f) => ({ ...f, fat: e.target.value }))} error={errors.fat} />
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="meal-notes" className="text-sm font-medium">Notes (optional)</label>

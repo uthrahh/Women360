@@ -11,16 +11,16 @@ export function SeniorTopBar({ title }: { title?: string }) {
   const isHome = location.pathname === "/app/dashboard";
 
   return (
-    <header className="flex items-center justify-between px-5 h-20 border-b border-[var(--w360-border)] bg-[var(--w360-bg)]">
-      <div className="flex items-center gap-3">
+    <header className="flex items-center justify-between flex-wrap gap-y-2 gap-x-3 px-5 py-3 min-h-20 border-b border-[var(--w360-border)] bg-[var(--w360-bg)]">
+      <div className="flex items-center gap-3 min-w-0">
         {!isHome && (
-          <button onClick={() => nav(-1)} aria-label="Go back" className="p-2 rounded-full hover:bg-black/[0.05] dark:hover:bg-white/[0.08]">
+          <button onClick={() => nav(-1)} aria-label="Go back" className="p-2 rounded-full hover:bg-black/[0.05] dark:hover:bg-white/[0.08] shrink-0">
             <ArrowLeft size={26} />
           </button>
         )}
-        <span className="font-display text-2xl font-semibold">{title ?? "MY HEALTH"}</span>
+        <span className="font-display text-2xl font-semibold truncate">{title ?? "MY HEALTH"}</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <button onClick={theme.toggle} aria-label="Toggle dark mode" className="p-2.5 rounded-full hover:bg-black/[0.05] dark:hover:bg-white/[0.08]">
           {theme.theme === "dark" ? <Sun size={24} /> : <Moon size={24} />}
         </button>
@@ -29,7 +29,7 @@ export function SeniorTopBar({ title }: { title?: string }) {
         </Link>
         <button
           onClick={senior.toggleSeniorMode}
-          className="ml-1 px-3.5 py-2 rounded-full text-sm font-semibold bg-maroon-700 text-white"
+          className="ml-1 px-3.5 py-2 rounded-full text-sm font-semibold bg-maroon-700 text-white whitespace-nowrap"
         >
           Simple view On
         </button>
