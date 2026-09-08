@@ -14,7 +14,9 @@ import { activityService } from "@/services/activityService";
 import { nutritionService } from "@/services/nutritionService";
 import { healthService } from "@/services/healthService";
 import { goalService } from "@/services/goalService";
-import type { CycleSummary, SleepSummary, ActivitySummary, NutritionSummary, Appointment, Goal } from "@/types";
+import { wellbeingService } from "@/services/wellbeingService";
+import { MOOD_LABELS } from "@/services/mappers";
+import type { CycleSummary, SleepSummary, ActivitySummary, NutritionSummary, Appointment, Goal, WellbeingEntry } from "@/types";
 import { Droplet, Moon, Activity as ActivityIcon, Smile, CalendarHeart, CalendarClock, Plus, type LucideIcon } from "lucide-react";
 
 export default function DashboardPage() {
@@ -25,12 +27,15 @@ export default function DashboardPage() {
 }
 
 function StandardDashboard() {
+  const { auth } = useApp();
   const [cycle, setCycle] = useState<CycleSummary | null>(null);
   const [sleep, setSleep] = useState<SleepSummary | null>(null);
   const [activity, setActivity] = useState<ActivitySummary | null>(null);
   const [nutrition, setNutrition] = useState<NutritionSummary | null>(null);
   const [appts, setAppts] = useState<Appointment[]>([]);
   const [goals, setGoals] = useState<Goal[] | null>(null);
+  const [todayMood, setTodayMood] = useState<WellbeingEntry | null>(null);
+  const [moodLoaded, setMoodLoaded] = useState(false);
 
   useEffect(() => {
     cycleService.getSummary().then(setCycle);
@@ -39,18 +44,23 @@ function StandardDashboard() {
     nutritionService.getToday().then(setNutrition);
     healthService.getAppointments().then(setAppts);
     goalService.list().then(setGoals);
+    wellbeingService.getTodayMood().then((m) => {
+      setTodayMood(m);
+      setMoodLoaded(true);
+    });
   }, []);
 
-  const loaded = cycle && sleep && activity && nutrition && goals;
+  const loaded = cycle && sleep && activity && nutrition && goals && moodLoaded;
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const firstName = auth.user?.name?.split(" ")[0] ?? "there";
 
   if (!loaded) return <LoadingState label="Preparing your snapshot" />;
 
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">{greeting}, Sarah.</h1>
+        <h1 className="font-display text-3xl font-semibold tracking-tight">{greeting}, {firstName}.</h1>
         <p className="text-[var(--w360-text-muted)] mt-1">Here's your health snapshot for today.</p>
       </div>
 
@@ -80,7 +90,13 @@ function StandardDashboard() {
           <SnapshotTile icon={Moon} label="Sleep" value={`${sleep!.durationHours}h`} sub={`${sleep!.quality}% quality`} to="/app/sleep" />
           <SnapshotTile icon={ActivityIcon} label="Activity" value={`${activity!.steps.toLocaleString()}`} sub="steps today" to="/app/activity" />
           <SnapshotTile icon={Droplet} label="Hydration" value={`${Math.round((nutrition!.hydrationMl / nutrition!.hydrationGoalMl) * 100)}%`} sub="of daily goal" to="/app/nutrition" />
-          <SnapshotTile icon={Smile} label="Mood" value="Good" sub="logged this morning" to="/app/wellbeing" />
+          <SnapshotTile
+            icon={Smile}
+            label="Mood"
+            value={todayMood ? MOOD_LABELS[todayMood.mood] : "Not logged yet"}
+            sub={todayMood ? "logged today" : "Log your mood"}
+            to="/app/wellbeing"
+          />
           <SnapshotTile
             icon={CalendarHeart}
             label="Cycle"
