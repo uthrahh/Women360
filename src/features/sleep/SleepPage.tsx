@@ -2,7 +2,7 @@ import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { sleepService } from "@/services/sleepService";
 import { calcSleepDuration, localDateISO, to24Hour } from "@/services/mappers";
-import type { SleepEntry, SleepSummary } from "@/types";
+import { SLEEP_QUALITY_LABELS, type SleepEntry, type SleepSummary } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -22,7 +22,7 @@ interface SleepFormValues {
 }
 
 function emptyForm(): SleepFormValues {
-  return { date: localDateISO(), bedtime: "23:00", wake: "07:00", quality: 70, notes: "" };
+  return { date: localDateISO(), bedtime: "23:00", wake: "07:00", quality: 3, notes: "" };
 }
 
 function entryToForm(e: SleepEntry): SleepFormValues {
@@ -116,18 +116,30 @@ export default function SleepPage() {
           <Input label="Wake time" type="time" value={form.wake} onChange={(e) => setForm((f) => ({ ...f, wake: e.target.value }))} required />
         </div>
         <p className="text-sm text-[var(--w360-text-muted)]">Duration: <span className="font-medium text-[var(--w360-text)]">{previewHours}h</span></p>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="sleep-quality" className="text-sm font-medium senior:text-lg">Sleep quality: {form.quality}%</label>
-          <input
-            id="sleep-quality"
-            type="range"
-            min={0}
-            max={100}
-            value={form.quality}
-            onChange={(e) => setForm((f) => ({ ...f, quality: Number(e.target.value) }))}
-            className="accent-[#6B1D30]"
-          />
-        </div>
+        <fieldset className="flex flex-col gap-1.5">
+          <legend className="text-sm font-medium senior:text-lg mb-1">Sleep quality</legend>
+          <div className="grid grid-cols-5 gap-1.5" role="radiogroup" aria-label="Sleep quality, 1 to 5">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button
+                key={n}
+                type="button"
+                role="radio"
+                aria-checked={form.quality === n}
+                onClick={() => setForm((f) => ({ ...f, quality: n }))}
+                className={`flex flex-col items-center justify-center gap-0.5 rounded border py-2.5 text-sm font-semibold transition-colors senior:py-3.5 senior:text-base ${
+                  form.quality === n
+                    ? "bg-maroon-700 border-maroon-700 text-white dark:bg-maroon-300 dark:border-maroon-300 dark:text-ink-900"
+                    : "border-[var(--w360-border)] hover:border-maroon-400 text-[var(--w360-text)]"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-[var(--w360-text-muted)] senior:text-sm" aria-live="polite">
+            {form.quality} — {SLEEP_QUALITY_LABELS[form.quality]}
+          </p>
+        </fieldset>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="sleep-notes" className="text-sm font-medium">Notes (optional)</label>
           <textarea
@@ -173,7 +185,7 @@ export default function SleepPage() {
       <div className="grid sm:grid-cols-3 gap-3">
         <Stat icon={<Moon size={16} />} label="Last night" value={`${data.durationHours}h`} />
         <Stat icon={<Sunrise size={16} />} label="Wake time" value={data.wakeTime} />
-        <Stat label="Sleep quality" value={`${data.quality}%`} />
+        <Stat label="Sleep quality" value={data.quality ? `${data.quality}/5 · ${SLEEP_QUALITY_LABELS[data.quality]}` : "Not rated"} />
       </div>
 
       <Card>
@@ -205,7 +217,7 @@ export default function SleepPage() {
                     {new Date(entry.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
                   </p>
                   <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">
-                    {entry.bedtime} → {entry.wakeTime} · {entry.durationHours}h · {entry.quality}% quality
+                    {entry.bedtime} → {entry.wakeTime} · {entry.durationHours}h · {entry.quality}/5 {SLEEP_QUALITY_LABELS[entry.quality]}
                   </p>
                   {entry.notes && <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">{entry.notes}</p>}
                 </div>

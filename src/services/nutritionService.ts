@@ -42,4 +42,10 @@ export const nutritionService = {
       body: JSON.stringify({ date: localDateISO(), amountMl }),
     });
   },
+  async logFruitVeg(servings: number): Promise<void> {
+    await request("/nutrition/fruit-veg", {
+      method: "POST",
+      body: JSON.stringify({ date: localDateISO(), servings }),
+    });
+  },
 };

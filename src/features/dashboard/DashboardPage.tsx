@@ -16,6 +16,7 @@ import { healthService } from "@/services/healthService";
 import { goalService } from "@/services/goalService";
 import { wellbeingService } from "@/services/wellbeingService";
 import { MOOD_LABELS } from "@/services/mappers";
+import { SLEEP_QUALITY_LABELS } from "@/types";
 import type { CycleSummary, SleepSummary, ActivitySummary, NutritionSummary, Appointment, Goal, WellbeingEntry } from "@/types";
 import { Droplet, Moon, Activity as ActivityIcon, Smile, CalendarHeart, CalendarClock, Plus, type LucideIcon } from "lucide-react";
 
@@ -87,7 +88,13 @@ function StandardDashboard() {
       <section>
         <SectionHeading title="Health snapshot" />
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-          <SnapshotTile icon={Moon} label="Sleep" value={`${sleep!.durationHours}h`} sub={`${sleep!.quality}% quality`} to="/app/sleep" />
+          <SnapshotTile
+            icon={Moon}
+            label="Sleep"
+            value={`${sleep!.durationHours}h`}
+            sub={sleep!.quality ? `${SLEEP_QUALITY_LABELS[sleep!.quality]} quality` : "Not rated yet"}
+            to="/app/sleep"
+          />
           <SnapshotTile icon={ActivityIcon} label="Activity" value={`${activity!.steps.toLocaleString()}`} sub="steps today" to="/app/activity" />
           <SnapshotTile icon={Droplet} label="Hydration" value={`${Math.round((nutrition!.hydrationMl / nutrition!.hydrationGoalMl) * 100)}%`} sub="of daily goal" to="/app/nutrition" />
           <SnapshotTile
@@ -138,16 +145,18 @@ function StandardDashboard() {
           </Card>
         </section>
 
-        {/* Trends */}
+        {/* This week */}
         <section className="lg:col-span-2">
-          <SectionHeading title="Trends worth noticing" />
+          <SectionHeading title="This week" />
           <div className="grid sm:grid-cols-2 gap-3">
             <Card>
               <CardBody className="flex items-center gap-4 pt-5">
-                <ProgressRing value={activity!.activeMinutes / activity!.activeMinutesGoal * 100} label={`${activity!.activeMinutes}m`} />
+                <ProgressRing value={activity!.activeMinutesGoal ? (activity!.activeMinutes / activity!.activeMinutesGoal) * 100 : 0} label={`${activity!.activeMinutes}m`} />
                 <div>
-                  <p className="text-sm font-semibold">Active minutes trending up</p>
-                  <p className="text-sm text-[var(--w360-text-muted)]">+18% vs last week's average.</p>
+                  <p className="text-sm font-semibold">Active minutes today</p>
+                  <p className="text-sm text-[var(--w360-text-muted)]">
+                    {activity!.weeklyMinutes.filter((d) => d.minutes > 0).length} of 7 days logged this week.
+                  </p>
                 </div>
               </CardBody>
             </Card>
@@ -155,8 +164,12 @@ function StandardDashboard() {
               <CardBody className="flex items-center gap-4 pt-5">
                 <ProgressRing value={sleep!.consistencyScore} label={`${sleep!.consistencyScore}%`} />
                 <div>
-                  <p className="text-sm font-semibold">Sleep consistency dipped</p>
-                  <p className="text-sm text-[var(--w360-text-muted)]">Bedtime has shifted later this week.</p>
+                  <p className="text-sm font-semibold">Sleep consistency</p>
+                  <p className="text-sm text-[var(--w360-text-muted)]">
+                    {sleep!.history.length > 1
+                      ? "Based on how similar your logged bedtimes have been this week."
+                      : "Log a few more nights to see this trend."}
+                  </p>
                 </div>
               </CardBody>
             </Card>

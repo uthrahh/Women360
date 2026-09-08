@@ -67,8 +67,11 @@ export interface NutritionSummary {
   date: string;
   hydrationMl: number;
   hydrationGoalMl: number;
+  calories: number;
   proteinG: number;
   proteinGoalG: number;
+  carbsG: number;
+  fatG: number;
   fibreG: number;
   fibreGoalG: number;
   fruitVeg: number;
@@ -100,13 +103,21 @@ export interface SleepEntry {
   bedtime: string;
   wakeTime: string;
   durationHours: number;
-  quality: number; // 0-100
+  quality: number; // 1-5 (1 Very poor .. 5 Excellent), never a percentage
   notes?: string;
 }
 
+export const SLEEP_QUALITY_LABELS: Record<number, string> = {
+  1: "Very poor",
+  2: "Poor",
+  3: "Fair",
+  4: "Good",
+  5: "Excellent",
+};
+
 export interface SleepSummary {
   durationHours: number;
-  quality: number; // 0-100
+  quality: number; // 1-5 (1 Very poor .. 5 Excellent), never a percentage
   bedtime: string;
   wakeTime: string;
   weeklyHours: { day: string; hours: number }[];
@@ -179,6 +190,48 @@ export interface ReportRecord {
   title: string;
   generatedOn: string;
   range: string;
+}
+
+// The full data snapshot behind one report record — same numbers the
+// Nutrition/Sleep/Cycle/Goals pages themselves read from, computed once at
+// generation time from the actual stored records for that period.
+export interface HealthReportSnapshot {
+  rangeDays: number;
+  profile: { name: string; lifeStage: string | null };
+  nutrition: {
+    daysLogged: number;
+    totalMealsLogged: number;
+    avgCaloriesPerLoggedDay: number | null;
+    avgProteinGPerLoggedDay: number | null;
+    avgFibreGPerLoggedDay: number | null;
+    avgCarbsGPerLoggedDay: number | null;
+    avgFatGPerLoggedDay: number | null;
+    avgHydrationMlPerLoggedDay: number | null;
+    totalFruitVegServings: number;
+  };
+  sleep: { entryCount: number; avgDurationHours: number | null; avgQuality: number | null };
+  activity: { entryCount: number; totalMinutes: number };
+  wellbeing: { entryCount: number; avgMood: number | null; avgStress: number | null; avgEnergy: number | null };
+  cycle: {
+    hasData: boolean;
+    currentDay: number | null;
+    phase: string | null;
+    averageCycleLengthDays: number;
+    averagePeriodLengthDays: number;
+    estimatedNextPeriodDate: string | null;
+  };
+  goals: {
+    active: { title: string; category: string; currentValue: number; targetValue: number; unit: string; progressPct: number }[];
+    completed: { title: string; category: string }[];
+  };
+  vitals: { type: string; value: string; date: string }[];
+}
+
+export interface HealthReportDetail {
+  title: string;
+  rangeLabel: string;
+  generatedOn: string;
+  dataSnapshot: HealthReportSnapshot;
 }
 
 export interface AppNotification {
