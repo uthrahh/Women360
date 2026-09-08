@@ -116,9 +116,21 @@ user's null cycle data (fabricating a fake cycle day/phase would be
 misleading in a menstrual-health product), and `DashboardPage`'s Goals
 tile now derives its count from real data instead of a hardcoded "3/4".
 
-Known remaining gap in this area (see `CLAUDE.md` §3): `DashboardPage`'s
-two "Trends worth noticing" cards are still hardcoded copy — a real
-week-over-week comparison doesn't exist in the backend yet, so this is
-feature work, not a mechanical service swap. The greeting and Mood tile
-were fixed the same way as Goals: reading `auth.user.name` and a new
-`wellbeingService.getTodayMood()` respectively.
+**CRUD status:** Nutrition, Sleep, Cycle, and Goals all support real
+create/edit/delete with validation, empty states, and confirmation
+dialogs (`src/components/ui/ConfirmDialog.tsx`) — not just a read-only
+view or a form that silently discarded input. Activity, Health
+(medications/appointments), Notifications (mark as read), Reports (a
+real client-side download), and Settings (Profile/Emergency Contact via
+a new `userService.ts`) got the same treatment for whichever of their
+actions the backend already supported but the frontend never called.
+
+Known remaining gaps in this area (see `CLAUDE.md` §3 for the full list
+and reasoning): `DashboardPage`'s two "Trends worth noticing" cards are
+still hardcoded copy — a real week-over-week comparison doesn't exist in
+the backend yet. Settings' Privacy & sharing toggles, Onboarding's
+step-by-step data capture, and Messages' two-way reply are all still
+non-functional; each needs either a product decision or new backend
+capability that's out of scope for a "make what exists actually work"
+pass, and each is called out explicitly in the UI or in `CLAUDE.md`
+rather than left as a silent fake.
