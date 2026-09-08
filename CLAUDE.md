@@ -85,6 +85,43 @@ at `server/prisma/migrations/`. Root-level CI lives at
 `.github/workflows/ci.yml` and runs both packages' lint/typecheck/test/
 build (the server job against a Postgres service container).
 
+**Nutrition, Sleep, Cycle, and Goals have full CRUD**, not just a
+read-only view or a fake "Add" form: create/edit/delete, inline
+validation, empty states, and dashboard tiles that all read from the same
+service data (no separate hardcoded dashboard numbers). Notably:
+`SleepPage.tsx` previously had zero logging UI at all — it's now a real
+add/edit/delete flow with a 12-hour-format conversion required by the
+backend's `consistencyScore` parser (`to12Hour`/`to24Hour` in
+`mappers.ts`) and a `calcSleepDuration` helper that handles midnight
+crossing. `NutritionPage.tsx`'s "Add meal" form used to be entirely
+fake — its submit handler never called the service at all. `CyclePage.
+tsx`'s calendar day buttons had no `onClick`; tapping a day now opens the
+same log/edit modal pre-filled for that date, with delete. `Goal` was
+restructured from a stored `progress` percentage + free-text `target` to
+real `currentValue`/`targetValue`/`unit`, with progress always computed
+(`goalProgress()` in `mappers.ts`), never trusted from a stale field.
+`src/components/ui/ConfirmDialog.tsx` (new) backs every delete action —
+there was no confirmation-dialog precedent anywhere before this.
+`Input.tsx` now generates a fallback id via `useId()` when a controlled
+usage omits `name`/`id`, fixing a real accessibility gap (broken
+label/input association) present since before this pass, across the
+whole app.
+
+Also fixed in the same pass, all using endpoints that already existed
+server-side but were never called: Activity entries can be deleted;
+notifications can be marked read by clicking them (`TopBar.tsx`);
+Reports' "Download" does a genuine client-side export of the report
+data instead of a fake toast (its "Share" button was removed — no
+backend capability exists for it, so per this repo's own standard it
+was removed rather than left as a dishonest no-op); Settings' Profile
+and Emergency Contact tabs are wired to a new `userService.ts` against
+`/users/me` and `/users/me/emergency-contact`; Health's Medications and
+Appointments tabs got the same Add/Edit/Delete treatment their Vitals
+tab already had. Also fixed: `users.service.ts`'s `updateProfile`
+returned the raw Prisma `User` row (including `passwordHash`) to the
+client — extracted the existing `publicUser()` helper from
+`auth.service.ts` into `server/src/lib/publicUser.ts` so both use it.
+
 Known concrete defects to fix as part of any related work:
 - No test runner (vitest/RTL/playwright) is installed for the **frontend**
   — `README.md` correctly discloses "no test suite yet." (The backend has
@@ -97,14 +134,26 @@ Known concrete defects to fix as part of any related work:
   later this week") — every other tile on this page is now real, but a
   genuine week-over-week comparison doesn't exist anywhere in the
   backend yet, so this is real feature work, not a mechanical service
-  swap. (The greeting and Mood tile were similarly hardcoded and have
-  since been fixed: the greeting reads `auth.user.name`, and Mood calls
-  a new `wellbeingService.getTodayMood()` that finds today's entry by
-  its real date before `getWeek()`'s mapper converts dates to weekday
-  labels for the chart.)
-- `SettingsPage.tsx`'s "Save changes" and "Save emergency contact" only
-  show a toast — nothing is actually persisted (not even to
-  `localStorage`), since there's no service call behind either handler.
+  swap.
+- Settings' "Privacy & sharing" toggles (share with coach, email
+  reminders) are explicitly disclosed in the UI as not yet persisted —
+  no backend endpoint exists for either preference at all, so inventing
+  one was out of scope for a "fix what's broken" pass. A real fix needs
+  a product decision on what "sharing with coach" actually controls,
+  then a new backend endpoint.
+- Onboarding's multi-step form (`OnboardingPage.tsx`) is still purely
+  cosmetic — none of the collected name/DOB/allergies/lifestyle/goals
+  data is captured into state or submitted anywhere; `completeOnboarding
+  ()` only flips the `onboarded` flag server-side. The backend has a
+  real `PUT /users/me/health-profile` that could receive some of this,
+  but wiring up all 7 steps is a standalone forms project, not a small
+  fix.
+- Messages has no real two-way reply — `MessagesPage.tsx`'s reply box
+  only appends to local component state and is lost on refresh. The
+  `Message` Prisma model itself has no sender-as-current-user concept
+  (just a `senderLabel` display string and a `recipientId`), so this
+  needs a data-model decision (a real conversation/thread model) before
+  it can be implemented, not just a service method.
 - No role-selection UI anywhere in registration/onboarding — `Role` (woman
   /coach/admin) is fully modeled and enforced server-side in `server/`,
   but the frontend can currently only ever create a "woman" account.
