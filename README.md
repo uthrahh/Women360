@@ -21,14 +21,26 @@ Lucide icons · React Hook Form + Zod (wired for future form validation)
 
 ## Getting started
 
+This is a monorepo with two independent processes. **Both must be
+running** for sign up, login, or any data call to work: the frontend has
+no mock auth left, it talks to the real API over HTTP, so if the API
+isn't running every request fails at the network layer with a generic
+"Failed to fetch."
+
 ```bash
+# Terminal 1: API (see server/README.md for first-time setup: .env, Postgres, migrations)
+cd server
 npm install
-npm run dev
+npm run dev               # starts the API on http://localhost:4000
+
+# Terminal 2: frontend
+npm install
+npm run dev               # starts the frontend on http://localhost:5173
 ```
 
-Open the printed local URL. Register a new account (any email/password) or
-just fill in the login form — the mock `authService` accepts anything and
-persists a session to `localStorage`.
+Open the printed frontend URL and register a real account — it creates an
+actual user in Postgres via the API and persists a real JWT session to
+`localStorage`, not a mock.
 
 ## Project structure
 
