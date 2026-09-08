@@ -53,11 +53,30 @@ Demo accounts after seeding (password for all: `Demo-Password-123`):
 `npm run typecheck` · `npm test` · `npm run prisma:studio` (visual DB
 browser).
 
+## Running tests
+
+`npm test` runs against a **separate** database from your dev one
+(`vitest.config.ts` hardcodes `women360_test`, not the `women360_dev`/
+`women360` your `.env` points `npm run dev` at) so integration tests can
+freely create and delete real rows without touching data you're looking
+at in the app. That database doesn't exist by default — create it once:
+
+```bash
+# If you're on docker-compose.yml's default credentials (user/password
+# both "women360"), just create the extra database in that same instance:
+psql -U women360 -h localhost -c "CREATE DATABASE women360_test;"
+DATABASE_URL="postgresql://women360:women360@localhost:5432/women360_test?schema=public" npx prisma migrate deploy
+```
+
+Re-run the `prisma migrate deploy` line whenever a new migration is added.
+
 ## Verification status
 
 This backend was originally authored in a sandbox with no network or shell
 access, so it shipped unverified. It has since been installed, linted,
-typechecked, built, and run for the first time; `npm test` passes (21/21).
+typechecked, built, and run for the first time; `npm test` passes
+(44/44 as of the latest pass — sleep/nutrition/goals/reports integration
+tests were added since).
 That pass also found and fixed three real defects that had never surfaced
 before: the whole codebase was configured as a strict ESM project
 (`"type": "module"` + `moduleResolution: "NodeNext"`) while every import
@@ -73,12 +92,17 @@ disallows — and because every call site invoked it without `await`, a
 failed ownership check would have thrown inside an unhandled promise
 rejection instead of surfacing as the intended 403/404.
 
-What has **not** been run yet: the full suite against a real Postgres
-instance (`docker-compose.yml` needs to be started manually first) and any
-manual/exploratory testing of the running API beyond `/health`. Prisma has
-also never had a migration generated (`prisma/migrations/` is empty) — run
-`npm run prisma:migrate` against a real database before relying on schema
-changes being tracked.
+**Update:** all of the above has since happened. The suite runs against a
+real local Postgres instance (`npm test`; 44/44 passing, including
+integration tests that register real users and hit the live routes via
+supertest, not just schema-level unit tests), and the running API has
+been driven manually through full signup/login/CRUD/report-generation
+flows via a real browser. Three migrations are committed under
+`prisma/migrations/`. (`server/vitest.config.ts` runs test files
+sequentially rather than in parallel worker threads — parallel execution
+was crashing intermittently with an opaque tinypool error on Windows; the
+suite is small enough that this costs a few seconds, not a real
+trade-off.)
 
 ## Security notes
 

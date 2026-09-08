@@ -122,19 +122,79 @@ returned the raw Prisma `User` row (including `passwordHash`) to the
 client — extracted the existing `publicUser()` helper from
 `auth.service.ts` into `server/src/lib/publicUser.ts` so both use it.
 
+**Sleep quality, nutrition precision, fibre, and PDF reports (latest
+pass):** Sleep quality moved from a 0-100 percentage to a real 1-5 rating
+(1 Very poor .. 5 Excellent) end to end — Prisma column semantics, zod
+validation (`quality: z.number().int().min(1).max(5)`), a segmented
+1-5 button control replacing the old percentage slider
+(`SleepPage.tsx`), and every display site (dashboard, history list,
+reports). Existing dev-only rows were converted proportionally in the
+migration rather than reset. Nutrition values (calories, protein, carbs,
+fat, fibre) now accept one decimal place via a shared
+`hasAtMostOneDecimal()` check duplicated deliberately in
+`nutrition.validation.ts` (backend) and `mappers.ts` (frontend, so the
+UI catches an invalid value before a round trip) — `MealEntry.calories`
+moved from `Int` to `Float` to allow it. The daily nutrition summary
+(`nutrition.service.ts#getDailySummary`) now sums calories/protein/carbs/
+fat/fibre directly from that day's actual `MealEntry` rows (it already
+did for protein/fibre; calories/carbs/fat were previously never
+aggregated at all) — a fibre-accumulation regression test locks this in
+(`server/tests/nutrition.test.ts`). "Fruit & veg" was a hardcoded `0`
+with no backing table (`// requires a food-database lookup; not modeled
+yet`) rendered as a real-looking, permanently-stuck-at-0% progress bar —
+replaced with a genuine `FruitVegLog` quick-add, mirroring
+`HydrationLog`'s shape.
+
+Health Reports generate a real PDF (`src/lib/generateHealthReportPdf.ts`,
+`jspdf` + `jspdf-autotable`) instead of a JSON blob download — branded
+header, section dividers, key/value tables, a hand-drawn goal progress
+bar, footer with page numbers and a "not medical advice" disclaimer.
+`reports.service.ts#generate` was rewritten to snapshot nutrition (it
+previously omitted nutrition entirely), sleep (now the 1-5 scale), cycle,
+activity, wellbeing, and goals directly from the same tables the live
+pages read — a period with no data reports "No X logged in this period"
+rather than a fabricated zero. `ReportsPage.tsx` gained a reporting-period
+selector (7/30/90 days) the old version never had. Fixed along the way: a
+real bug where `window.open()` was called *after* an `await`, which most
+browsers silently block as an unrequested popup — the tab is now opened
+synchronously in the click handler and navigated once the PDF is ready,
+with a toast explaining what happened if the browser blocks it anyway.
+
+Also fixed while doing this pass: `DashboardPage.tsx`'s "Trends worth
+noticing" cards were hardcoded copy ("+18% vs last week's average") on
+an otherwise all-real page — replaced with an honest "This week" section
+built from data already being fetched (days logged this week, sleep
+consistency), rather than inventing a week-over-week comparison the
+backend doesn't support. `SeniorNav.tsx`'s `SeniorTopBar` overflowed
+horizontally at mobile widths (414px content in a 375px viewport, found
+while testing the new Sleep control on mobile) — it now wraps onto two
+rows instead of clipping. The frontend had zero test runner at all
+(`README.md`'s disclosed gap); added a minimal Vitest setup
+(`vitest.config.ts` at the repo root) covering the pure functions most
+worth locking in (`calcSleepDuration` incl. midnight crossing,
+`to12Hour`/`to24Hour`, `hasAtMostOneDecimal`, `goalProgress`) — this is a
+start, not full coverage. The backend's own test suite intermittently
+crashed with an opaque tinypool "Worker exited unexpectedly" (a Windows
+worker-thread flakiness, not a code defect) — fixed by disabling file
+parallelism in `server/vitest.config.ts`; the suite is small enough that
+running sequentially costs a few seconds.
+
 Known concrete defects to fix as part of any related work:
-- No test runner (vitest/RTL/playwright) is installed for the **frontend**
-  — `README.md` correctly discloses "no test suite yet." (The backend has
-  its own Vitest suite, unrelated to this gap.)
 - No `robots.txt`/`sitemap.xml`, no favicon files, no legal pages
   (privacy/terms/cookies), no SEO metadata per route (single static
   `<title>` in `index.html`).
-- `DashboardPage.tsx`'s two "Trends worth noticing" cards are still
-  hardcoded copy ("+18% vs last week's average", "Bedtime has shifted
-  later this week") — every other tile on this page is now real, but a
-  genuine week-over-week comparison doesn't exist anywhere in the
-  backend yet, so this is real feature work, not a mechanical service
-  swap.
+- The PDF report's typography is Helvetica, not Fraunces/Inter — jsPDF's
+  built-in fonts don't include custom web fonts without shipping and
+  embedding font files, which was judged not worth the added complexity
+  for a print document. The maroon brand color and wordmark are still
+  used throughout.
+- `generateHealthReportPdf`'s dependency (`jspdf`) bundles `html2canvas`
+  internally for an HTML-rendering feature this app never calls; Vite
+  correctly splits it into its own ~200KB chunk that's only fetched if
+  that code path ever runs, but the Reports page's own lazy chunk is
+  still ~430KB (~140KB gzipped) — acceptable since it only loads when a
+  user visits Reports, not on initial app load, but worth knowing if
+  bundle size becomes a concern later.
 - Settings' "Privacy & sharing" toggles (share with coach, email
   reminders) are explicitly disclosed in the UI as not yet persisted —
   no backend endpoint exists for either preference at all, so inventing
