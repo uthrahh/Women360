@@ -10,28 +10,7 @@ import {
 import { env } from "@/config/env";
 import { ConflictError, UnauthorizedError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-
-function publicUser(user: {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  dateOfBirth: Date | null;
-  lifeStage: string | null;
-  avatarInitials: string | null;
-  onboarded: boolean;
-}) {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    dateOfBirth: user.dateOfBirth,
-    lifeStage: user.lifeStage,
-    avatarInitials: user.avatarInitials,
-    onboarded: user.onboarded,
-  };
-}
+import { publicUser } from "@/lib/publicUser";
 
 function initialsFrom(name: string): string {
   return name

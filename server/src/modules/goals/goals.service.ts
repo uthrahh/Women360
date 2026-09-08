@@ -5,14 +5,17 @@ import type { GoalCategory } from "@prisma/client";
 interface CreateGoalInput {
   title: string;
   category: GoalCategory;
-  target: string;
+  currentValue?: number;
+  targetValue: number;
+  unit: string;
   reminder?: string;
 }
 
 interface UpdateGoalInput {
   title?: string;
-  target?: string;
-  progress?: number;
+  currentValue?: number;
+  targetValue?: number;
+  unit?: string;
   reminder?: string;
   completed?: boolean;
 }

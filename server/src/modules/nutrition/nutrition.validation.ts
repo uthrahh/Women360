@@ -8,7 +8,12 @@ export const mealEntrySchema = z.object({
   proteinG: z.number().min(0).max(500),
   fibreG: z.number().min(0).max(200),
   servings: z.string().trim().min(1).max(60),
+  carbsG: z.number().min(0).max(500).optional(),
+  fatG: z.number().min(0).max(500).optional(),
+  notes: z.string().trim().max(500).optional(),
 });
+
+export const updateMealSchema = mealEntrySchema.omit({ date: true }).partial();
 
 export const hydrationLogSchema = z.object({
   date: z.string().date(),

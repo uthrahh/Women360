@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { NotFoundError } from "@/lib/errors";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -34,11 +35,12 @@ export const sleepService = {
       wakeTime: latest?.wakeTime ?? "",
       consistencyScore: consistencyScore(entries),
       weeklyHours: entries.map((e) => ({ day: DAY_NAMES[e.date.getUTCDay()], hours: e.durationHours })),
+      history: [...entries].reverse(),
     };
   },
 
   async upsertEntry(userId: string, input: {
-    date: string; durationHours: number; quality: number; bedtime: string; wakeTime: string;
+    date: string; durationHours: number; quality: number; bedtime: string; wakeTime: string; notes?: string;
   }) {
     const { date, ...rest } = input;
     return prisma.sleepEntry.upsert({
@@ -46,5 +48,13 @@ export const sleepService = {
       create: { userId, date: new Date(date), ...rest },
       update: rest,
     });
+  },
+
+  async deleteEntry(userId: string, date: string) {
+    const existing = await prisma.sleepEntry.findUnique({
+      where: { userId_date: { userId, date: new Date(date) } },
+    });
+    if (!existing) throw new NotFoundError("No sleep entry found for that date.");
+    await prisma.sleepEntry.delete({ where: { id: existing.id } });
   },
 };

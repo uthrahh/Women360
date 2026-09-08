@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "Goal" DROP COLUMN "progress",
+DROP COLUMN "target",
+ADD COLUMN     "currentValue" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "targetValue" DOUBLE PRECISION NOT NULL DEFAULT 100,
+ADD COLUMN     "unit" TEXT NOT NULL DEFAULT '';
+
+-- AlterTable
+ALTER TABLE "MealEntry" ADD COLUMN     "carbsG" DOUBLE PRECISION,
+ADD COLUMN     "fatG" DOUBLE PRECISION,
+ADD COLUMN     "notes" TEXT;
+
+-- AlterTable
+ALTER TABLE "SleepEntry" ADD COLUMN     "notes" TEXT;
+

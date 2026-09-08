@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { publicUser } from "@/lib/publicUser";
 import type { LifeStage, SeniorEssentialKey } from "@prisma/client";
 
 const DEFAULT_ESSENTIALS: { key: SeniorEssentialKey; enabled: boolean }[] = [
@@ -18,7 +19,7 @@ export const usersService = {
     userId: string,
     input: { name?: string; dateOfBirth?: string; lifeStage?: LifeStage }
   ) {
-    return prisma.user.update({
+    const user = await prisma.user.update({
       where: { id: userId },
       data: {
         name: input.name,
@@ -26,6 +27,7 @@ export const usersService = {
         lifeStage: input.lifeStage,
       },
     });
+    return publicUser(user);
   },
 
   async getEmergencyContact(userId: string) {

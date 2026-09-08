@@ -10,6 +10,7 @@ import {
   idParamSchema,
   mealEntrySchema,
   nutritionGoalSchema,
+  updateMealSchema,
 } from "./nutrition.validation";
 
 export const nutritionRouter = Router();
@@ -31,6 +32,12 @@ nutritionRouter.post(
   "/meals",
   validate({ body: mealEntrySchema }),
   asyncHandler(async (req, res) => created(res, await nutritionService.addMeal(req.user!.id, req.body)))
+);
+
+nutritionRouter.patch(
+  "/meals/:id",
+  validate({ params: idParamSchema, body: updateMealSchema }),
+  asyncHandler(async (req, res) => ok(res, await nutritionService.updateMeal(req.user!.id, req.params.id, req.body)))
 );
 
 nutritionRouter.delete(

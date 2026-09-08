@@ -45,6 +45,16 @@ export const nutritionService = {
     });
   },
 
+  async updateMeal(userId: string, id: string, input: Partial<{
+    time: string; name: string; calories: number; proteinG: number; fibreG: number; servings: string;
+    carbsG: number; fatG: number; notes: string;
+  }>) {
+    const meal = await prisma.mealEntry.findUnique({ where: { id } });
+    if (!meal) throw new NotFoundError("Meal entry not found.");
+    if (meal.userId !== userId) throw new ForbiddenError();
+    return prisma.mealEntry.update({ where: { id }, data: input });
+  },
+
   async deleteMeal(userId: string, id: string) {
     const meal = await prisma.mealEntry.findUnique({ where: { id } });
     if (!meal) throw new NotFoundError("Meal entry not found.");
