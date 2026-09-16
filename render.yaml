@@ -9,6 +9,16 @@
 # external managed Postgres (Supabase, one of the SRS's approved options)
 # rather than Render's own Postgres, whose free tier expires after 30 days
 # and would die mid-semester. Point DATABASE_URL at that instead.
+#
+# `npm ci --include=dev` is deliberate, not a typo: NODE_ENV=production is
+# set below (for the app's own runtime behavior), but unlike `npm install`,
+# `npm ci` specifically treats that as "skip devDependencies" — which is
+# exactly where typescript/tsc-alias/the prisma CLI live, i.e. the tools
+# this very build command needs to produce dist/ in the first place.
+# Omitting --include=dev silently fell through to npm's registry-fetch
+# fallback for the missing `tsc` binary, compiling with an arbitrary
+# unpinned TypeScript version instead of the one this project is tested
+# against — that's what caused the first two failed deploys.
 services:
   - type: web
     name: women360-api
@@ -16,7 +26,7 @@ services:
     plan: free
     region: singapore
     rootDir: server
-    buildCommand: npm ci && npx prisma generate && npm run build && npx prisma migrate deploy
+    buildCommand: npm ci --include=dev && npx prisma generate && npm run build && npx prisma migrate deploy
     startCommand: npm start
     healthCheckPath: /health
     envVars:
