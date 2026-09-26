@@ -184,16 +184,26 @@ export function generateHealthReportPdf(report: HealthReportDetail): jsPDF {
   if (!snap.cycle.hasData) {
     noData("No cycle data has been logged yet.");
   } else {
+    const nextPeriodLabel =
+      snap.cycle.nextPeriodRangeStart && snap.cycle.nextPeriodRangeEnd
+        ? `${formatDate(snap.cycle.nextPeriodRangeStart)} – ${formatDate(snap.cycle.nextPeriodRangeEnd)}`
+        : snap.cycle.estimatedNextPeriodDate
+          ? formatDate(snap.cycle.estimatedNextPeriodDate)
+          : "—";
     keyValueTable([
       ["Current cycle day", snap.cycle.currentDay != null ? `Day ${snap.cycle.currentDay}` : "—"],
       ["Current phase", snap.cycle.phase ? titleCase(snap.cycle.phase) : "—"],
       ["Average cycle length", `${snap.cycle.averageCycleLengthDays} days`],
       ["Average period length", `${snap.cycle.averagePeriodLengthDays} days`],
-      [
-        "Estimated next period",
-        snap.cycle.estimatedNextPeriodDate ? `${formatDate(snap.cycle.estimatedNextPeriodDate)} (estimate, not a diagnosis)` : "—",
-      ],
+      ["Next period expected", nextPeriodLabel],
+      ["Prediction confidence", titleCase(snap.cycle.confidence)],
     ]);
+    if (snap.cycle.irregularityNote) paragraph(snap.cycle.irregularityNote, { muted: true, size: 9 });
+    paragraph(
+      "This is an estimate based on your own logged cycles, not a diagnosis, and not a birth control method — " +
+        "don't rely on it to prevent or plan pregnancy.",
+      { muted: true, size: 9 }
+    );
   }
 
   // --- Activity & wellbeing -----------------------------------------

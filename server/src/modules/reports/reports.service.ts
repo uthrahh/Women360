@@ -109,6 +109,10 @@ export const reportsService = {
       averageCycleLengthDays: cycleSummary.cycleLength,
       averagePeriodLengthDays: cycleSummary.periodLength,
       estimatedNextPeriodDate: cycleSummary.nextPeriodDate,
+      nextPeriodRangeStart: cycleSummary.nextPeriodRangeStart,
+      nextPeriodRangeEnd: cycleSummary.nextPeriodRangeEnd,
+      confidence: cycleSummary.confidence,
+      irregularityNote: cycleSummary.irregularityNote,
     };
 
     const goalsSummary = {

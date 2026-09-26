@@ -7,10 +7,13 @@ import { LoadingState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { MOOD_LABELS } from "@/services/mappers";
+import { insightsService } from "@/services/insightsService";
+import { ExplainThisCard } from "@/components/ExplainThisCard";
 
 export default function WellbeingPage() {
   const [data, setData] = useState<WellbeingEntry[] | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  const [showLowMoodHelp, setShowLowMoodHelp] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -59,6 +62,7 @@ export default function WellbeingPage() {
             onClick={() => {
               if (selected === null) return;
               const last = data[data.length - 1];
+              const loggedMood = selected;
               wellbeingService
                 .logToday({ mood: selected, stress: last?.stress ?? 2, energy: last?.energy ?? 2 })
                 .then((entry) => {
@@ -69,6 +73,9 @@ export default function WellbeingPage() {
                   });
                   toast.show("Mood logged for today");
                   setSelected(null);
+                  // A low mood doesn't default to "must be PMS" — offer to
+                  // look across sleep/hydration/activity/stress/cycle phase.
+                  setShowLowMoodHelp(loggedMood <= 1);
                 });
             }}
           >
@@ -76,6 +83,14 @@ export default function WellbeingPage() {
           </Button>
         </CardBody>
       </Card>
+
+      {showLowMoodHelp && (
+        <ExplainThisCard
+          title="Not feeling great today?"
+          buttonLabel="See possible reasons"
+          fetchReport={() => insightsService.explainLowMood()}
+        />
+      )}
 
       <Card>
         <CardBody className="pt-5">

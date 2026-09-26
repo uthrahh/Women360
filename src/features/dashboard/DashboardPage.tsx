@@ -72,7 +72,11 @@ function StandardDashboard() {
           {cycle!.currentDay !== null && cycle!.nextPeriodDate !== null && (
             <PriorityCard
               title="Your period may start soon"
-              detail={`Expected around ${new Date(cycle!.nextPeriodDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })} — day ${cycle!.currentDay} of your cycle now.`}
+              detail={
+                cycle!.nextPeriodRangeStart && cycle!.nextPeriodRangeEnd
+                  ? `Expected ${new Date(cycle!.nextPeriodRangeStart).toLocaleDateString(undefined, { month: "short", day: "numeric" })}–${new Date(cycle!.nextPeriodRangeEnd).toLocaleDateString(undefined, { month: "short", day: "numeric" })} — day ${cycle!.currentDay} of your cycle now.`
+                  : `Expected around ${new Date(cycle!.nextPeriodDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })} — day ${cycle!.currentDay} of your cycle now.`
+              }
               to="/app/cycle"
             />
           )}

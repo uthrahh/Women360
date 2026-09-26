@@ -13,10 +13,29 @@ import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useApp } from "@/context/AppContext";
 import { Trash2 } from "lucide-react";
+import { ExplainThisCard } from "@/components/ExplainThisCard";
+import { insightsService } from "@/services/insightsService";
 
 const PHASE_LABEL: Record<string, string> = {
   menstrual: "Menstrual", follicular: "Follicular", ovulation: "Ovulation", luteal: "Luteal",
 };
+
+const CONFIDENCE_LABEL: Record<CycleSummary["confidence"], string> = {
+  high: "Consistent with your recent cycles",
+  medium: "Still building a picture from your logs",
+  low: "Low confidence — see note below",
+};
+
+function formatDateRange(startISO: string, endISO: string): string {
+  const start = new Date(startISO);
+  const end = new Date(endISO);
+  const startLabel = start.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+  const endLabel = end.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return startISO === endISO ? startLabel : `${startLabel} – ${endLabel}`;
+}
+
+const CONTRACEPTION_DISCLAIMER =
+  "Not a birth control method — this is an estimate, not a reliable way to prevent or plan pregnancy.";
 
 const SYMPTOM_OPTIONS = ["Cramps", "Fatigue", "Headache", "Bloating", "Tender breasts", "Backache"];
 
@@ -34,6 +53,7 @@ export default function CyclePage() {
   const [cycle, setCycle] = useState<CycleSummary | null>(null);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [confirmDeleteDate, setConfirmDeleteDate] = useState<string | null>(null);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -45,6 +65,12 @@ export default function CyclePage() {
   const hasData = cycle.currentDay !== null && cycle.phase !== null && cycle.nextPeriodDate !== null;
   const existingDay = editingDate ? cycle.history.find((d) => d.date === editingDate) : undefined;
   const isToday = editingDate === localDateISO();
+  // Essentials-first logging: period/flow is the only mandatory field, and
+  // pain/symptoms/notes stay tucked away unless the day already has some
+  // (editing) or the woman actively wants to add more — daily symptom
+  // tracking can itself become a source of anxiety, so nothing beyond flow
+  // is asked for by default.
+  const showDetails = detailsExpanded || Boolean(existingDay?.pain || existingDay?.symptoms?.length || existingDay?.notes);
 
   function handleLog(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -110,31 +136,43 @@ export default function CyclePage() {
             <option value="heavy">Heavy</option>
           </select>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="pain" className="text-sm font-medium senior:text-lg">Pain level (0–4)</label>
-          <input id="pain" name="pain" type="range" min={0} max={4} defaultValue={existingDay?.pain ?? 0} className="accent-[#6B1D30]" />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium senior:text-lg">Symptoms</span>
-          <div className="grid grid-cols-2 gap-2">
-            {SYMPTOM_OPTIONS.map((s) => (
-              <label key={s} className="flex items-center gap-2 text-sm senior:text-base">
-                <input type="checkbox" name={`symptom_${s}`} defaultChecked={existingDay?.symptoms?.includes(s)} className="w-4 h-4 accent-[#6B1D30]" />
-                {s}
-              </label>
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="notes" className="text-sm font-medium senior:text-lg">Notes (optional)</label>
-          <textarea
-            id="notes"
-            name="notes"
-            rows={2}
-            defaultValue={existingDay?.notes ?? ""}
-            className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-sm senior:text-lg"
-          />
-        </div>
+        {showDetails ? (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="pain" className="text-sm font-medium senior:text-lg">Pain level (0–4)</label>
+              <input id="pain" name="pain" type="range" min={0} max={4} defaultValue={existingDay?.pain ?? 0} className="accent-[#6B1D30]" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-sm font-medium senior:text-lg">Symptoms</span>
+              <div className="grid grid-cols-2 gap-2">
+                {SYMPTOM_OPTIONS.map((s) => (
+                  <label key={s} className="flex items-center gap-2 text-sm senior:text-base">
+                    <input type="checkbox" name={`symptom_${s}`} defaultChecked={existingDay?.symptoms?.includes(s)} className="w-4 h-4 accent-[#6B1D30]" />
+                    {s}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="notes" className="text-sm font-medium senior:text-lg">Notes (optional)</label>
+              <textarea
+                id="notes"
+                name="notes"
+                rows={2}
+                defaultValue={existingDay?.notes ?? ""}
+                className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-sm senior:text-lg"
+              />
+            </div>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setDetailsExpanded(true)}
+            className="text-sm text-maroon-700 dark:text-maroon-300 font-medium text-left hover:underline senior:text-lg"
+          >
+            + Add pain, symptoms or a note (optional)
+          </button>
+        )}
         <div className="flex items-center justify-between gap-2">
           {existingDay ? (
             <Button
@@ -179,11 +217,20 @@ export default function CyclePage() {
   }
 
   const populated = cycle as PopulatedCycleSummary;
+  const isLate = populated.currentDay > populated.cycleLength + 3;
 
   if (senior.seniorMode) {
     return (
       <>
         <SeniorCycle cycle={populated} onLog={() => setEditingDate(localDateISO())} />
+        {isLate && (
+          <div className="max-w-xl mx-auto px-5">
+            <ExplainThisCard
+              title="Your period looks later than usual"
+              fetchReport={() => insightsService.explainCycleDelay()}
+            />
+          </div>
+        )}
         {logModal}
         {deleteConfirm}
       </>
@@ -198,6 +245,13 @@ export default function CyclePage() {
       </div>
 
       <CycleRing cycle={populated} onLog={() => setEditingDate(localDateISO())} />
+
+      {isLate && (
+        <ExplainThisCard
+          title="Your period looks later than usual"
+          fetchReport={() => insightsService.explainCycleDelay()}
+        />
+      )}
 
       <Tabs
         tabs={[
@@ -238,14 +292,25 @@ function CycleRing({ cycle, onLog }: { cycle: PopulatedCycleSummary; onLog: () =
           </div>
         </div>
         <div className="flex-1 flex flex-col gap-2">
-          <Badge tone="accent">{PHASE_LABEL[cycle.phase]} phase</Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="accent">{PHASE_LABEL[cycle.phase]} phase</Badge>
+            <Badge tone={cycle.confidence === "low" ? "neutral" : "accent"}>{CONFIDENCE_LABEL[cycle.confidence]}</Badge>
+          </div>
           <p className="text-sm text-[var(--w360-text-muted)]">
-            Your next period is expected around{" "}
+            Next period expected{" "}
             <span className="font-medium text-[var(--w360-text)]">
-              {new Date(cycle.nextPeriodDate).toLocaleDateString(undefined, { month: "long", day: "numeric" })}
+              {cycle.nextPeriodRangeStart && cycle.nextPeriodRangeEnd
+                ? formatDateRange(cycle.nextPeriodRangeStart, cycle.nextPeriodRangeEnd)
+                : new Date(cycle.nextPeriodDate).toLocaleDateString(undefined, { month: "long", day: "numeric" })}
             </span>
-            , based on your recent cycles.
+            , based on your own recent cycles — a range, not an exact date.
           </p>
+          {cycle.irregularityNote && (
+            <p className="text-xs text-[var(--w360-text-muted)] bg-warmgrey-50 dark:bg-white/5 rounded px-2.5 py-2">
+              {cycle.irregularityNote}
+            </p>
+          )}
+          <p className="text-xs text-[var(--w360-text-muted)] italic">{CONTRACEPTION_DISCLAIMER}</p>
           <Button variant="primary" size="sm" className="w-fit mt-2" onClick={onLog}>Log today's flow & symptoms</Button>
         </div>
       </CardBody>
@@ -363,9 +428,13 @@ function SeniorCycle({ cycle, onLog }: { cycle: PopulatedCycleSummary; onLog: ()
           <span className="font-display text-5xl font-semibold tabular-nums">{cycle.currentDay}</span>
           <p className="text-lg">Day {cycle.currentDay} of your cycle</p>
           <p className="text-[var(--w360-text-muted)] text-lg">
-            Next period expected around{" "}
-            {new Date(cycle.nextPeriodDate).toLocaleDateString(undefined, { month: "long", day: "numeric" })}
+            Next period expected{" "}
+            {cycle.nextPeriodRangeStart && cycle.nextPeriodRangeEnd
+              ? formatDateRange(cycle.nextPeriodRangeStart, cycle.nextPeriodRangeEnd)
+              : new Date(cycle.nextPeriodDate).toLocaleDateString(undefined, { month: "long", day: "numeric" })}
           </p>
+          {cycle.irregularityNote && <p className="text-base text-[var(--w360-text-muted)]">{cycle.irregularityNote}</p>}
+          <p className="text-sm text-[var(--w360-text-muted)] italic">{CONTRACEPTION_DISCLAIMER}</p>
           <Button size="xl" fullWidth onClick={onLog}>Add today's flow</Button>
         </CardBody>
       </Card>
