@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { explainCycleDelay, explainLowMood } from "./factors";
 
 /**
  * Read-only, descriptive trend summaries — SRS §12/BR-03/BR-04: dashboard
@@ -95,4 +96,8 @@ export const insightsService = {
 
     return { sleepMood, cards };
   },
+
+  // Cross-domain "explain this" — see factors.ts for the full rationale.
+  explainCycleDelay,
+  explainLowMood,
 };

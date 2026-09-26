@@ -11,3 +11,13 @@ insightsRouter.get(
   "/",
   asyncHandler(async (req, res) => ok(res, await insightsService.getInsights(req.user!.id)))
 );
+
+insightsRouter.get(
+  "/cycle-delay",
+  asyncHandler(async (req, res) => ok(res, await insightsService.explainCycleDelay(req.user!.id)))
+);
+
+insightsRouter.get(
+  "/low-mood",
+  asyncHandler(async (req, res) => ok(res, await insightsService.explainLowMood(req.user!.id)))
+);

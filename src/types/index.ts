@@ -46,6 +46,17 @@ export interface CycleSummary {
   cycleLength: number;
   periodLength: number;
   nextPeriodDate: string | null;
+  // A range, not a false-precise single date — width reflects how
+  // consistent this user's own recent cycles have actually been.
+  nextPeriodRangeStart: string | null;
+  nextPeriodRangeEnd: string | null;
+  fertileWindowStart: string | null;
+  fertileWindowEnd: string | null;
+  // "low" when history is thin, cycles have been irregular, or the user is
+  // in perimenopause — the UI must never present a low-confidence estimate
+  // with the same certainty as a high-confidence one.
+  confidence: "low" | "medium" | "high";
+  irregularityNote: string | null;
   lastCycleLengths: number[];
   history: CycleDay[];
 }
@@ -219,6 +230,10 @@ export interface HealthReportSnapshot {
     averageCycleLengthDays: number;
     averagePeriodLengthDays: number;
     estimatedNextPeriodDate: string | null;
+    nextPeriodRangeStart: string | null;
+    nextPeriodRangeEnd: string | null;
+    confidence: "low" | "medium" | "high";
+    irregularityNote: string | null;
   };
   goals: {
     active: { title: string; category: string; currentValue: number; targetValue: number; unit: string; progressPct: number }[];
@@ -245,4 +260,12 @@ export interface AppNotification {
 export interface InsightsSummary {
   sleepMood: { sleep: number; mood: number }[];
   cards: { q: string; a: string }[];
+}
+
+// A ranked, cross-domain "explain this" report — never a diagnosis, always
+// grounded in the user's own logged data. See server/.../insights/factors.ts.
+export interface FactorReport {
+  factors: { label: string; detail: string }[];
+  insufficientData: boolean;
+  disclaimer: string;
 }

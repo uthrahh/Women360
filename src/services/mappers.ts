@@ -153,6 +153,12 @@ interface ApiCycleSummary {
   cycleLength: number;
   periodLength: number;
   nextPeriodDate: string | null;
+  nextPeriodRangeStart: string | null;
+  nextPeriodRangeEnd: string | null;
+  fertileWindowStart: string | null;
+  fertileWindowEnd: string | null;
+  confidence: "low" | "medium" | "high";
+  irregularityNote: string | null;
   lastCycleLengths: number[];
   history: ApiCycleEntry[];
 }
@@ -164,6 +170,12 @@ export function toFrontendCycleSummary(apiSummary: ApiCycleSummary): CycleSummar
     cycleLength: apiSummary.cycleLength,
     periodLength: apiSummary.periodLength,
     nextPeriodDate: toDateOnly(apiSummary.nextPeriodDate),
+    nextPeriodRangeStart: toDateOnly(apiSummary.nextPeriodRangeStart),
+    nextPeriodRangeEnd: toDateOnly(apiSummary.nextPeriodRangeEnd),
+    fertileWindowStart: toDateOnly(apiSummary.fertileWindowStart),
+    fertileWindowEnd: toDateOnly(apiSummary.fertileWindowEnd),
+    confidence: apiSummary.confidence,
+    irregularityNote: apiSummary.irregularityNote,
     lastCycleLengths: apiSummary.lastCycleLengths,
     history: apiSummary.history.map(toFrontendCycleDay),
   };
