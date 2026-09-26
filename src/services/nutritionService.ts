@@ -9,6 +9,13 @@ export const nutritionService = {
     );
     return toFrontendNutritionSummary(apiSummary);
   },
+  // One row per distinct meal name, most recent first — powers a one-tap
+  // "log again" so re-entering a familiar meal doesn't mean retyping every
+  // field from scratch every time.
+  async getRecentMeals(): Promise<MealEntry[]> {
+    const apiMeals = await request<Parameters<typeof toFrontendMealEntry>[0][]>("/nutrition/recent-meals");
+    return apiMeals.map(toFrontendMealEntry);
+  },
   async addMeal(meal: Omit<MealEntry, "id">): Promise<MealEntry> {
     const apiMeal = await request<Parameters<typeof toFrontendMealEntry>[0]>("/nutrition/meals", {
       method: "POST",

@@ -52,6 +52,19 @@ export const nutritionService = {
     };
   },
 
+  // Most recently logged meals, one row per distinct name — lets the UI
+  // offer a one-tap "log again" instead of retyping every field for a meal
+  // that's been logged before, which is the single biggest source of the
+  // tracking fatigue named in nutrition-app research.
+  async getRecentMeals(userId: string, limit = 8) {
+    return prisma.mealEntry.findMany({
+      where: { userId },
+      orderBy: [{ date: "desc" }, { time: "desc" }],
+      distinct: ["name"],
+      take: limit,
+    });
+  },
+
   async addMeal(userId: string, input: {
     date: string; time: string; name: string; calories: number; proteinG: number; fibreG: number; servings: string;
     carbsG?: number; fatG?: number; notes?: string;
