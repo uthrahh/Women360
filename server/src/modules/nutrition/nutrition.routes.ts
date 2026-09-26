@@ -29,6 +29,11 @@ nutritionRouter.get(
   })
 );
 
+nutritionRouter.get(
+  "/recent-meals",
+  asyncHandler(async (req, res) => ok(res, await nutritionService.getRecentMeals(req.user!.id)))
+);
+
 nutritionRouter.post(
   "/meals",
   validate({ body: mealEntrySchema }),

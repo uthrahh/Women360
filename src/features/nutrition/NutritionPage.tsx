@@ -47,6 +47,7 @@ function mealToForm(m: MealEntry): MealFormValues {
 
 export default function NutritionPage() {
   const [data, setData] = useState<NutritionSummary | null>(null);
+  const [recentMeals, setRecentMeals] = useState<MealEntry[]>([]);
   const [editingMeal, setEditingMeal] = useState<MealEntry | "new" | null>(null);
   const [form, setForm] = useState<MealFormValues>(emptyForm());
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -56,12 +57,22 @@ export default function NutritionPage() {
 
   useEffect(() => {
     nutritionService.getToday().then(setData);
+    nutritionService.getRecentMeals().then(setRecentMeals);
   }, []);
 
   if (!data) return <LoadingState label="Loading nutrition" />;
 
   function openAdd() {
     setForm(emptyForm());
+    setErrors({});
+    setEditingMeal("new");
+  }
+
+  // Pre-fills the Add meal form from something already logged before —
+  // still editable and still requires a tap to confirm, never silently
+  // re-logs — so a familiar breakfast doesn't mean retyping six fields.
+  function openLogAgain(meal: MealEntry) {
+    setForm({ ...mealToForm(meal), time: new Date().toTimeString().slice(0, 5) });
     setErrors({});
     setEditingMeal("new");
   }
@@ -126,6 +137,7 @@ export default function NutritionPage() {
       // Refetch rather than hand-patch local state: adding/editing a meal
       // changes the protein/fibre totals shown above, not just the list.
       setData(await nutritionService.getToday());
+      nutritionService.getRecentMeals().then(setRecentMeals);
       setEditingMeal(null);
     } catch (err) {
       toast.show(err instanceof Error ? err.message : "Couldn't save that meal. Please try again.", { tone: "error" });
@@ -180,12 +192,28 @@ export default function NutritionPage() {
         <Button onClick={openAdd}><Plus size={16} /> Add meal</Button>
       </div>
 
+      {recentMeals.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-[var(--w360-text-muted)]">Log again:</span>
+          {recentMeals.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => openLogAgain(m)}
+              className="text-xs px-3 py-1.5 rounded-full border border-[var(--w360-border)] hover:border-maroon-400 hover:text-maroon-700 dark:hover:text-maroon-300 transition-colors senior:text-sm"
+            >
+              {m.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <Card>
           <CardBody className="pt-5">
             <p className="text-xs text-[var(--w360-text-muted)] mb-1">Calories</p>
             <p className="text-xl font-display font-semibold tabular-nums">{data.calories} kcal</p>
             <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">logged today · {data.proteinG}g protein · {data.carbsG}g carbs · {data.fatG}g fat</p>
+            <p className="text-[11px] text-[var(--w360-text-muted)] italic mt-1.5">Estimates based on what you log — not lab-measured.</p>
           </CardBody>
         </Card>
         <MetricCard label="Hydration" value={`${data.hydrationMl}ml`} goal={`of ${data.hydrationGoalMl}ml`} pct={(data.hydrationMl / data.hydrationGoalMl) * 100} icon={<Droplet size={16} />}>
