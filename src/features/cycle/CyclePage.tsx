@@ -54,6 +54,9 @@ export default function CyclePage() {
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [confirmDeleteDate, setConfirmDeleteDate] = useState<string | null>(null);
   const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkDates, setBulkDates] = useState<string[]>(["", ""]);
+  const [bulkSaving, setBulkSaving] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -93,6 +96,50 @@ export default function CyclePage() {
       },
       (err) => toast.show(err instanceof Error ? err.message : "Couldn't save that entry. Please try again.", { tone: "error" })
     );
+  }
+
+  function openBulkAdd() {
+    setBulkDates(["", ""]);
+    setBulkOpen(true);
+  }
+
+  function updateBulkDate(i: number, value: string) {
+    setBulkDates((d) => d.map((x, idx) => (idx === i ? value : x)));
+  }
+
+  function addBulkRow() {
+    setBulkDates((d) => [...d, ""]);
+  }
+
+  function removeBulkRow(i: number) {
+    setBulkDates((d) => d.filter((_, idx) => idx !== i));
+  }
+
+  async function handleBulkSave() {
+    const today = localDateISO();
+    const dates = Array.from(new Set(bulkDates.filter(Boolean)));
+    if (dates.length === 0) {
+      toast.show("Add at least one date.", { tone: "error" });
+      return;
+    }
+    if (dates.some((d) => d > today)) {
+      toast.show("Period start dates can't be in the future.", { tone: "error" });
+      return;
+    }
+    setBulkSaving(true);
+    try {
+      // Only the start day of each past period needs marking — the
+      // predictor derives cycle length from the gap between start dates,
+      // not from every day of bleeding.
+      await Promise.all(dates.map((date) => cycleService.logDay({ date, isPeriod: true })));
+      setCycle(await cycleService.getSummary());
+      setBulkOpen(false);
+      toast.show(`${dates.length} period ${dates.length === 1 ? "date" : "dates"} added`);
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't save those dates. Please try again.", { tone: "error" });
+    } finally {
+      setBulkSaving(false);
+    }
   }
 
   function handleDelete() {
@@ -191,6 +238,47 @@ export default function CyclePage() {
     </Modal>
   );
 
+  const bulkModal = (
+    <Modal open={bulkOpen} onClose={() => setBulkOpen(false)} title="Add past periods" size="sm">
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-[var(--w360-text-muted)] senior:text-base">
+          Add the start dates of your last few periods and Women360 can predict your next one right away, instead of
+          waiting for you to log two full cycles going forward.
+        </p>
+        <div className="flex flex-col gap-2.5">
+          {bulkDates.map((d, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                type="date"
+                value={d}
+                max={localDateISO()}
+                onChange={(e) => updateBulkDate(i, e.target.value)}
+                aria-label={`Period start date ${i + 1}`}
+                className="flex-1 px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg"
+              />
+              {bulkDates.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeBulkRow(i)}
+                  aria-label="Remove this date"
+                  className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-[var(--w360-text-muted)] hover:text-red-600"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        <Button type="button" variant="secondary" size="sm" className="w-fit" onClick={addBulkRow}>
+          + Add another date
+        </Button>
+        <Button onClick={handleBulkSave} disabled={bulkSaving} size="lg">
+          {bulkSaving ? "Saving…" : "Save dates"}
+        </Button>
+      </div>
+    </Modal>
+  );
+
   const deleteConfirm = (
     <ConfirmDialog
       open={confirmDeleteDate !== null}
@@ -208,9 +296,15 @@ export default function CyclePage() {
         <EmptyState
           title="Log your first entry to get started"
           description="Once you log a period, flow, or symptom, Women360 will start showing your cycle day, phase, and predictions here."
-          action={<Button onClick={() => setEditingDate(localDateISO())}>Log today's flow & symptoms</Button>}
+          action={
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <Button onClick={() => setEditingDate(localDateISO())}>Log today's flow & symptoms</Button>
+              <Button variant="secondary" onClick={openBulkAdd}>Add past periods instead</Button>
+            </div>
+          }
         />
         {logModal}
+        {bulkModal}
         {deleteConfirm}
       </>
     );
@@ -222,7 +316,7 @@ export default function CyclePage() {
   if (senior.seniorMode) {
     return (
       <>
-        <SeniorCycle cycle={populated} onLog={() => setEditingDate(localDateISO())} />
+        <SeniorCycle cycle={populated} onLog={() => setEditingDate(localDateISO())} onBulkAdd={openBulkAdd} />
         {isLate && (
           <div className="max-w-xl mx-auto px-5">
             <ExplainThisCard
@@ -232,6 +326,7 @@ export default function CyclePage() {
           </div>
         )}
         {logModal}
+        {bulkModal}
         {deleteConfirm}
       </>
     );
@@ -244,7 +339,7 @@ export default function CyclePage() {
         <p className="text-[var(--w360-text-muted)] mt-1">A gentle picture of where you are in your cycle.</p>
       </div>
 
-      <CycleRing cycle={populated} onLog={() => setEditingDate(localDateISO())} />
+      <CycleRing cycle={populated} onLog={() => setEditingDate(localDateISO())} onBulkAdd={openBulkAdd} />
 
       {isLate && (
         <ExplainThisCard
@@ -261,12 +356,13 @@ export default function CyclePage() {
         ]}
       />
       {logModal}
+      {bulkModal}
       {deleteConfirm}
     </div>
   );
 }
 
-function CycleRing({ cycle, onLog }: { cycle: PopulatedCycleSummary; onLog: () => void }) {
+function CycleRing({ cycle, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary; onLog: () => void; onBulkAdd: () => void }) {
   const size = 180;
   const stroke = 14;
   const r = (size - stroke) / 2;
@@ -311,7 +407,10 @@ function CycleRing({ cycle, onLog }: { cycle: PopulatedCycleSummary; onLog: () =
             </p>
           )}
           <p className="text-xs text-[var(--w360-text-muted)] italic">{CONTRACEPTION_DISCLAIMER}</p>
-          <Button variant="primary" size="sm" className="w-fit mt-2" onClick={onLog}>Log today's flow & symptoms</Button>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <Button variant="primary" size="sm" onClick={onLog}>Log today's flow & symptoms</Button>
+            <Button variant="secondary" size="sm" onClick={onBulkAdd}>Add past periods</Button>
+          </div>
         </div>
       </CardBody>
     </Card>
@@ -420,7 +519,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SeniorCycle({ cycle, onLog }: { cycle: PopulatedCycleSummary; onLog: () => void }) {
+function SeniorCycle({ cycle, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary; onLog: () => void; onBulkAdd: () => void }) {
   return (
     <div className="max-w-xl mx-auto p-5 flex flex-col gap-5">
       <Card>
@@ -436,6 +535,7 @@ function SeniorCycle({ cycle, onLog }: { cycle: PopulatedCycleSummary; onLog: ()
           {cycle.irregularityNote && <p className="text-base text-[var(--w360-text-muted)]">{cycle.irregularityNote}</p>}
           <p className="text-sm text-[var(--w360-text-muted)] italic">{CONTRACEPTION_DISCLAIMER}</p>
           <Button size="xl" fullWidth onClick={onLog}>Add today's flow</Button>
+          <Button size="lg" variant="secondary" fullWidth onClick={onBulkAdd}>Add past periods</Button>
         </CardBody>
       </Card>
     </div>
