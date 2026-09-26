@@ -4,7 +4,14 @@ import { validate } from "@/middleware/validate";
 import { requireAuth } from "@/middleware/auth";
 import { created, noContent, ok } from "@/lib/response";
 import { healthService } from "./health.service";
-import { appointmentSchema, idParamSchema, medicationSchema, vitalSchema } from "./health.validation";
+import {
+  adherenceQuerySchema,
+  appointmentSchema,
+  idParamSchema,
+  logMedicationDoseSchema,
+  medicationSchema,
+  vitalSchema,
+} from "./health.validation";
 
 export const healthRouter = Router();
 healthRouter.use(requireAuth);
@@ -59,6 +66,24 @@ healthRouter.delete(
     await healthService.deleteMedication(req.user!.id, req.params.id);
     return noContent(res);
   })
+);
+healthRouter.get(
+  "/medications/today",
+  asyncHandler(async (req, res) => ok(res, await healthService.getTodayMedications(req.user!.id)))
+);
+healthRouter.post(
+  "/medications/:id/log",
+  validate({ params: idParamSchema, body: logMedicationDoseSchema }),
+  asyncHandler(async (req, res) =>
+    ok(res, await healthService.logMedicationDose(req.user!.id, req.params.id, req.body.scheduledFor, req.body.status))
+  )
+);
+healthRouter.get(
+  "/medications/adherence",
+  validate({ query: adherenceQuerySchema }),
+  asyncHandler(async (req, res) =>
+    ok(res, await healthService.getAdherence(req.user!.id, (req.query.days as unknown as number) ?? 7))
+  )
 );
 
 // Vitals

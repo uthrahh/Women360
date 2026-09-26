@@ -1,5 +1,5 @@
 import { request } from "./apiClient";
-import type { Appointment, Medication, VitalMeasurement } from "@/types";
+import type { Appointment, Medication, MedicationAdherence, MedicationDose, VitalMeasurement } from "@/types";
 import {
   toBackendAppointment,
   toBackendVitalType,
@@ -52,6 +52,19 @@ export const healthService = {
   },
   async deleteMedication(id: string): Promise<void> {
     await request(`/health/medications/${id}`, { method: "DELETE" });
+  },
+
+  async getTodayMedications(): Promise<MedicationDose[]> {
+    return request<MedicationDose[]>("/health/medications/today");
+  },
+  async logMedicationDose(medicationId: string, scheduledFor: string, status: "TAKEN" | "SKIPPED"): Promise<void> {
+    await request(`/health/medications/${medicationId}/log`, {
+      method: "POST",
+      body: JSON.stringify({ scheduledFor, status }),
+    });
+  },
+  async getAdherence(days: 7 | 30 = 7): Promise<MedicationAdherence> {
+    return request<MedicationAdherence>(`/health/medications/adherence?days=${days}`);
   },
 
   async getVitals() {

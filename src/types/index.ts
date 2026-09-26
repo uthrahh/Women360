@@ -170,7 +170,27 @@ export interface Medication {
   name: string;
   dose: string;
   schedule: string;
+  // Structured 24-hour "HH:MM" reminder times — optional, since not every
+  // medicine (e.g. an as-needed painkiller) has a fixed daily schedule.
+  times?: string[];
   remaining?: number;
+}
+
+// A single expected dose for today, derived from a medication's `times` —
+// PENDING/OVERDUE are computed, never stored; TAKEN/SKIPPED come from a
+// real logged MedicationLog row.
+export interface MedicationDose {
+  medicationId: string;
+  medicationName: string;
+  dose: string;
+  scheduledFor: string;
+  status: "PENDING" | "OVERDUE" | "TAKEN" | "SKIPPED";
+}
+
+export interface MedicationAdherence {
+  takenCount: number;
+  expectedCount: number;
+  pct: number | null;
 }
 
 export interface Message {

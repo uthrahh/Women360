@@ -67,6 +67,7 @@ model User {
   goals             Goal[]
   appointments      Appointment[]
   medications       Medication[]
+  medicationLogs    MedicationLog[]
   vitals            VitalMeasurement[]
   reports           Report[]
   notifications     Notification[]
@@ -382,9 +383,37 @@ model Medication {
   name      String
   dose      String
   schedule  String
+  // Structured dose times (e.g. ["08:00", "20:00"]), used to generate
+  // today's expected doses for adherence tracking — `schedule` stays the
+  // free-text human label ("Twice daily") shown alongside it.
+  times     String[] @default([])
   remaining Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  logs MedicationLog[]
+}
+
+enum MedicationLogStatus {
+  TAKEN
+  SKIPPED
+}
+
+// One row per actually-recorded dose (taken or skipped) — a dose the user
+// hasn't acted on yet has no row at all, and is derived as PENDING/OVERDUE
+// from Medication.times at read time, not stored.
+model MedicationLog {
+  id           String              @id @default(cuid())
+  medicationId String
+  medication   Medication          @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduledFor DateTime
+  status       MedicationLogStatus
+  recordedAt   DateTime            @default(now())
+
+  @@unique([medicationId, scheduledFor])
+  @@index([userId, scheduledFor])
 }
 
 enum VitalType {
