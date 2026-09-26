@@ -179,6 +179,59 @@ worker-thread flakiness, not a code defect) — fixed by disabling file
 parallelism in `server/vitest.config.ts`; the suite is small enough that
 running sequentially costs a few seconds.
 
+**Cross-domain correlation engine + per-category safety passes (latest
+pass):** the competitive gap against Flo/Clue/MyFitnessPal/Sleep Cycle/
+Headspace/NTC/Medisafe isn't feature parity — it's that each of those
+apps treats its metric in isolation and has a documented failure mode.
+Added `server/src/modules/insights/factors.ts`, a reusable "explain
+this" engine: `explainCycleDelay` and `explainLowMood` look across a
+user's own logged sleep/nutrition/activity/hydration/stress/medication/
+weight data for a genuine deviation from *that user's own* baseline
+(never a population norm, never fired without enough history to trust
+it) and report it as a ranked, disclaimed observation — a late period
+isn't defaulted to "maybe pregnant" (pregnancy is always listed, but
+unranked and last, and skipped entirely for MENOPAUSE/POSTMENOPAUSE
+users) and a bad mood isn't defaulted to "PMS" (cycle phase is one
+possible factor among several). Wired into `CyclePage.tsx` (when a
+period is late) and `WellbeingPage.tsx` (when a logged mood is notably
+low), both collapsed by default.
+
+`cycle.service.ts#getSummary` was rewritten from a fixed "assume 28
+days, ovulate on day 14" formula (inaccurate for most people per the
+research, and actively unsafe as a contraception signal) to median/MAD
+statistics over the user's own recent cycle lengths, returned as a
+range with a `confidence` level (forced low for thin history, high
+cycle-length variance, or `PERIMENOPAUSE`) instead of a false-precision
+single date. A persistent "not a birth control method" disclaimer now
+renders wherever the fertile-window estimate shows, and the cycle-day
+log modal collapses pain/symptoms/notes behind an optional disclosure
+(period/flow only is mandatory) to reduce daily-tracking burden.
+
+Nutrition, sleep, medications, wellbeing and activity each got a
+smaller, targeted pass rather than a rebuild: Nutrition gained a
+`GET /nutrition/recent-meals`-backed "log again" chip row (the
+research's #1 named cause of tracking-fatigue churn is retyping every
+field every time) and an honesty caption on totals — deliberately
+*not* a calorie goal or color-coded/streak mechanic, since the codebase
+already had none of that and the research is explicit that shame-based
+feedback drives disordered-eating risk. Sleep got copy fixes so its
+bedtime-`consistencyScore` and 1-5 quality rating can't read as a
+device "verdict" (orthosomnia). Medications gained the one genuine
+missing capability in this set — structured `times` + a new
+`MedicationLog` model for real TAKEN/SKIPPED/OVERDUE tracking and a
+rolling adherence %, in-app only (no push infra, stated as such in the
+UI). Wellbeing gained a no-audio guided box-breathing pacer
+(`src/components/BreathingExercise.tsx`) offered alongside the low-mood
+explainer. Activity gained a small static library of guided-routine
+templates (`activityTemplates.ts`) and a dismissible, skippable
+lower-intensity suggestion during the menstrual phase.
+
+Verified via 15 new backend integration tests (regular vs. irregular
+cycles, perimenopause, insufficient-data handling, pregnancy
+suppression, baseline-deviation detection, medication adherence math
+including a retroactive-same-day-log edge case) plus live browser
+verification of every new surface against a seeded dev database.
+
 Known concrete defects to fix as part of any related work:
 - No `robots.txt`/`sitemap.xml`, no favicon files, no legal pages
   (privacy/terms/cookies), no SEO metadata per route (single static
