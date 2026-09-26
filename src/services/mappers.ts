@@ -433,6 +433,7 @@ interface ApiMedication {
   name: string;
   dose: string;
   schedule: string;
+  times: string[];
   remaining: number | null;
 }
 

@@ -12,23 +12,37 @@ import { Input } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { useApp } from "@/context/AppContext";
-import type { Appointment, Medication, VitalMeasurement } from "@/types";
-import { Pill, CalendarClock, Plus, Pencil, Trash2 } from "lucide-react";
+import type { Appointment, Medication, MedicationAdherence, MedicationDose, VitalMeasurement } from "@/types";
+import { Pill, CalendarClock, Plus, Pencil, Trash2, Check, X as XIcon } from "lucide-react";
 
 interface MedFormValues {
   name: string;
   dose: string;
   schedule: string;
+  times: string[];
   remaining: string;
 }
 
 function emptyMedForm(): MedFormValues {
-  return { name: "", dose: "", schedule: "", remaining: "" };
+  return { name: "", dose: "", schedule: "", times: [], remaining: "" };
 }
 
 function medToForm(m: Medication): MedFormValues {
-  return { name: m.name, dose: m.dose, schedule: m.schedule, remaining: m.remaining !== undefined ? String(m.remaining) : "" };
+  return {
+    name: m.name,
+    dose: m.dose,
+    schedule: m.schedule,
+    times: m.times ?? [],
+    remaining: m.remaining !== undefined ? String(m.remaining) : "",
+  };
 }
+
+const DOSE_STATUS_LABEL: Record<MedicationDose["status"], string> = {
+  PENDING: "Due later today",
+  OVERDUE: "Overdue",
+  TAKEN: "Taken",
+  SKIPPED: "Skipped",
+};
 
 interface ApptFormValues {
   title: string;
@@ -53,8 +67,24 @@ export default function HealthPage() {
   const [appts, setAppts] = useState<Appointment[] | null>(null);
   const [meds, setMeds] = useState<Medication[] | null>(null);
   const [vitals, setVitals] = useState<VitalMeasurement[] | null>(null);
+  const [todayDoses, setTodayDoses] = useState<MedicationDose[]>([]);
+  const [adherence, setAdherence] = useState<MedicationAdherence | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const toast = useToast();
+
+  function refreshToday() {
+    healthService.getTodayMedications().then(setTodayDoses);
+    healthService.getAdherence(7).then(setAdherence);
+  }
+
+  async function markDose(dose: MedicationDose, status: "TAKEN" | "SKIPPED") {
+    try {
+      await healthService.logMedicationDose(dose.medicationId, dose.scheduledFor, status);
+      refreshToday();
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't update that dose. Please try again.", { tone: "error" });
+    }
+  }
 
   const [medModal, setMedModal] = useState<Medication | "new" | null>(null);
   const [medForm, setMedForm] = useState<MedFormValues>(emptyMedForm());
@@ -72,6 +102,7 @@ export default function HealthPage() {
     healthService.getAppointments().then(setAppts);
     healthService.getMedications().then(setMeds);
     healthService.getVitals().then(setVitals);
+    refreshToday();
   }, []);
 
   if (!appts || !meds || !vitals) return <LoadingState label="Loading your health" />;
@@ -116,6 +147,7 @@ export default function HealthPage() {
       name: medForm.name.trim(),
       dose: medForm.dose.trim(),
       schedule: medForm.schedule.trim(),
+      times: medForm.times.filter(Boolean),
       remaining: medForm.remaining !== "" ? Number(medForm.remaining) : undefined,
     };
     setMedSaving(true);
@@ -129,6 +161,7 @@ export default function HealthPage() {
         setMeds((m) => (m ? m.map((x) => (x.id === updated.id ? updated : x)) : m));
         toast.show("Medicine updated");
       }
+      refreshToday();
       setMedModal(null);
     } catch (err) {
       toast.show(err instanceof Error ? err.message : "Couldn't save that medicine. Please try again.", { tone: "error" });
@@ -143,6 +176,7 @@ export default function HealthPage() {
     try {
       await healthService.deleteMedication(id);
       setMeds((m) => (m ? m.filter((x) => x.id !== id) : m));
+      refreshToday();
       toast.show("Medicine deleted");
     } catch (err) {
       toast.show(err instanceof Error ? err.message : "Couldn't delete that medicine. Please try again.", { tone: "error" });
@@ -244,6 +278,31 @@ export default function HealthPage() {
         <Input label="Dose" placeholder="e.g. 500mg" value={medForm.dose} onChange={(e) => setMedForm((f) => ({ ...f, dose: e.target.value }))} error={medErrors.dose} required />
         <Input label="Schedule" placeholder="e.g. Every morning" value={medForm.schedule} onChange={(e) => setMedForm((f) => ({ ...f, schedule: e.target.value }))} error={medErrors.schedule} required />
         <Input label="Remaining (optional)" type="number" min={0} value={medForm.remaining} onChange={(e) => setMedForm((f) => ({ ...f, remaining: e.target.value }))} error={medErrors.remaining} />
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium senior:text-lg">Reminder times (optional)</span>
+          <p className="text-xs text-[var(--w360-text-muted)]">Shown in-app as due/overdue when you open Women360 — not a push notification.</p>
+          {medForm.times.map((t, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                type="time"
+                value={t}
+                onChange={(e) => setMedForm((f) => ({ ...f, times: f.times.map((x, idx) => (idx === i ? e.target.value : x)) }))}
+                className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setMedForm((f) => ({ ...f, times: f.times.filter((_, idx) => idx !== i) }))}
+                aria-label="Remove this reminder time"
+                className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-[var(--w360-text-muted)] hover:text-red-600"
+              >
+                <XIcon size={16} />
+              </button>
+            </div>
+          ))}
+          <Button type="button" variant="secondary" size="sm" className="w-fit" onClick={() => setMedForm((f) => ({ ...f, times: [...f.times, "08:00"] }))}>
+            <Plus size={14} /> Add a reminder time
+          </Button>
+        </div>
         <Button type="submit" disabled={medSaving}>{medSaving ? "Saving…" : "Save medicine"}</Button>
       </form>
     </Modal>
@@ -328,6 +387,46 @@ export default function HealthPage() {
                 <div className="flex justify-end">
                   <Button size="sm" variant="secondary" onClick={openAddMed}><Plus size={15} /> Add medicine</Button>
                 </div>
+                {todayDoses.length > 0 && (
+                  <Card>
+                    <CardBody className="pt-5 flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium senior:text-lg">Today's doses</p>
+                        {adherence?.pct !== null && adherence !== null && (
+                          <span className="text-xs text-[var(--w360-text-muted)]">{adherence.pct}% taken, last 7 days</span>
+                        )}
+                      </div>
+                      {todayDoses.map((d) => (
+                        <div key={`${d.medicationId}-${d.scheduledFor}`} className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{d.medicationName} · {d.dose}</p>
+                            <p className={`text-xs mt-0.5 ${d.status === "OVERDUE" ? "text-red-600 dark:text-red-400" : "text-[var(--w360-text-muted)]"}`}>
+                              {new Date(d.scheduledFor).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · {DOSE_STATUS_LABEL[d.status]}
+                            </p>
+                          </div>
+                          {(d.status === "PENDING" || d.status === "OVERDUE") && (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                onClick={() => markDose(d, "TAKEN")}
+                                aria-label={`Mark ${d.medicationName} as taken`}
+                                className="p-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[var(--w360-text-muted)] hover:text-emerald-600"
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                onClick={() => markDose(d, "SKIPPED")}
+                                aria-label={`Mark ${d.medicationName} as skipped`}
+                                className="p-1.5 rounded hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--w360-text-muted)]"
+                              >
+                                <XIcon size={16} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </CardBody>
+                  </Card>
+                )}
                 {meds.length === 0 ? (
                   <EmptyState title="No medicines added yet" description="Add a medicine to keep track of your dose and schedule." />
                 ) : (
