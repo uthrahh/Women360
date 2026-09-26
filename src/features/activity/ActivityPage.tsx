@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { activityService } from "@/services/activityService";
-import type { ActivitySummary } from "@/types";
+import { cycleService } from "@/services/cycleService";
+import type { ActivitySummary, CycleSummary } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Button } from "@/components/ui/Button";
@@ -11,20 +12,32 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import type { ActivityEntry } from "@/types";
+import { ACTIVITY_TEMPLATES, LOW_INTENSITY_TEMPLATES, type ActivityTemplate } from "./activityTemplates";
 
 export default function ActivityPage() {
   const [data, setData] = useState<ActivitySummary | null>(null);
+  const [cycle, setCycle] = useState<CycleSummary | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [prefill, setPrefill] = useState<ActivityTemplate | null>(null);
+  const [formKey, setFormKey] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<ActivityEntry | null>(null);
+  const [suggestionDismissed, setSuggestionDismissed] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
     activityService.getSummary().then(setData);
+    cycleService.getSummary().then(setCycle);
   }, []);
 
   if (!data) return <LoadingState label="Loading activity" />;
+
+  function openAdd(template?: ActivityTemplate) {
+    setPrefill(template ?? null);
+    setFormKey((k) => k + 1);
+    setAddOpen(true);
+  }
 
   function handleAdd(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -70,8 +83,44 @@ export default function ActivityPage() {
           <h1 className="font-display text-3xl font-semibold">Activity</h1>
           <p className="text-[var(--w360-text-muted)] mt-1">Steps, workouts and movement, all in one place.</p>
         </div>
-        <Button onClick={() => setAddOpen(true)}><Plus size={16} /> Add activity</Button>
+        <Button onClick={() => openAdd()}><Plus size={16} /> Add activity</Button>
       </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-[var(--w360-text-muted)]">Quick log:</span>
+        {ACTIVITY_TEMPLATES.map((t) => (
+          <button
+            key={t.label}
+            onClick={() => openAdd(t)}
+            className="text-xs px-3 py-1.5 rounded-full border border-[var(--w360-border)] hover:border-maroon-400 hover:text-maroon-700 dark:hover:text-maroon-300 transition-colors senior:text-sm"
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {cycle?.phase === "menstrual" && !suggestionDismissed && (
+        <Card>
+          <CardBody className="pt-5 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium senior:text-base">Lower-intensity days can feel better right now</p>
+              <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">
+                Just a suggestion based on your cycle — a walk, stretch or yoga session, or skip it entirely.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button variant="secondary" size="sm" onClick={() => openAdd(LOW_INTENSITY_TEMPLATES[0])}>See options</Button>
+              <button
+                onClick={() => setSuggestionDismissed(true)}
+                aria-label="Dismiss this suggestion"
+                className="p-1.5 rounded hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--w360-text-muted)]"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       <div className="grid sm:grid-cols-2 gap-4">
         <Card>
@@ -143,15 +192,15 @@ export default function ActivityPage() {
       </section>
 
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add activity" size="sm">
-        <form className="flex flex-col gap-4" onSubmit={handleAdd}>
-          <Input label="Activity type" name="type" placeholder="e.g. Brisk walk" required />
-          <Input label="Duration (minutes)" name="duration" type="number" min={1} placeholder="e.g. 30" required />
+        <form key={formKey} className="flex flex-col gap-4" onSubmit={handleAdd}>
+          <Input label="Activity type" name="type" defaultValue={prefill?.type ?? ""} placeholder="e.g. Brisk walk" required />
+          <Input label="Duration (minutes)" name="duration" type="number" min={1} defaultValue={prefill ? String(prefill.duration) : ""} placeholder="e.g. 30" required />
           <div className="flex flex-col gap-1.5">
             <label htmlFor="intensity" className="text-sm font-medium">Intensity</label>
             <select
               id="intensity"
               name="intensity"
-              defaultValue="moderate"
+              defaultValue={prefill?.intensity ?? "moderate"}
               className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg senior:py-3.5"
             >
               <option value="low">Low</option>
