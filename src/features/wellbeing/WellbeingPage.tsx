@@ -3,17 +3,20 @@ import { wellbeingService } from "@/services/wellbeingService";
 import type { WellbeingEntry } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 import { LoadingState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { MOOD_LABELS } from "@/services/mappers";
 import { insightsService } from "@/services/insightsService";
 import { ExplainThisCard } from "@/components/ExplainThisCard";
+import { BreathingExercise } from "@/components/BreathingExercise";
 
 export default function WellbeingPage() {
   const [data, setData] = useState<WellbeingEntry[] | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [showLowMoodHelp, setShowLowMoodHelp] = useState(false);
+  const [breathingOpen, setBreathingOpen] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -85,12 +88,27 @@ export default function WellbeingPage() {
       </Card>
 
       {showLowMoodHelp && (
-        <ExplainThisCard
-          title="Not feeling great today?"
-          buttonLabel="See possible reasons"
-          fetchReport={() => insightsService.explainLowMood()}
-        />
+        <>
+          <ExplainThisCard
+            title="Not feeling great today?"
+            buttonLabel="See possible reasons"
+            fetchReport={() => insightsService.explainLowMood()}
+          />
+          <Card>
+            <CardBody className="pt-5 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium senior:text-base">Want a moment to reset?</p>
+                <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">A short guided breathing exercise, no audio needed.</p>
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => setBreathingOpen(true)}>Try it</Button>
+            </CardBody>
+          </Card>
+        </>
       )}
+
+      <Modal open={breathingOpen} onClose={() => setBreathingOpen(false)} title="Breathing exercise" size="sm">
+        <BreathingExercise />
+      </Modal>
 
       <Card>
         <CardBody className="pt-5">
