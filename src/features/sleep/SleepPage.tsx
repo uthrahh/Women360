@@ -139,6 +139,9 @@ export default function SleepPage() {
           <p className="text-xs text-[var(--w360-text-muted)] senior:text-sm" aria-live="polite">
             {form.quality} — {SLEEP_QUALITY_LABELS[form.quality]}
           </p>
+          <p className="text-xs text-[var(--w360-text-muted)] italic">
+            This is your own rating — trust how you actually feel over any number.
+          </p>
         </fieldset>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="sleep-notes" className="text-sm font-medium">Notes (optional)</label>
@@ -191,7 +194,10 @@ export default function SleepPage() {
       <Card>
         <CardBody className="pt-5">
           <p className="text-sm font-medium mb-1">This week</p>
-          <p className="text-xs text-[var(--w360-text-muted)] mb-4">Bedtime {data.bedtime} · Consistency {data.consistencyScore}%</p>
+          <p className="text-xs text-[var(--w360-text-muted)]">Bedtime {data.bedtime} · Consistency {data.consistencyScore}%</p>
+          <p className="text-[11px] text-[var(--w360-text-muted)] italic mb-4">
+            How regular your bedtime has been — not a judgment of your sleep quality.
+          </p>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.weeklyHours}>
