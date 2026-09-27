@@ -15,10 +15,53 @@ import { Droplet, Apple, Plus, Pencil, Trash2 } from "lucide-react";
 
 const HYDRATION_STEP_ML = 250;
 
+// A fixed, unit-labeled vocabulary for how a meal was measured — replaces a
+// free-text "e.g. 1 bowl" field, which is exactly the kind of unverified,
+// inconsistent entry nutrition-tracking research flags as a data-quality
+// problem (one person's "1 bowl" is another's "2 bowls" for the same food).
+// Units that naturally pluralize get an "s" in the composed/displayed
+// string when the amount isn't 1; abbreviations (g, ml, tbsp, tsp) don't.
+const SERVING_UNITS = [
+  { value: "serving", label: "serving", plural: "servings" },
+  { value: "cup", label: "cup", plural: "cups" },
+  { value: "bowl", label: "bowl", plural: "bowls" },
+  { value: "plate", label: "plate", plural: "plates" },
+  { value: "glass", label: "glass", plural: "glasses" },
+  { value: "piece", label: "piece", plural: "pieces" },
+  { value: "slice", label: "slice", plural: "slices" },
+  { value: "tbsp", label: "tablespoon (tbsp)", plural: "tbsp" },
+  { value: "tsp", label: "teaspoon (tsp)", plural: "tsp" },
+  { value: "g", label: "gram (g)", plural: "g" },
+  { value: "ml", label: "milliliter (ml)", plural: "ml" },
+] as const;
+const DEFAULT_SERVING_UNIT = "serving";
+
+function formatServings(amount: string, unit: string): string {
+  const n = Number(amount);
+  const def = SERVING_UNITS.find((u) => u.value === unit) ?? SERVING_UNITS[0];
+  const word = n === 1 || Number.isNaN(n) ? def.label.replace(/\s*\(.*\)/, "") : def.plural;
+  return `${amount} ${word}`;
+}
+
+// Best-effort parse of a legacy or composed "servings" string back into an
+// amount + a known unit, so existing meals (including ones logged before
+// this structure existed) still open cleanly in the edit form. A quantity
+// that doesn't match a known unit falls back to a generic "serving" rather
+// than leaving the amount field holding non-numeric text.
+function parseServings(servings: string): { amount: string; unit: string } {
+  const match = /^(\d+(?:\.\d+)?)\s*(.*)$/.exec(servings.trim());
+  if (!match) return { amount: "1", unit: DEFAULT_SERVING_UNIT };
+  const amount = match[1];
+  const rest = match[2].trim().toLowerCase();
+  const found = SERVING_UNITS.find((u) => u.value === rest || u.plural === rest);
+  return { amount, unit: found?.value ?? DEFAULT_SERVING_UNIT };
+}
+
 interface MealFormValues {
   name: string;
   time: string; // 24-hour "HH:MM" for the native input
-  servings: string;
+  servingAmount: string;
+  servingUnit: string;
   calories: string;
   protein: string;
   fibre: string;
@@ -28,14 +71,16 @@ interface MealFormValues {
 }
 
 function emptyForm(): MealFormValues {
-  return { name: "", time: "12:00", servings: "", calories: "", protein: "", fibre: "", carbs: "", fat: "", notes: "" };
+  return { name: "", time: "12:00", servingAmount: "1", servingUnit: DEFAULT_SERVING_UNIT, calories: "", protein: "", fibre: "", carbs: "", fat: "", notes: "" };
 }
 
 function mealToForm(m: MealEntry): MealFormValues {
+  const { amount, unit } = parseServings(m.servings);
   return {
     name: m.name,
     time: to24Hour(m.time),
-    servings: m.servings,
+    servingAmount: amount,
+    servingUnit: unit,
     calories: String(m.calories),
     protein: m.protein ? String(m.protein) : "",
     fibre: m.fibre ? String(m.fibre) : "",
@@ -86,7 +131,10 @@ export default function NutritionPage() {
   function validate(values: MealFormValues): Record<string, string> {
     const errs: Record<string, string> = {};
     if (!values.name.trim()) errs.name = "Enter a meal or food name.";
-    if (!values.servings.trim()) errs.servings = "Enter a quantity, e.g. \"1 bowl\".";
+    const amount = Number(values.servingAmount);
+    if (values.servingAmount === "" || Number.isNaN(amount) || amount <= 0) {
+      errs.servingAmount = "Enter an amount greater than 0.";
+    }
     if (!values.time) errs.time = "Enter a time.";
     const calories = Number(values.calories);
     if (values.calories === "" || Number.isNaN(calories) || calories < 0) {
@@ -116,7 +164,7 @@ export default function NutritionPage() {
     const meal = {
       name: form.name.trim(),
       time: to12Hour(form.time),
-      servings: form.servings.trim(),
+      servings: formatServings(form.servingAmount, form.servingUnit),
       calories: Number(form.calories),
       protein: form.protein ? Number(form.protein) : 0,
       fibre: form.fibre ? Number(form.fibre) : 0,
@@ -276,9 +324,32 @@ export default function NutritionPage() {
       <Modal open={editingMeal !== null} onClose={() => setEditingMeal(null)} title={editingMeal === "new" ? "Add meal" : "Edit meal"} size="sm">
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <Input label="Meal / food name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} error={errors.name} required />
+          <Input label="Time" type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))} error={errors.time} required />
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Time" type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))} error={errors.time} required />
-            <Input label="Quantity" placeholder="e.g. 1 bowl" value={form.servings} onChange={(e) => setForm((f) => ({ ...f, servings: e.target.value }))} error={errors.servings} required />
+            <Input
+              label="Amount"
+              type="number"
+              min={0.25}
+              step={0.25}
+              inputMode="decimal"
+              value={form.servingAmount}
+              onChange={(e) => setForm((f) => ({ ...f, servingAmount: e.target.value }))}
+              error={errors.servingAmount}
+              required
+            />
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="serving-unit" className="text-sm font-medium senior:text-lg">Unit</label>
+              <select
+                id="serving-unit"
+                value={form.servingUnit}
+                onChange={(e) => setForm((f) => ({ ...f, servingUnit: e.target.value }))}
+                className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg senior:py-3.5"
+              >
+                {SERVING_UNITS.map((u) => (
+                  <option key={u.value} value={u.value}>{u.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <Input label="Calories (kcal)" type="number" min={0} step={0.1} inputMode="decimal" value={form.calories} onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))} error={errors.calories} hint="Up to one decimal place, e.g. 420.5" required />
           <div className="grid grid-cols-2 gap-3">
