@@ -106,6 +106,7 @@ export const reportsService = {
       hasData: cycleSummary.currentDay !== null,
       currentDay: cycleSummary.currentDay,
       phase: cycleSummary.phase,
+      isLate: cycleSummary.isLate,
       averageCycleLengthDays: cycleSummary.cycleLength,
       averagePeriodLengthDays: cycleSummary.periodLength,
       estimatedNextPeriodDate: cycleSummary.nextPeriodDate,

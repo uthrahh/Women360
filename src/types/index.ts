@@ -42,9 +42,17 @@ export interface CycleDay {
 export interface CycleSummary {
   // null for a brand-new user who hasn't logged any cycle data yet.
   currentDay: number | null;
-  phase: "menstrual" | "follicular" | "ovulation" | "luteal" | null;
+  // "late" once today has passed the predicted range with no new period
+  // logged — never reported as "luteal" indefinitely.
+  phase: "menstrual" | "follicular" | "ovulation" | "luteal" | "late" | null;
+  isLate: boolean;
+  daysLate: number;
   cycleLength: number;
   periodLength: number;
+  // The average of the user's own logged period lengths when there's at
+  // least one completed period, null otherwise (periodLength then falls
+  // back to the CycleProfile value).
+  loggedPeriodLength: number | null;
   nextPeriodDate: string | null;
   // A range, not a false-precise single date — width reflects how
   // consistent this user's own recent cycles have actually been.
@@ -59,6 +67,11 @@ export interface CycleSummary {
   irregularityNote: string | null;
   lastCycleLengths: number[];
   history: CycleDay[];
+}
+
+export interface CycleProfileSettings {
+  averageCycleLength: number;
+  averagePeriodLength: number;
 }
 
 export interface MealEntry {
@@ -247,6 +260,7 @@ export interface HealthReportSnapshot {
     hasData: boolean;
     currentDay: number | null;
     phase: string | null;
+    isLate: boolean;
     averageCycleLengthDays: number;
     averagePeriodLengthDays: number;
     estimatedNextPeriodDate: string | null;

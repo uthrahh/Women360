@@ -1,18 +1,19 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { cycleService } from "@/services/cycleService";
 import { localDateISO } from "@/services/mappers";
-import type { CycleSummary } from "@/types";
+import type { CycleDay, CycleSummary } from "@/types";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Tabs } from "@/components/ui/Tabs";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useApp } from "@/context/AppContext";
-import { Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings, Trash2, X } from "lucide-react";
 import { ExplainThisCard } from "@/components/ExplainThisCard";
 import { insightsService } from "@/services/insightsService";
 
@@ -38,6 +39,8 @@ const CONTRACEPTION_DISCLAIMER =
   "Not a birth control method — this is an estimate, not a reliable way to prevent or plan pregnancy.";
 
 const SYMPTOM_OPTIONS = ["Cramps", "Fatigue", "Headache", "Bloating", "Tender breasts", "Backache"];
+const MAX_SYMPTOMS = 30;
+const MAX_SYMPTOM_LENGTH = 60;
 
 // Once a woman has logged at least one entry, the backend fills in
 // currentDay/phase/nextPeriodDate — this narrows those three fields so
@@ -48,15 +51,44 @@ type PopulatedCycleSummary = CycleSummary & {
   nextPeriodDate: string;
 };
 
+interface LogFormState {
+  isPeriod: boolean;
+  flow: "" | "spotting" | "light" | "medium" | "heavy";
+  pain: number | null;
+  mood: string;
+  energy: number | null;
+  symptoms: string[];
+  notes: string;
+}
+
+function emptyLogForm(): LogFormState {
+  return { isPeriod: false, flow: "", pain: null, mood: "", energy: null, symptoms: [], notes: "" };
+}
+
+function dayToLogForm(day: CycleDay): LogFormState {
+  return {
+    isPeriod: day.isPeriod,
+    flow: day.flow ?? "",
+    pain: day.pain ?? null,
+    mood: day.mood ?? "",
+    energy: day.energy ?? null,
+    symptoms: day.symptoms ?? [],
+    notes: day.notes ?? "",
+  };
+}
+
 export default function CyclePage() {
   const { senior } = useApp();
   const [cycle, setCycle] = useState<CycleSummary | null>(null);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [confirmDeleteDate, setConfirmDeleteDate] = useState<string | null>(null);
+  const [logForm, setLogForm] = useState<LogFormState>(emptyLogForm());
   const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const [customSymptomInput, setCustomSymptomInput] = useState("");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkDates, setBulkDates] = useState<string[]>(["", ""]);
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -69,33 +101,77 @@ export default function CyclePage() {
   const existingDay = editingDate ? cycle.history.find((d) => d.date === editingDate) : undefined;
   const isToday = editingDate === localDateISO();
   // Essentials-first logging: period/flow is the only mandatory field, and
-  // pain/symptoms/notes stay tucked away unless the day already has some
-  // (editing) or the woman actively wants to add more — daily symptom
-  // tracking can itself become a source of anxiety, so nothing beyond flow
-  // is asked for by default.
-  const showDetails = detailsExpanded || Boolean(existingDay?.pain || existingDay?.symptoms?.length || existingDay?.notes);
+  // pain/mood/energy/symptoms/notes stay tucked away unless the day already
+  // has some (editing) or the woman actively wants to add more — daily
+  // symptom tracking can itself become a source of anxiety, so nothing
+  // beyond flow is asked for by default.
+  const showDetails =
+    detailsExpanded ||
+    Boolean(existingDay?.pain !== undefined || existingDay?.energy !== undefined || existingDay?.mood || existingDay?.symptoms?.length || existingDay?.notes);
+
+  function openLogModal(date: string) {
+    const day = cycle!.history.find((d) => d.date === date);
+    setLogForm(day ? dayToLogForm(day) : emptyLogForm());
+    setDetailsExpanded(false);
+    setCustomSymptomInput("");
+    setEditingDate(date);
+  }
+
+  function toggleSymptom(symptom: string) {
+    setLogForm((f) => ({
+      ...f,
+      symptoms: f.symptoms.includes(symptom) ? f.symptoms.filter((s) => s !== symptom) : [...f.symptoms, symptom],
+    }));
+  }
+
+  function addCustomSymptom() {
+    const value = customSymptomInput.trim();
+    if (!value) return;
+    if (value.length > MAX_SYMPTOM_LENGTH) {
+      toast.show(`Keep symptoms under ${MAX_SYMPTOM_LENGTH} characters.`, { tone: "error" });
+      return;
+    }
+    if (logForm.symptoms.length >= MAX_SYMPTOMS) {
+      toast.show(`You can log up to ${MAX_SYMPTOMS} symptoms for one day.`, { tone: "error" });
+      return;
+    }
+    if (logForm.symptoms.some((s) => s.toLowerCase() === value.toLowerCase())) {
+      setCustomSymptomInput("");
+      return;
+    }
+    setLogForm((f) => ({ ...f, symptoms: [...f.symptoms, value] }));
+    setCustomSymptomInput("");
+  }
+
+  function removeSymptom(symptom: string) {
+    setLogForm((f) => ({ ...f, symptoms: f.symptoms.filter((s) => s !== symptom) }));
+  }
 
   function handleLog(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!editingDate) return;
-    const form = new FormData(e.currentTarget);
-    const flow = String(form.get("flow") ?? "") as "spotting" | "light" | "medium" | "heavy" | "";
-    const pain = Number(form.get("pain") ?? 0);
-    const symptoms = SYMPTOM_OPTIONS.filter((s) => form.get(`symptom_${s}`));
-    const notes = String(form.get("notes") ?? "");
-    const date = editingDate;
-
-    cycleService.logDay({ date, flow: flow || undefined, pain, symptoms, notes }).then(
-      () => {
-        // Re-fetch rather than hand-patch local state: logging the very
-        // first entry changes currentDay/phase/nextPeriodDate too, not just
-        // one day's history item.
-        cycleService.getSummary().then(setCycle);
-        setEditingDate(null);
-        toast.show(existingDay ? "Cycle entry updated" : "Cycle entry saved");
-      },
-      (err) => toast.show(err instanceof Error ? err.message : "Couldn't save that entry. Please try again.", { tone: "error" })
-    );
+    cycleService
+      .logDay({
+        date: editingDate,
+        isPeriod: logForm.isPeriod,
+        flow: logForm.flow || undefined,
+        pain: logForm.pain ?? undefined,
+        mood: logForm.mood.trim() || undefined,
+        energy: logForm.energy ?? undefined,
+        symptoms: logForm.symptoms,
+        notes: logForm.notes.trim() || undefined,
+      })
+      .then(
+        () => {
+          // Re-fetch rather than hand-patch local state: logging the very
+          // first entry changes currentDay/phase/nextPeriodDate too, not
+          // just one day's history item.
+          cycleService.getSummary().then(setCycle);
+          setEditingDate(null);
+          toast.show(existingDay ? "Cycle entry updated" : "Cycle entry saved");
+        },
+        (err) => toast.show(err instanceof Error ? err.message : "Couldn't save that entry. Please try again.", { tone: "error" })
+      );
   }
 
   function openBulkAdd() {
@@ -165,15 +241,26 @@ export default function CyclePage() {
       : `${existingDay ? "Edit" : "Log"} entry for ${new Date(editingDate).toLocaleDateString(undefined, { month: "long", day: "numeric" })}`
     : "";
 
+  const customSymptoms = logForm.symptoms.filter((s) => !SYMPTOM_OPTIONS.includes(s));
+
   const logModal = (
     <Modal open={editingDate !== null} onClose={() => setEditingDate(null)} title={modalTitle} size="sm">
       <form className="flex flex-col gap-4" onSubmit={handleLog}>
+        <label className="flex items-center gap-2.5 text-sm font-medium senior:text-lg">
+          <input
+            type="checkbox"
+            checked={logForm.isPeriod}
+            onChange={(e) => setLogForm((f) => ({ ...f, isPeriod: e.target.checked }))}
+            className="w-5 h-5 accent-[#6B1D30]"
+          />
+          Period day
+        </label>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="flow" className="text-sm font-medium senior:text-lg">Flow</label>
           <select
             id="flow"
-            name="flow"
-            defaultValue={existingDay?.flow ?? ""}
+            value={logForm.flow}
+            onChange={(e) => setLogForm((f) => ({ ...f, flow: e.target.value as LogFormState["flow"] }))}
             className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg senior:py-3.5"
           >
             <option value="">None today</option>
@@ -182,31 +269,82 @@ export default function CyclePage() {
             <option value="medium">Medium</option>
             <option value="heavy">Heavy</option>
           </select>
+          {logForm.flow === "spotting" && (
+            <p className="text-xs text-[var(--w360-text-muted)]">
+              Spotting alone won't count as the start of a new period in your predictions.
+            </p>
+          )}
         </div>
         {showDetails ? (
           <>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="pain" className="text-sm font-medium senior:text-lg">Pain level (0–4)</label>
-              <input id="pain" name="pain" type="range" min={0} max={4} defaultValue={existingDay?.pain ?? 0} className="accent-[#6B1D30]" />
-            </div>
+            <ScalePicker label="Pain level (0–4)" value={logForm.pain} onChange={(v) => setLogForm((f) => ({ ...f, pain: v }))} />
+            <ScalePicker label="Energy (0–4)" value={logForm.energy} onChange={(v) => setLogForm((f) => ({ ...f, energy: v }))} />
+            <Input
+              label="Mood (optional)"
+              placeholder="e.g. irritable, calm, anxious"
+              value={logForm.mood}
+              onChange={(e) => setLogForm((f) => ({ ...f, mood: e.target.value }))}
+              maxLength={60}
+            />
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium senior:text-lg">Symptoms</span>
               <div className="grid grid-cols-2 gap-2">
                 {SYMPTOM_OPTIONS.map((s) => (
                   <label key={s} className="flex items-center gap-2 text-sm senior:text-base">
-                    <input type="checkbox" name={`symptom_${s}`} defaultChecked={existingDay?.symptoms?.includes(s)} className="w-4 h-4 accent-[#6B1D30]" />
+                    <input
+                      type="checkbox"
+                      checked={logForm.symptoms.includes(s)}
+                      onChange={() => toggleSymptom(s)}
+                      className="w-4 h-4 accent-[#6B1D30]"
+                    />
                     {s}
                   </label>
                 ))}
+              </div>
+              {customSymptoms.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {customSymptoms.map((s) => (
+                    <span
+                      key={s}
+                      className="inline-flex items-center gap-1 text-xs pl-2.5 pr-1.5 py-1 rounded-full bg-maroon-50 dark:bg-white/10 text-maroon-800 dark:text-maroon-200"
+                    >
+                      {s}
+                      <button
+                        type="button"
+                        onClick={() => removeSymptom(s)}
+                        aria-label={`Remove symptom ${s}`}
+                        className="p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <input
+                  value={customSymptomInput}
+                  onChange={(e) => setCustomSymptomInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addCustomSymptom();
+                    }
+                  }}
+                  placeholder="Add another symptom"
+                  maxLength={MAX_SYMPTOM_LENGTH}
+                  className="flex-1 px-3 py-2 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-base"
+                />
+                <Button type="button" variant="secondary" size="sm" onClick={addCustomSymptom}>Add</Button>
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="notes" className="text-sm font-medium senior:text-lg">Notes (optional)</label>
               <textarea
                 id="notes"
-                name="notes"
                 rows={2}
-                defaultValue={existingDay?.notes ?? ""}
+                value={logForm.notes}
+                onChange={(e) => setLogForm((f) => ({ ...f, notes: e.target.value }))}
                 className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-sm senior:text-lg"
               />
             </div>
@@ -217,7 +355,7 @@ export default function CyclePage() {
             onClick={() => setDetailsExpanded(true)}
             className="text-sm text-maroon-700 dark:text-maroon-300 font-medium text-left hover:underline senior:text-lg"
           >
-            + Add pain, symptoms or a note (optional)
+            + Add pain, mood, energy, symptoms or a note (optional)
           </button>
         )}
         <div className="flex items-center justify-between gap-2">
@@ -290,6 +428,8 @@ export default function CyclePage() {
     />
   );
 
+  const settingsModal = <CycleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} onSaved={() => cycleService.getSummary().then(setCycle)} />;
+
   if (!hasData) {
     return (
       <>
@@ -298,7 +438,7 @@ export default function CyclePage() {
           description="Once you log a period, flow, or symptom, Women360 will start showing your cycle day, phase, and predictions here."
           action={
             <div className="flex flex-col sm:flex-row items-center gap-2">
-              <Button onClick={() => setEditingDate(localDateISO())}>Log today's flow & symptoms</Button>
+              <Button onClick={() => openLogModal(localDateISO())}>Log today's flow & symptoms</Button>
               <Button variant="secondary" onClick={openBulkAdd}>Add past periods instead</Button>
             </div>
           }
@@ -311,13 +451,12 @@ export default function CyclePage() {
   }
 
   const populated = cycle as PopulatedCycleSummary;
-  const isLate = populated.currentDay > populated.cycleLength + 3;
 
   if (senior.seniorMode) {
     return (
       <>
-        <SeniorCycle cycle={populated} onLog={() => setEditingDate(localDateISO())} onBulkAdd={openBulkAdd} />
-        {isLate && (
+        <SeniorCycle cycle={populated} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} />
+        {cycle.isLate && (
           <div className="max-w-xl mx-auto px-5">
             <ExplainThisCard
               title="Your period looks later than usual"
@@ -339,9 +478,9 @@ export default function CyclePage() {
         <p className="text-[var(--w360-text-muted)] mt-1">A gentle picture of where you are in your cycle.</p>
       </div>
 
-      <CycleRing cycle={populated} onLog={() => setEditingDate(localDateISO())} onBulkAdd={openBulkAdd} />
+      <CycleRing cycle={populated} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} onSettings={() => setSettingsOpen(true)} />
 
-      {isLate && (
+      {cycle.isLate && (
         <ExplainThisCard
           title="Your period looks later than usual"
           fetchReport={() => insightsService.explainCycleDelay()}
@@ -351,23 +490,64 @@ export default function CyclePage() {
       <Tabs
         tabs={[
           { id: "overview", label: "Overview", content: <OverviewTab cycle={cycle} /> },
-          { id: "calendar", label: "Calendar", content: <CalendarTab cycle={cycle} onSelectDay={setEditingDate} /> },
+          { id: "calendar", label: "Calendar", content: <MonthCalendar onSelectDay={openLogModal} /> },
           { id: "trends", label: "Trends", content: <TrendsTab cycle={cycle} /> },
         ]}
       />
       {logModal}
       {bulkModal}
       {deleteConfirm}
+      {settingsModal}
     </div>
   );
 }
 
-function CycleRing({ cycle, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary; onLog: () => void; onBulkAdd: () => void }) {
+function ScalePicker({ label, value, onChange }: { label: string; value: number | null; onChange: (v: number | null) => void }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium senior:text-lg">{label}</span>
+        {value !== null && (
+          <button type="button" onClick={() => onChange(null)} className="text-xs text-maroon-700 dark:text-maroon-300 hover:underline">
+            Clear
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-5 gap-1.5" role="radiogroup" aria-label={label}>
+        {[0, 1, 2, 3, 4].map((n) => (
+          <button
+            key={n}
+            type="button"
+            role="radio"
+            aria-checked={value === n}
+            onClick={() => onChange(n)}
+            className={`flex items-center justify-center rounded border py-2 text-sm font-semibold transition-colors senior:py-3 senior:text-base ${
+              value === n
+                ? "bg-maroon-700 border-maroon-700 text-white dark:bg-maroon-300 dark:border-maroon-300 dark:text-ink-900"
+                : "border-[var(--w360-border)] hover:border-maroon-400 text-[var(--w360-text)]"
+            }`}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-[var(--w360-text-muted)]" aria-live="polite">
+        {value === null ? "Not recorded" : `${value} of 4`}
+      </p>
+    </div>
+  );
+}
+
+function CycleRing({
+  cycle, onLog, onBulkAdd, onSettings,
+}: { cycle: PopulatedCycleSummary; onLog: () => void; onBulkAdd: () => void; onSettings: () => void }) {
   const size = 180;
   const stroke = 14;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
-  const pct = (cycle.currentDay / cycle.cycleLength) * 100;
+  // Never over-fill the ring past a full circle once a period runs long —
+  // lateness is communicated through the label below, not a broken ring.
+  const pct = Math.min(100, (cycle.currentDay / cycle.cycleLength) * 100);
   const offset = circ - (pct / 100) * circ;
 
   return (
@@ -379,17 +559,22 @@ function CycleRing({ cycle, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary; 
             <circle
               cx={size / 2} cy={size / 2} r={r} strokeWidth={stroke}
               strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-              className="stroke-maroon-600 dark:stroke-maroon-300 transition-[stroke-dashoffset] duration-700" fill="none"
+              className={`transition-[stroke-dashoffset] duration-700 ${cycle.isLate ? "stroke-amber-600 dark:stroke-amber-400" : "stroke-maroon-600 dark:stroke-maroon-300"}`}
+              fill="none"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-3xl font-display font-semibold tabular-nums">{cycle.currentDay}</span>
-            <span className="text-xs text-[var(--w360-text-muted)]">of {cycle.cycleLength} days</span>
+            <span className="text-xs text-[var(--w360-text-muted)] text-center px-2">
+              {cycle.isLate ? `${cycle.daysLate} day${cycle.daysLate === 1 ? "" : "s"} late` : `of ${cycle.cycleLength} days`}
+            </span>
           </div>
         </div>
         <div className="flex-1 flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone="accent">{PHASE_LABEL[cycle.phase]} phase</Badge>
+            <Badge tone={cycle.isLate ? "warning" : "accent"}>
+              {cycle.isLate ? "Period may be late" : `${PHASE_LABEL[cycle.phase]} phase`}
+            </Badge>
             <Badge tone={cycle.confidence === "low" ? "neutral" : "accent"}>{CONFIDENCE_LABEL[cycle.confidence]}</Badge>
           </div>
           <p className="text-sm text-[var(--w360-text-muted)]">
@@ -410,6 +595,14 @@ function CycleRing({ cycle, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary; 
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <Button variant="primary" size="sm" onClick={onLog}>Log today's flow & symptoms</Button>
             <Button variant="secondary" size="sm" onClick={onBulkAdd}>Add past periods</Button>
+            <button
+              type="button"
+              onClick={onSettings}
+              aria-label="Cycle settings"
+              className="inline-flex items-center gap-1.5 text-sm text-[var(--w360-text-muted)] hover:text-[var(--w360-text)] px-2"
+            >
+              <Settings size={15} /> Settings
+            </button>
           </div>
         </div>
       </CardBody>
@@ -418,14 +611,18 @@ function CycleRing({ cycle, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary; 
 }
 
 function OverviewTab({ cycle }: { cycle: CycleSummary }) {
-  const recent = cycle.history.slice(-7);
-  const avgCycleLength = cycle.lastCycleLengths.length
-    ? `${Math.round(cycle.lastCycleLengths.reduce((a, b) => a + b, 0) / cycle.lastCycleLengths.length)} days`
-    : "Not enough data yet";
+  // history is newest-first from the API — take the most recent 7, then
+  // reverse so the strip reads oldest-to-newest, left to right.
+  const recent = [...cycle.history].slice(0, 7).reverse();
+  const periodLengthIsLogged = cycle.loggedPeriodLength !== null;
   return (
     <div className="grid sm:grid-cols-3 gap-3">
-      <Stat label="Average cycle length" value={avgCycleLength} />
-      <Stat label="Average period length" value={`${cycle.periodLength} days`} />
+      <Stat label="Average cycle length" value={`${cycle.cycleLength} days`} />
+      <Stat
+        label="Average period length"
+        value={`${cycle.periodLength} days`}
+        note={periodLengthIsLogged ? "from your logged periods" : "a starting estimate — log a period to refine it"}
+      />
       <Stat label="Cycles tracked" value={`${cycle.lastCycleLengths.length}`} />
       <div className="sm:col-span-3">
         <Card>
@@ -448,72 +645,171 @@ function OverviewTab({ cycle }: { cycle: CycleSummary }) {
   );
 }
 
-function CalendarTab({ cycle, onSelectDay }: { cycle: CycleSummary; onSelectDay: (date: string) => void }) {
-  const days = cycle.history.slice(-35);
+function startOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+function daysInMonth(monthStart: Date): number {
+  return new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
+}
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void }) {
+  const [monthStart, setMonthStart] = useState(() => startOfMonth(new Date()));
+  const [days, setDays] = useState<CycleDay[] | null>(null);
   const today = localDateISO();
+
+  useEffect(() => {
+    setDays(null);
+    const from = localDateISO(monthStart);
+    const to = localDateISO(new Date(monthStart.getFullYear(), monthStart.getMonth(), daysInMonth(monthStart)));
+    cycleService.listEntries(from, to).then(setDays);
+  }, [monthStart]);
+
+  const dayByDate = new Map((days ?? []).map((d) => [d.date, d]));
+  const total = daysInMonth(monthStart);
+  const leadingBlanks = monthStart.getDay();
+  const cells: ({ iso: string; entry?: CycleDay } | null)[] = [
+    ...Array.from({ length: leadingBlanks }, () => null),
+    ...Array.from({ length: total }, (_, i) => {
+      const iso = localDateISO(new Date(monthStart.getFullYear(), monthStart.getMonth(), i + 1));
+      return { iso, entry: dayByDate.get(iso) };
+    }),
+  ];
 
   return (
     <Card>
       <CardBody className="pt-5">
-        <p className="text-sm text-[var(--w360-text-muted)] mb-4">Tap a day to log period, flow, pain, symptoms, mood, energy or a note.</p>
-        <div className="grid grid-cols-7 gap-2">
-          {days.map((d) => (
-            <button
-              key={d.date}
-              type="button"
-              onClick={() => onSelectDay(d.date)}
-              aria-label={`${d.date === today ? "Today, " : ""}${new Date(d.date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}${d.isPeriod ? ", period day" : ""}${d.symptoms?.length ? `, symptoms: ${d.symptoms.join(", ")}` : ""} — tap to log or edit`}
-              className={`aspect-square rounded flex flex-col items-center justify-center text-xs gap-0.5 border transition-colors ${
-                d.isPeriod
-                  ? "bg-maroon-600 text-white border-maroon-600"
-                  : "border-[var(--w360-border)] hover:border-maroon-400"
-              } ${d.date === today ? "ring-2 ring-offset-1 ring-maroon-400 dark:ring-offset-ink-900" : ""}`}
-            >
-              <span className="font-medium">{new Date(d.date).getDate()}</span>
-              {d.symptoms && d.symptoms.length > 0 && <span className="w-1 h-1 rounded-full bg-current opacity-70" />}
-            </button>
+        <div className="flex items-center justify-between mb-4">
+          <button
+            type="button"
+            onClick={() => setMonthStart((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+            aria-label="Previous month"
+            className="p-2 rounded hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--w360-text-muted)]"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <p className="text-sm font-semibold senior:text-lg" aria-live="polite">
+            {monthStart.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+          </p>
+          <button
+            type="button"
+            onClick={() => setMonthStart((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+            aria-label="Next month"
+            className="p-2 rounded hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--w360-text-muted)]"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+        <p className="text-sm text-[var(--w360-text-muted)] mb-4">Tap a day to log period, flow, pain, mood, energy, symptoms or a note.</p>
+        <div className="grid grid-cols-7 gap-1.5 text-center mb-1.5">
+          {WEEKDAY_LABELS.map((w) => (
+            <span key={w} className="text-[10px] font-medium text-[var(--w360-text-muted)]">{w}</span>
           ))}
         </div>
+        {days === null ? (
+          <div className="py-10 text-center text-sm text-[var(--w360-text-muted)]">Loading…</div>
+        ) : (
+          <div className="grid grid-cols-7 gap-1.5">
+            {cells.map((cell, i) => {
+              if (!cell) return <div key={`blank-${i}`} aria-hidden="true" />;
+              const isFuture = cell.iso > today;
+              const isToday = cell.iso === today;
+              const d = cell.entry;
+              const label = `${isToday ? "Today, " : ""}${new Date(cell.iso).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}${d?.isPeriod ? ", period day" : ""}${d?.symptoms?.length ? `, symptoms: ${d.symptoms.join(", ")}` : ""}${isFuture ? " — not yet available to log" : " — tap to log or edit"}`;
+              return (
+                <button
+                  key={cell.iso}
+                  type="button"
+                  disabled={isFuture}
+                  onClick={() => onSelectDay(cell.iso)}
+                  aria-label={label}
+                  aria-current={isToday ? "date" : undefined}
+                  className={`aspect-square rounded flex flex-col items-center justify-center text-xs gap-0.5 border transition-colors ${
+                    isFuture
+                      ? "border-transparent text-[var(--w360-text-muted)] opacity-40 cursor-not-allowed"
+                      : d?.isPeriod
+                        ? "bg-maroon-600 text-white border-maroon-600"
+                        : "border-[var(--w360-border)] hover:border-maroon-400"
+                  } ${isToday ? "ring-2 ring-offset-1 ring-maroon-400 dark:ring-offset-ink-900" : ""}`}
+                >
+                  <span className="font-medium">{new Date(cell.iso).getDate()}</span>
+                  {d?.symptoms && d.symptoms.length > 0 && <span className="w-1 h-1 rounded-full bg-current opacity-70" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </CardBody>
     </Card>
   );
 }
 
 function TrendsTab({ cycle }: { cycle: CycleSummary }) {
-  const data = cycle.lastCycleLengths.map((len, i) => ({ cycle: `C${i + 1}`, length: len }));
+  const lengths = cycle.lastCycleLengths;
+  const data = lengths.map((len, i) => ({ cycle: `C${i + 1}`, length: len }));
+
+  let trendText: string;
+  if (lengths.length < 3) {
+    trendText = "Not enough logged cycles yet to describe a trend — this needs at least 3.";
+  } else {
+    const avg = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+    const latest = lengths[lengths.length - 1];
+    const diff = Math.round(latest - avg);
+    const min = Math.min(...lengths);
+    const max = Math.max(...lengths);
+    const base = `Your last ${lengths.length} cycles have ranged from ${min} to ${max} days, averaging ${avg.toFixed(1)}`;
+    trendText =
+      Math.abs(diff) < 2
+        ? `${base} — your latest cycle (${latest} days) is close to that average.`
+        : diff > 0
+          ? `${base} — your latest cycle (${latest} days) ran ${diff} day${diff === 1 ? "" : "s"} longer than that average.`
+          : `${base} — your latest cycle (${latest} days) ran ${Math.abs(diff)} day${Math.abs(diff) === 1 ? "" : "s"} shorter than that average.`;
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      <Card>
-        <CardBody className="pt-5">
-          <p className="text-sm font-medium mb-1">Cycle length</p>
-          <p className="text-xs text-[var(--w360-text-muted)] mb-4">This pattern has stayed close to your usual range.</p>
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--w360-border)" vertical={false} />
-                <XAxis dataKey="cycle" stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} domain={[20, 35]} />
-                <Tooltip contentStyle={{ background: "var(--w360-bg-raised)", border: "1px solid var(--w360-border)", borderRadius: 8, fontSize: 13 }} />
-                <Line type="monotone" dataKey="length" stroke="#6B1D30" strokeWidth={2.5} dot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardBody>
-      </Card>
-      <EmptyState
-        title="No unusual patterns detected"
-        description="Women360 highlights changes from your own baseline here — not a diagnosis, just a nudge to pay attention if something shifts."
-      />
+      {lengths.length >= 2 && (
+        <Card>
+          <CardBody className="pt-5">
+            <p className="text-sm font-medium mb-4">Cycle length</p>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--w360-border)" vertical={false} />
+                  <XAxis dataKey="cycle" stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} domain={[20, 35]} />
+                  <Tooltip contentStyle={{ background: "var(--w360-bg-raised)", border: "1px solid var(--w360-border)", borderRadius: 8, fontSize: 13 }} />
+                  <Line type="monotone" dataKey="length" stroke="#6B1D30" strokeWidth={2.5} dot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+      {lengths.length < 3 ? (
+        <EmptyState title="Not enough data yet" description={trendText} />
+      ) : (
+        <Card>
+          <CardBody className="pt-5">
+            <p className="text-sm">{trendText}</p>
+            <p className="text-xs text-[var(--w360-text-muted)] mt-2">
+              Women360 describes patterns in your own logged data here — never a diagnosis, just a nudge to pay
+              attention if something shifts a lot.
+            </p>
+          </CardBody>
+        </Card>
+      )}
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
     <Card>
       <CardBody className="pt-5">
         <p className="text-xs text-[var(--w360-text-muted)]">{label}</p>
         <p className="text-2xl font-display font-semibold mt-1 tabular-nums">{value}</p>
+        {note && <p className="text-[11px] text-[var(--w360-text-muted)] mt-0.5">{note}</p>}
       </CardBody>
     </Card>
   );
@@ -525,7 +821,11 @@ function SeniorCycle({ cycle, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary
       <Card>
         <CardBody className="pt-6 flex flex-col items-center text-center gap-3">
           <span className="font-display text-5xl font-semibold tabular-nums">{cycle.currentDay}</span>
-          <p className="text-lg">Day {cycle.currentDay} of your cycle</p>
+          <p className="text-lg">
+            {cycle.isLate
+              ? `Your period looks about ${cycle.daysLate} day${cycle.daysLate === 1 ? "" : "s"} later than usual`
+              : `Day ${cycle.currentDay} of your cycle`}
+          </p>
           <p className="text-[var(--w360-text-muted)] text-lg">
             Next period expected{" "}
             {cycle.nextPeriodRangeStart && cycle.nextPeriodRangeEnd
@@ -539,5 +839,76 @@ function SeniorCycle({ cycle, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary
         </CardBody>
       </Card>
     </div>
+  );
+}
+
+function CycleSettingsModal({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved: () => void }) {
+  const [averageCycleLength, setAverageCycleLength] = useState("28");
+  const [averagePeriodLength, setAveragePeriodLength] = useState("5");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const toast = useToast();
+
+  useEffect(() => {
+    if (!open) return;
+    cycleService.getProfile().then((p) => {
+      setAverageCycleLength(String(p.averageCycleLength));
+      setAveragePeriodLength(String(p.averagePeriodLength));
+    });
+  }, [open]);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const cycleLen = Number(averageCycleLength);
+    const periodLen = Number(averagePeriodLength);
+    const errs: Record<string, string> = {};
+    if (!Number.isInteger(cycleLen) || cycleLen < 15 || cycleLen > 90) errs.cycleLen = "Enter a whole number of days between 15 and 90.";
+    if (!Number.isInteger(periodLen) || periodLen < 1 || periodLen > 15) errs.periodLen = "Enter a whole number of days between 1 and 15.";
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+
+    setSaving(true);
+    try {
+      await cycleService.upsertProfile({ averageCycleLength: cycleLen, averagePeriodLength: periodLen });
+      onSaved();
+      toast.show("Cycle settings saved");
+      onClose();
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't save cycle settings. Please try again.", { tone: "error" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Cycle settings" size="sm">
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        <p className="text-sm text-[var(--w360-text-muted)] senior:text-base">
+          Used as a starting estimate until you've logged a few cycles of your own — after that, your own logged
+          pattern takes over the prediction.
+        </p>
+        <Input
+          label="Average cycle length (days)"
+          type="number"
+          min={15}
+          max={90}
+          value={averageCycleLength}
+          onChange={(e) => setAverageCycleLength(e.target.value)}
+          error={errors.cycleLen}
+          required
+        />
+        <Input
+          label="Average period length (days)"
+          type="number"
+          min={1}
+          max={15}
+          value={averagePeriodLength}
+          onChange={(e) => setAveragePeriodLength(e.target.value)}
+          error={errors.periodLen}
+          required
+        />
+        <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save settings"}</Button>
+      </form>
+    </Modal>
   );
 }

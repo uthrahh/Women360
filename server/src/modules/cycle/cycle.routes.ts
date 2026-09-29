@@ -4,14 +4,23 @@ import { validate } from "@/middleware/validate";
 import { requireAuth } from "@/middleware/auth";
 import { ok, noContent } from "@/lib/response";
 import { cycleService } from "./cycle.service";
-import { cycleEntrySchema, cycleProfileSchema, dateParamSchema, listQuerySchema } from "./cycle.validation";
+import {
+  cycleEntrySchema,
+  cycleProfileSchema,
+  dateParamSchema,
+  listQuerySchema,
+  summaryQuerySchema,
+} from "./cycle.validation";
 
 export const cycleRouter = Router();
 cycleRouter.use(requireAuth);
 
 cycleRouter.get(
   "/summary",
-  asyncHandler(async (req, res) => ok(res, await cycleService.getSummary(req.user!.id)))
+  validate({ query: summaryQuerySchema }),
+  asyncHandler(async (req, res) =>
+    ok(res, await cycleService.getSummary(req.user!.id, req.query.today as string | undefined))
+  )
 );
 
 cycleRouter.get(

@@ -112,7 +112,7 @@ function StandardDashboard() {
             icon={CalendarHeart}
             label="Cycle"
             value={cycle!.currentDay !== null ? `Day ${cycle!.currentDay}` : "Log your cycle"}
-            sub={cycle!.phase ?? "Get started"}
+            sub={cycle!.isLate ? "may be late" : cycle!.phase ?? "Get started"}
             to="/app/cycle"
           />
           <SnapshotTile
