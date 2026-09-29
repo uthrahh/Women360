@@ -150,8 +150,11 @@ export function toFrontendCycleDay(entry: ApiCycleEntry): CycleDay {
 interface ApiCycleSummary {
   currentDay: number | null;
   phase: string | null;
+  isLate: boolean;
+  daysLate: number;
   cycleLength: number;
   periodLength: number;
+  loggedPeriodLength: number | null;
   nextPeriodDate: string | null;
   nextPeriodRangeStart: string | null;
   nextPeriodRangeEnd: string | null;
@@ -167,8 +170,11 @@ export function toFrontendCycleSummary(apiSummary: ApiCycleSummary): CycleSummar
   return {
     currentDay: apiSummary.currentDay,
     phase: apiSummary.phase as CycleSummary["phase"],
+    isLate: apiSummary.isLate,
+    daysLate: apiSummary.daysLate,
     cycleLength: apiSummary.cycleLength,
     periodLength: apiSummary.periodLength,
+    loggedPeriodLength: apiSummary.loggedPeriodLength,
     nextPeriodDate: toDateOnly(apiSummary.nextPeriodDate),
     nextPeriodRangeStart: toDateOnly(apiSummary.nextPeriodRangeStart),
     nextPeriodRangeEnd: toDateOnly(apiSummary.nextPeriodRangeEnd),
@@ -181,13 +187,13 @@ export function toFrontendCycleSummary(apiSummary: ApiCycleSummary): CycleSummar
   };
 }
 
-// The backend's PUT /cycle/entries/:date takes the date as a path param, and
-// defaults isPeriod to false if omitted — the frontend's log form only ever
-// sends a flow value on a period day, so we infer isPeriod from that when
-// the caller hasn't set it explicitly.
+// The backend's PUT /cycle/entries/:date takes the date as a path param.
+// isPeriod is always sent explicitly now (a real "Period day" toggle in the
+// log form) — never inferred from whether a flow level was picked, so a
+// Spotting day logged without the toggle on doesn't silently count as one.
 export function toBackendCycleEntry(entry: Partial<CycleDay>) {
   return {
-    isPeriod: entry.isPeriod ?? Boolean(entry.flow),
+    isPeriod: entry.isPeriod ?? false,
     flow: entry.flow ? upper(entry.flow) : undefined,
     pain: entry.pain,
     energy: entry.energy,

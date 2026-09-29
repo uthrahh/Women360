@@ -198,6 +198,9 @@ export function generateHealthReportPdf(report: HealthReportDetail): jsPDF {
       ["Next period expected", nextPeriodLabel],
       ["Prediction confidence", titleCase(snap.cycle.confidence)],
     ]);
+    if (snap.cycle.isLate) {
+      paragraph("This cycle has run longer than expected based on your own recent pattern.", { muted: true, size: 9 });
+    }
     if (snap.cycle.irregularityNote) paragraph(snap.cycle.irregularityNote, { muted: true, size: 9 });
     paragraph(
       "This is an estimate based on your own logged cycles, not a diagnosis, and not a birth control method — " +

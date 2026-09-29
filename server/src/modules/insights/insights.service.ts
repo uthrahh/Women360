@@ -18,7 +18,7 @@ export const insightsService = {
         prisma.activityEntry.findMany({ where: { userId, date: { gte: since } } }),
         prisma.hydrationLog.findMany({ where: { userId, date: { gte: since } } }),
         prisma.nutritionGoal.findUnique({ where: { userId } }),
-        prisma.cycleEntry.findMany({ where: { userId, date: { gte: since } } }),
+        prisma.cycleEntry.findMany({ where: { userId, date: { gte: since } }, orderBy: { date: "asc" } }),
       ]);
 
     const byDate = <T extends { date: Date }>(rows: T[]) => {

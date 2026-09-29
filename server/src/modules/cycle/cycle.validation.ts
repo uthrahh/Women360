@@ -21,4 +21,10 @@ export const listQuerySchema = z.object({
   to: z.string().date().optional(),
 });
 
+// The browser's own local calendar date, so "current cycle day" doesn't
+// undercount for a user meaningfully ahead of UTC (see cycle.service.ts).
+export const summaryQuerySchema = z.object({
+  today: z.string().date().optional(),
+});
+
 export const dateParamSchema = z.object({ date: z.string().date() });
