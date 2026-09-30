@@ -82,7 +82,7 @@ export interface CycleSummaryResult {
  * still counts toward its length, but spotting that precedes the real flow
  * does not (consistent with it not being able to start the period either).
  */
-function detectPeriods(periodDays: PeriodDayInput[]): { start: Date; end: Date }[] {
+export function detectPeriods(periodDays: PeriodDayInput[]): { start: Date; end: Date }[] {
   const sorted = [...periodDays].sort((a, b) => a.date.getTime() - b.date.getTime());
   const runs: PeriodDayInput[][] = [];
   let current: PeriodDayInput[] = [];
@@ -241,6 +241,54 @@ export function computeCycleSummary(input: CycleSummaryInput): CycleSummaryResul
   };
 }
 
+export interface DayPhase {
+  date: string;
+  phase: CyclePhase | null;
+  /** False only for a day that literally falls inside a logged period run — every other phase label (including a menstrual day that's just a projected future period) is an estimate from the pattern, not a logged fact. */
+  estimated: boolean;
+}
+
+/**
+ * Projects a phase onto any single date — past, present, or future — using
+ * the same day-range thresholds `computeCycleSummary` uses for "today",
+ * generalized to the whole calendar. A day inside an actual logged period
+ * run is always "menstrual" and never an estimate (it's a logged fact, not
+ * a guess). Every other day is placed by counting forward from the most
+ * recent period start at or before it and wrapping that count into the
+ * cycle length — which also naturally projects future predicted periods
+ * (a new cycle tiles in every `cycleLength` days). A date before the very
+ * first ever logged period has no anchor to count from, so it's reported
+ * as unknown (null) rather than guessed at.
+ */
+export function phaseForDate(
+  date: Date,
+  periods: { start: Date; end: Date }[],
+  cycleLength: number,
+  periodLength: number
+): DayPhase {
+  const iso = date.toISOString().slice(0, 10);
+  for (const p of periods) {
+    if (date >= p.start && date <= p.end) return { date: iso, phase: "menstrual", estimated: false };
+  }
+
+  let anchor: Date | null = null;
+  for (const p of periods) {
+    if (p.start <= date && (!anchor || p.start > anchor)) anchor = p.start;
+  }
+  if (!anchor || cycleLength <= 0) return { date: iso, phase: null, estimated: true };
+
+  const rawDayInCycle = Math.floor((date.getTime() - anchor.getTime()) / DAY_MS) + 1;
+  const dayInCycle = ((rawDayInCycle - 1) % cycleLength) + 1;
+
+  let phase: CyclePhase;
+  if (dayInCycle <= periodLength) phase = "menstrual";
+  else if (dayInCycle <= cycleLength / 2 - 2) phase = "follicular";
+  else if (dayInCycle <= cycleLength / 2 + 2) phase = "ovulation";
+  else phase = "luteal";
+
+  return { date: iso, phase, estimated: true };
+}
+
 export const cycleService = {
   async listEntries(userId: string, range: { from?: string; to?: string }) {
     const where: Prisma.CycleEntryWhereInput = { userId };
@@ -327,5 +375,46 @@ export const cycleService = {
     });
 
     return { ...result, history };
+  },
+
+  /** Per-day phase for a date range, for the calendar's colour coding. */
+  async getPhaseCalendar(userId: string, from: string, to: string, todayOverride?: string) {
+    const [user, profile, periodEntries] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { lifeStage: true } }),
+      cycleService.getProfile(userId),
+      prisma.cycleEntry.findMany({
+        where: { userId, isPeriod: true },
+        select: { date: true, flow: true },
+        orderBy: { date: "desc" },
+        take: 400,
+      }),
+    ]);
+
+    const today = todayOverride ? new Date(todayOverride) : new Date();
+    const summary = computeCycleSummary({
+      periodDays: periodEntries,
+      today,
+      profile,
+      isPerimenopause: user?.lifeStage === "PERIMENOPAUSE",
+    });
+    const periods = detectPeriods(periodEntries);
+
+    const days: DayPhase[] = [];
+    // `from`/`to` are "YYYY-MM-DD" strings, which parse as exact UTC
+    // midnight — same as Prisma's `@db.Date` columns (`periods` below).
+    // Stepping with `Date#setDate()` advances by one *local* calendar day,
+    // which silently drifts off UTC midnight on any server not running in
+    // UTC (this one runs in IST, UTC+5:30) and breaks the `>=`/`<=` range
+    // checks in phaseForDate against those UTC-midnight period boundaries.
+    // Stepping by exactly one day in milliseconds keeps every cursor
+    // UTC-midnight-aligned regardless of the server's local timezone.
+    let cursor = new Date(from);
+    const end = new Date(to);
+    while (cursor <= end) {
+      days.push(phaseForDate(cursor, periods, summary.cycleLength, summary.periodLength));
+      cursor = new Date(cursor.getTime() + DAY_MS);
+    }
+
+    return { days, cycleLength: summary.cycleLength, periodLength: summary.periodLength };
   },
 };

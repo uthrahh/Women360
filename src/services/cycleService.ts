@@ -1,5 +1,5 @@
 import { request } from "./apiClient";
-import type { CycleSummary, CycleDay, CycleProfileSettings } from "@/types";
+import type { CycleSummary, CycleDay, CycleProfileSettings, CyclePhaseCalendar } from "@/types";
 import { localDateISO, toBackendCycleEntry, toFrontendCycleDay, toFrontendCycleSummary } from "./mappers";
 
 export const cycleService = {
@@ -26,6 +26,11 @@ export const cycleService = {
       `/cycle/entries?from=${from}&to=${to}`
     );
     return apiEntries.map(toFrontendCycleDay);
+  },
+  async getPhaseCalendar(from: string, to: string): Promise<CyclePhaseCalendar> {
+    return request<CyclePhaseCalendar>(
+      `/cycle/phase-calendar?from=${from}&to=${to}&today=${localDateISO()}`
+    );
   },
   async getProfile(): Promise<CycleProfileSettings> {
     return request<CycleProfileSettings>("/cycle/profile");

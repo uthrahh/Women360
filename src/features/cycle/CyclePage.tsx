@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { cycleService } from "@/services/cycleService";
 import { localDateISO } from "@/services/mappers";
-import type { CycleDay, CycleSummary } from "@/types";
+import type { CycleDay, CycleDayPhase, CycleSummary } from "@/types";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -20,6 +20,24 @@ import { insightsService } from "@/services/insightsService";
 const PHASE_LABEL: Record<string, string> = {
   menstrual: "Menstrual", follicular: "Follicular", ovulation: "Ovulation", luteal: "Luteal",
 };
+
+// One restrained colour per phase, reused everywhere a phase is shown —
+// menstrual keeps the existing brand maroon; follicular/ovulation/luteal
+// reuse colours already established elsewhere in the app (amber for a
+// lower-intensity phase, emerald for the fertile window, a lighter maroon
+// tint for luteal) rather than introducing new hues.
+const PHASE_CELL_CLASS: Record<string, string> = {
+  menstrual: "bg-maroon-600 text-white border-maroon-600",
+  follicular: "bg-amber-200 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 border-transparent",
+  ovulation: "bg-emerald-500 dark:bg-emerald-600 text-white border-transparent",
+  luteal: "bg-maroon-200 dark:bg-maroon-900/40 text-maroon-900 dark:text-maroon-200 border-transparent",
+};
+const PHASE_LEGEND: { phase: keyof typeof PHASE_CELL_CLASS; label: string }[] = [
+  { phase: "menstrual", label: "Menstrual" },
+  { phase: "follicular", label: "Follicular" },
+  { phase: "ovulation", label: "Ovulation (fertile window)" },
+  { phase: "luteal", label: "Luteal" },
+];
 
 const CONFIDENCE_LABEL: Record<CycleSummary["confidence"], string> = {
   high: "Consistent with your recent cycles",
@@ -172,6 +190,16 @@ export default function CyclePage() {
         },
         (err) => toast.show(err instanceof Error ? err.message : "Couldn't save that entry. Please try again.", { tone: "error" })
       );
+  }
+
+  function logPeriodStartedToday() {
+    cycleService.logDay({ date: localDateISO(), isPeriod: true, flow: "medium" }).then(
+      () => {
+        cycleService.getSummary().then(setCycle);
+        toast.show("Period start logged for today");
+      },
+      (err) => toast.show(err instanceof Error ? err.message : "Couldn't log that. Please try again.", { tone: "error" })
+    );
   }
 
   function openBulkAdd() {
@@ -438,7 +466,8 @@ export default function CyclePage() {
           description="Once you log a period, flow, or symptom, Women360 will start showing your cycle day, phase, and predictions here."
           action={
             <div className="flex flex-col sm:flex-row items-center gap-2">
-              <Button onClick={() => openLogModal(localDateISO())}>Log today's flow & symptoms</Button>
+              <Button onClick={logPeriodStartedToday}>Period started today</Button>
+              <Button variant="secondary" onClick={() => openLogModal(localDateISO())}>Log today's flow & symptoms</Button>
               <Button variant="secondary" onClick={openBulkAdd}>Add past periods instead</Button>
             </div>
           }
@@ -455,7 +484,7 @@ export default function CyclePage() {
   if (senior.seniorMode) {
     return (
       <>
-        <SeniorCycle cycle={populated} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} />
+        <SeniorCycle cycle={populated} onPeriodToday={logPeriodStartedToday} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} />
         {cycle.isLate && (
           <div className="max-w-xl mx-auto px-5">
             <ExplainThisCard
@@ -478,7 +507,7 @@ export default function CyclePage() {
         <p className="text-[var(--w360-text-muted)] mt-1">A gentle picture of where you are in your cycle.</p>
       </div>
 
-      <CycleRing cycle={populated} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} onSettings={() => setSettingsOpen(true)} />
+      <CycleRing cycle={populated} onPeriodToday={logPeriodStartedToday} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} onSettings={() => setSettingsOpen(true)} />
 
       {cycle.isLate && (
         <ExplainThisCard
@@ -539,8 +568,8 @@ function ScalePicker({ label, value, onChange }: { label: string; value: number 
 }
 
 function CycleRing({
-  cycle, onLog, onBulkAdd, onSettings,
-}: { cycle: PopulatedCycleSummary; onLog: () => void; onBulkAdd: () => void; onSettings: () => void }) {
+  cycle, onPeriodToday, onLog, onBulkAdd, onSettings,
+}: { cycle: PopulatedCycleSummary; onPeriodToday: () => void; onLog: () => void; onBulkAdd: () => void; onSettings: () => void }) {
   const size = 180;
   const stroke = 14;
   const r = (size - stroke) / 2;
@@ -593,7 +622,8 @@ function CycleRing({
           )}
           <p className="text-xs text-[var(--w360-text-muted)] italic">{CONTRACEPTION_DISCLAIMER}</p>
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <Button variant="primary" size="sm" onClick={onLog}>Log today's flow & symptoms</Button>
+            <Button variant="primary" size="sm" onClick={onPeriodToday}>Period started today</Button>
+            <Button variant="secondary" size="sm" onClick={onLog}>Log today's flow & symptoms</Button>
             <Button variant="secondary" size="sm" onClick={onBulkAdd}>Add past periods</Button>
             <button
               type="button"
@@ -656,16 +686,20 @@ const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void }) {
   const [monthStart, setMonthStart] = useState(() => startOfMonth(new Date()));
   const [days, setDays] = useState<CycleDay[] | null>(null);
+  const [phases, setPhases] = useState<CycleDayPhase[] | null>(null);
   const today = localDateISO();
 
   useEffect(() => {
     setDays(null);
+    setPhases(null);
     const from = localDateISO(monthStart);
     const to = localDateISO(new Date(monthStart.getFullYear(), monthStart.getMonth(), daysInMonth(monthStart)));
     cycleService.listEntries(from, to).then(setDays);
+    cycleService.getPhaseCalendar(from, to).then((r) => setPhases(r.days));
   }, [monthStart]);
 
   const dayByDate = new Map((days ?? []).map((d) => [d.date, d]));
+  const phaseByDate = new Map((phases ?? []).map((p) => [p.date, p]));
   const total = daysInMonth(monthStart);
   const leadingBlanks = monthStart.getDay();
   const cells: ({ iso: string; entry?: CycleDay } | null)[] = [
@@ -700,13 +734,16 @@ function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void })
             <ChevronRight size={18} />
           </button>
         </div>
-        <p className="text-sm text-[var(--w360-text-muted)] mb-4">Tap a day to log period, flow, pain, mood, energy, symptoms or a note.</p>
+        <p className="text-sm text-[var(--w360-text-muted)] mb-4">
+          Tap a day to log period, flow, pain, mood, energy, symptoms or a note. Colour shows the cycle phase — solid
+          for a logged period, softer for an estimated phase.
+        </p>
         <div className="grid grid-cols-7 gap-1.5 text-center mb-1.5">
           {WEEKDAY_LABELS.map((w) => (
             <span key={w} className="text-[10px] font-medium text-[var(--w360-text-muted)]">{w}</span>
           ))}
         </div>
-        {days === null ? (
+        {days === null || phases === null ? (
           <div className="py-10 text-center text-sm text-[var(--w360-text-muted)]">Loading…</div>
         ) : (
           <div className="grid grid-cols-7 gap-1.5">
@@ -715,7 +752,13 @@ function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void })
               const isFuture = cell.iso > today;
               const isToday = cell.iso === today;
               const d = cell.entry;
-              const label = `${isToday ? "Today, " : ""}${new Date(cell.iso).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}${d?.isPeriod ? ", period day" : ""}${d?.symptoms?.length ? `, symptoms: ${d.symptoms.join(", ")}` : ""}${isFuture ? " — not yet available to log" : " — tap to log or edit"}`;
+              const dayPhase = phaseByDate.get(cell.iso);
+              // A logged period day is ground truth and always wins, even
+              // when it's spotting-only (which the phase model excludes
+              // from counting as a period) — it's still a real period day.
+              const phase = d?.isPeriod ? "menstrual" : dayPhase?.phase ?? null;
+              const isEstimated = d?.isPeriod ? false : dayPhase?.estimated !== false;
+              const label = `${isToday ? "Today, " : ""}${new Date(cell.iso).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}${d?.isPeriod ? ", period day" : phase ? `, ${PHASE_LABEL[phase]} phase (estimated)` : ""}${d?.symptoms?.length ? `, symptoms: ${d.symptoms.join(", ")}` : ""}${isFuture ? " — not yet available to log" : " — tap to log or edit"}`;
               return (
                 <button
                   key={cell.iso}
@@ -727,8 +770,8 @@ function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void })
                   className={`aspect-square rounded flex flex-col items-center justify-center text-xs gap-0.5 border transition-colors ${
                     isFuture
                       ? "border-transparent text-[var(--w360-text-muted)] opacity-40 cursor-not-allowed"
-                      : d?.isPeriod
-                        ? "bg-maroon-600 text-white border-maroon-600"
+                      : phase
+                        ? `${PHASE_CELL_CLASS[phase]} ${isEstimated ? "opacity-55 border-dashed" : ""}`
                         : "border-[var(--w360-border)] hover:border-maroon-400"
                   } ${isToday ? "ring-2 ring-offset-1 ring-maroon-400 dark:ring-offset-ink-900" : ""}`}
                 >
@@ -739,6 +782,18 @@ function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void })
             })}
           </div>
         )}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-4 pt-4 border-t border-[var(--w360-border)]">
+          {PHASE_LEGEND.map((l) => (
+            <span key={l.phase} className="flex items-center gap-1.5 text-xs text-[var(--w360-text-muted)]">
+              <span className={`w-3 h-3 rounded-sm shrink-0 ${PHASE_CELL_CLASS[l.phase]}`} />
+              {l.label}
+            </span>
+          ))}
+          <span className="flex items-center gap-1.5 text-xs text-[var(--w360-text-muted)]">
+            <span className="w-3 h-3 rounded-sm shrink-0 bg-maroon-600 border border-dashed border-maroon-800 opacity-55" />
+            Estimated, not logged
+          </span>
+        </div>
       </CardBody>
     </Card>
   );
@@ -815,7 +870,7 @@ function Stat({ label, value, note }: { label: string; value: string; note?: str
   );
 }
 
-function SeniorCycle({ cycle, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary; onLog: () => void; onBulkAdd: () => void }) {
+function SeniorCycle({ cycle, onPeriodToday, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary; onPeriodToday: () => void; onLog: () => void; onBulkAdd: () => void }) {
   return (
     <div className="max-w-xl mx-auto p-5 flex flex-col gap-5">
       <Card>
@@ -834,7 +889,8 @@ function SeniorCycle({ cycle, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary
           </p>
           {cycle.irregularityNote && <p className="text-base text-[var(--w360-text-muted)]">{cycle.irregularityNote}</p>}
           <p className="text-sm text-[var(--w360-text-muted)] italic">{CONTRACEPTION_DISCLAIMER}</p>
-          <Button size="xl" fullWidth onClick={onLog}>Add today's flow</Button>
+          <Button size="xl" fullWidth onClick={onPeriodToday}>Period started today</Button>
+          <Button size="lg" variant="secondary" fullWidth onClick={onLog}>Add today's flow</Button>
           <Button size="lg" variant="secondary" fullWidth onClick={onBulkAdd}>Add past periods</Button>
         </CardBody>
       </Card>
