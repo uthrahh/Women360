@@ -45,6 +45,14 @@ const CONFIDENCE_LABEL: Record<CycleSummary["confidence"], string> = {
   low: "Low confidence — see note below",
 };
 
+// Adds `days` to a "YYYY-MM-DD" string, purely in local-calendar terms (no
+// UTC parsing involved, unlike `new Date(iso)` + `.setDate()`, which can
+// drift a day off in a browser whose local timezone isn't UTC).
+function addDaysISO(iso: string, days: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return localDateISO(new Date(y, m - 1, d + days));
+}
+
 function formatDateRange(startISO: string, endISO: string): string {
   const start = new Date(startISO);
   const end = new Date(endISO);
@@ -221,24 +229,32 @@ export default function CyclePage() {
 
   async function handleBulkSave() {
     const today = localDateISO();
-    const dates = Array.from(new Set(bulkDates.filter(Boolean)));
-    if (dates.length === 0) {
+    const starts = Array.from(new Set(bulkDates.filter(Boolean)));
+    if (starts.length === 0) {
       toast.show("Add at least one date.", { tone: "error" });
       return;
     }
-    if (dates.some((d) => d > today)) {
+    if (starts.some((d) => d > today)) {
       toast.show("Period start dates can't be in the future.", { tone: "error" });
       return;
     }
     setBulkSaving(true);
     try {
-      // Only the start day of each past period needs marking — the
-      // predictor derives cycle length from the gap between start dates,
-      // not from every day of bleeding.
-      await Promise.all(dates.map((date) => cycleService.logDay({ date, isPeriod: true })));
+      // Marking only the start day is enough for cycle-length prediction
+      // (that's derived from the gap between starts), but it's not enough
+      // for period LENGTH or the calendar's phase colouring — both need to
+      // know roughly how many days each period actually ran. Logging a
+      // realistic run from each start (using the best period-length
+      // estimate available right now) instead of one isolated day keeps
+      // both honest; never logs into the future.
+      const span = Math.max(1, Math.min(15, Math.round(cycle?.periodLength ?? 5)));
+      const dates = starts.flatMap((start) =>
+        Array.from({ length: span }, (_, i) => addDaysISO(start, i)).filter((d) => d <= today)
+      );
+      await Promise.all(dates.map((date) => cycleService.logDay({ date, isPeriod: true, flow: "medium" })));
       setCycle(await cycleService.getSummary());
       setBulkOpen(false);
-      toast.show(`${dates.length} period ${dates.length === 1 ? "date" : "dates"} added`);
+      toast.show(`${starts.length} period ${starts.length === 1 ? "date" : "dates"} added`);
     } catch (err) {
       toast.show(err instanceof Error ? err.message : "Couldn't save those dates. Please try again.", { tone: "error" });
     } finally {
@@ -409,7 +425,8 @@ export default function CyclePage() {
       <div className="flex flex-col gap-4">
         <p className="text-sm text-[var(--w360-text-muted)] senior:text-base">
           Add the start dates of your last few periods and Women360 can predict your next one right away, instead of
-          waiting for you to log two full cycles going forward.
+          waiting for you to log two full cycles going forward. Each one logs a realistic run of days from that
+          start, using your current period-length estimate — not just the single start day.
         </p>
         <div className="flex flex-col gap-2.5">
           {bulkDates.map((d, i) => (
