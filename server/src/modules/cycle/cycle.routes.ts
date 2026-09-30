@@ -9,6 +9,7 @@ import {
   cycleProfileSchema,
   dateParamSchema,
   listQuerySchema,
+  phaseCalendarQuerySchema,
   summaryQuerySchema,
 } from "./cycle.validation";
 
@@ -29,6 +30,15 @@ cycleRouter.get(
   asyncHandler(async (req, res) =>
     ok(res, await cycleService.listEntries(req.user!.id, req.query as { from?: string; to?: string }))
   )
+);
+
+cycleRouter.get(
+  "/phase-calendar",
+  validate({ query: phaseCalendarQuerySchema }),
+  asyncHandler(async (req, res) => {
+    const { from, to, today } = req.query as { from: string; to: string; today?: string };
+    return ok(res, await cycleService.getPhaseCalendar(req.user!.id, from, to, today));
+  })
 );
 
 cycleRouter.put(

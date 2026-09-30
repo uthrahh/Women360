@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeCycleSummary, type PeriodDayInput } from "@/modules/cycle/cycle.service";
+import { computeCycleSummary, detectPeriods, phaseForDate, type PeriodDayInput } from "@/modules/cycle/cycle.service";
 
 const DAY_MS = 86_400_000;
 function d(iso: string): Date {
@@ -191,5 +191,48 @@ describe("computeCycleSummary — phase boundaries (28-day cycle, 5-day period)"
     });
     expect(result.currentDay).toBe(expectedDay);
     expect(result.phase).toBe(expectedPhase);
+  });
+});
+
+describe("phaseForDate", () => {
+  // Two logged periods, 28 days apart, period length 5 — matches the same
+  // phase boundaries computeCycleSummary uses for "today", generalized to
+  // any date on the calendar.
+  const periods = [
+    { start: d("2026-01-01"), end: d("2026-01-05") },
+    { start: d("2026-01-29"), end: d("2026-02-02") },
+  ];
+  const cycleLength = 28;
+  const periodLength = 5;
+
+  it("reports a logged period day as menstrual and not an estimate", () => {
+    const result = phaseForDate(d("2026-01-03"), periods, cycleLength, periodLength);
+    expect(result).toEqual({ date: "2026-01-03", phase: "menstrual", estimated: false });
+  });
+
+  it("estimates follicular/ovulation/luteal for days between logged periods, using the most recent anchor", () => {
+    expect(phaseForDate(d("2026-01-10"), periods, cycleLength, periodLength)).toMatchObject({ phase: "follicular", estimated: true });
+    expect(phaseForDate(d("2026-01-15"), periods, cycleLength, periodLength)).toMatchObject({ phase: "ovulation", estimated: true });
+    expect(phaseForDate(d("2026-01-20"), periods, cycleLength, periodLength)).toMatchObject({ phase: "luteal", estimated: true });
+  });
+
+  it("returns null for a date before the very first ever logged period — there's nothing to anchor a guess to", () => {
+    expect(phaseForDate(d("2025-12-25"), periods, cycleLength, periodLength)).toMatchObject({ phase: null });
+    expect(phaseForDate(d("2025-12-25"), [], cycleLength, periodLength)).toMatchObject({ phase: null });
+  });
+
+  it("tiles the pattern forward from the most recent anchor to project a future predicted period", () => {
+    // 2026-02-26 is 28 days past the second logged start (2026-01-29) — a
+    // full cycle length later, so it wraps back to day 1 of a new,
+    // not-yet-logged projected cycle.
+    const result = phaseForDate(d("2026-02-26"), periods, cycleLength, periodLength);
+    expect(result).toEqual({ date: "2026-02-26", phase: "menstrual", estimated: true });
+  });
+});
+
+describe("detectPeriods", () => {
+  it("is exported and groups consecutive period days the same way computeCycleSummary uses internally", () => {
+    const result = detectPeriods(period("2026-01-01", 5));
+    expect(result).toEqual([{ start: d("2026-01-01"), end: d("2026-01-05") }]);
   });
 });
