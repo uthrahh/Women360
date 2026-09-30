@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { BadRequestError, ForbiddenError } from "@/lib/errors";
+import { recordAudit } from "@/lib/audit";
 
 async function assertActiveAssignment(coachId: string, womanId: string) {
   const assignment = await prisma.coachAssignment.findUnique({
@@ -17,17 +18,33 @@ export const coachService = {
   async grantAccess(womanId: string, coachEmail: string) {
     const coach = await prisma.user.findFirst({ where: { email: coachEmail, role: "COACH", deletedAt: null } });
     if (!coach) throw new BadRequestError("No wellness coach account was found with that email.");
-    return prisma.coachAssignment.upsert({
+    const assignment = await prisma.coachAssignment.upsert({
       where: { womanId_coachId: { womanId, coachId: coach.id } },
       create: { womanId, coachId: coach.id, active: true },
       update: { active: true },
     });
+    await recordAudit({
+      actorId: womanId,
+      actorRole: "WOMAN",
+      action: "coach.access_granted",
+      targetType: "CoachAssignment",
+      targetId: assignment.id,
+      metadata: { coachId: coach.id },
+    });
+    return assignment;
   },
 
   async revokeAccess(womanId: string, coachId: string) {
     await prisma.coachAssignment.updateMany({
       where: { womanId, coachId },
       data: { active: false },
+    });
+    await recordAudit({
+      actorId: womanId,
+      actorRole: "WOMAN",
+      action: "coach.access_revoked",
+      targetType: "CoachAssignment",
+      metadata: { coachId },
     });
   },
 
@@ -54,6 +71,11 @@ export const coachService = {
    */
   async getWomanSummary(coachId: string, womanId: string) {
     await assertActiveAssignment(coachId, womanId);
+    // Known gap: Appointment has no coachId, so if a woman shares with more
+    // than one coach, every coach sees all of her COACH-kind appointments,
+    // not just ones with them. Fixing this properly needs a coach picker on
+    // the appointment form (a real UI change), not a backend-only patch —
+    // left as-is rather than faked with a fragile name match.
     const [goals, wellbeing, sleep, activity, appointments] = await Promise.all([
       prisma.goal.findMany({ where: { userId: womanId } }),
       prisma.wellbeingEntry.findMany({ where: { userId: womanId }, orderBy: { date: "desc" }, take: 14 }),
@@ -61,12 +83,28 @@ export const coachService = {
       prisma.activityEntry.findMany({ where: { userId: womanId }, orderBy: { date: "desc" }, take: 14 }),
       prisma.appointment.findMany({ where: { userId: womanId, kind: "COACH" }, orderBy: { date: "asc" } }),
     ]);
+    await recordAudit({
+      actorId: coachId,
+      actorRole: "COACH",
+      action: "coach.summary_viewed",
+      targetType: "User",
+      targetId: womanId,
+    });
     return { goals, wellbeing, sleep, activity, appointments };
   },
 
   async addNote(coachId: string, womanId: string, input: { note: string; visibleToWoman: boolean }) {
     await assertActiveAssignment(coachId, womanId);
-    return prisma.coachNote.create({ data: { coachId, womanId, ...input } });
+    const note = await prisma.coachNote.create({ data: { coachId, womanId, ...input } });
+    await recordAudit({
+      actorId: coachId,
+      actorRole: "COACH",
+      action: "coach.note_added",
+      targetType: "CoachNote",
+      targetId: note.id,
+      metadata: { womanId, visibleToWoman: input.visibleToWoman },
+    });
+    return note;
   },
 
   async listNotes(coachId: string, womanId: string) {
