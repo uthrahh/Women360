@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { cycleService } from "@/services/cycleService";
 import { localDateISO } from "@/services/mappers";
 import type { CycleDay, CycleDayPhase, CycleSummary } from "@/types";
-import { LoadingState, EmptyState } from "@/components/ui/states";
+import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Tabs } from "@/components/ui/Tabs";
@@ -687,16 +687,28 @@ function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void })
   const [monthStart, setMonthStart] = useState(() => startOfMonth(new Date()));
   const [days, setDays] = useState<CycleDay[] | null>(null);
   const [phases, setPhases] = useState<CycleDayPhase[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const today = localDateISO();
 
-  useEffect(() => {
+  function load() {
     setDays(null);
     setPhases(null);
+    setLoadError(false);
     const from = localDateISO(monthStart);
     const to = localDateISO(new Date(monthStart.getFullYear(), monthStart.getMonth(), daysInMonth(monthStart)));
-    cycleService.listEntries(from, to).then(setDays);
-    cycleService.getPhaseCalendar(from, to).then((r) => setPhases(r.days));
-  }, [monthStart]);
+    // Both must resolve before the grid renders — without a .catch, either
+    // one failing silently (a real risk on a phone's network) left this
+    // stuck on "Loading…" forever with no way to recover short of leaving
+    // the tab and coming back.
+    Promise.all([cycleService.listEntries(from, to), cycleService.getPhaseCalendar(from, to)])
+      .then(([entries, calendar]) => {
+        setDays(entries);
+        setPhases(calendar.days);
+      })
+      .catch(() => setLoadError(true));
+  }
+
+  useEffect(load, [monthStart]);
 
   const dayByDate = new Map((days ?? []).map((d) => [d.date, d]));
   const phaseByDate = new Map((phases ?? []).map((p) => [p.date, p]));
@@ -734,6 +746,10 @@ function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void })
             <ChevronRight size={18} />
           </button>
         </div>
+        {loadError ? (
+          <ErrorState title="Couldn't load this month" description="Check your connection and try again." onRetry={load} />
+        ) : (
+          <>
         <p className="text-sm text-[var(--w360-text-muted)] mb-4">
           Tap a day to log period, flow, pain, mood, energy, symptoms or a note. Colour shows the cycle phase — solid
           for a logged period, softer for an estimated phase.
@@ -794,6 +810,8 @@ function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void })
             Estimated, not logged
           </span>
         </div>
+          </>
+        )}
       </CardBody>
     </Card>
   );
