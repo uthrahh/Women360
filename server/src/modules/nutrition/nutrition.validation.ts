@@ -23,9 +23,13 @@ export const mealEntrySchema = z.object({
   proteinG: oneDecimalNumber(500),
   fibreG: oneDecimalNumber(200),
   servings: z.string().trim().min(1).max(60),
-  carbsG: oneDecimalNumber(500).optional(),
-  fatG: oneDecimalNumber(500).optional(),
-  notes: z.string().trim().max(500).optional(),
+  // Nullable (not just optional): a client clearing these on an edit sends
+  // an explicit null, which Prisma writes as NULL — an omitted key instead
+  // leaves the previously-saved value untouched, which is the bug this is
+  // fixing (see updateMealSchema below).
+  carbsG: oneDecimalNumber(500).nullable().optional(),
+  fatG: oneDecimalNumber(500).nullable().optional(),
+  notes: z.string().trim().max(500).nullable().optional(),
 });
 
 export const updateMealSchema = mealEntrySchema.omit({ date: true }).partial();

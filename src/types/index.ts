@@ -82,9 +82,11 @@ export interface MealEntry {
   protein: number;
   fibre: number;
   servings: string;
-  carbs?: number;
-  fat?: number;
-  notes?: string;
+  // number|null|undefined: null explicitly clears a previously-saved value
+  // on an edit; undefined means "was never entered" when reading a meal.
+  carbs?: number | null;
+  fat?: number | null;
+  notes?: string | null;
 }
 
 export interface NutritionSummary {

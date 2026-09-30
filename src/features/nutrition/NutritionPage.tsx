@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { LoadingState, EmptyState } from "@/components/ui/states";
+import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { Droplet, Apple, Plus, Pencil, Trash2 } from "lucide-react";
 
@@ -92,6 +92,7 @@ function mealToForm(m: MealEntry): MealFormValues {
 
 export default function NutritionPage() {
   const [data, setData] = useState<NutritionSummary | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [recentMeals, setRecentMeals] = useState<MealEntry[]>([]);
   const [editingMeal, setEditingMeal] = useState<MealEntry | "new" | null>(null);
   const [form, setForm] = useState<MealFormValues>(emptyForm());
@@ -100,10 +101,25 @@ export default function NutritionPage() {
   const [deleteTarget, setDeleteTarget] = useState<MealEntry | null>(null);
   const toast = useToast();
 
-  useEffect(() => {
-    nutritionService.getToday().then(setData);
-    nutritionService.getRecentMeals().then(setRecentMeals);
-  }, []);
+  function load() {
+    setLoadError(false);
+    nutritionService.getToday().then(setData).catch(() => setLoadError(true));
+    // Recent meals only power the "log again" chips, not a required part of
+    // the page — a failure there shouldn't block the page from loading.
+    nutritionService.getRecentMeals().then(setRecentMeals).catch(() => {});
+  }
+
+  useEffect(load, []);
+
+  if (loadError) {
+    return (
+      <ErrorState
+        title="Couldn't load your nutrition data"
+        description="Check your connection and try again."
+        onRetry={load}
+      />
+    );
+  }
 
   if (!data) return <LoadingState label="Loading nutrition" />;
 
@@ -168,9 +184,12 @@ export default function NutritionPage() {
       calories: Number(form.calories),
       protein: form.protein ? Number(form.protein) : 0,
       fibre: form.fibre ? Number(form.fibre) : 0,
-      carbs: form.carbs ? Number(form.carbs) : undefined,
-      fat: form.fat ? Number(form.fat) : undefined,
-      notes: form.notes.trim() || undefined,
+      // null (not undefined) so clearing a field on an edit actually
+      // clears it server-side — an omitted JSON key leaves the old value
+      // untouched, which is the bug this is fixing.
+      carbs: form.carbs ? Number(form.carbs) : null,
+      fat: form.fat ? Number(form.fat) : null,
+      notes: form.notes.trim() || null,
     };
 
     setSaving(true);
@@ -294,10 +313,13 @@ export default function NutritionPage() {
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{m.name}</p>
                     <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">{m.time} · {m.servings}</p>
+                    {m.notes && <p className="text-xs text-[var(--w360-text-muted)] italic mt-0.5 truncate">{m.notes}</p>}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <div className="text-right text-sm tabular-nums text-[var(--w360-text-muted)]">
-                      {m.calories} kcal · {m.protein}g protein
+                    <div className="text-right text-xs tabular-nums text-[var(--w360-text-muted)] leading-relaxed">
+                      <p className="text-sm">{m.calories} kcal</p>
+                      <p>{m.protein}g protein · {m.fibre}g fibre</p>
+                      <p>{m.carbs ?? "—"}g carbs · {m.fat ?? "—"}g fat</p>
                     </div>
                     <button
                       onClick={() => openEdit(m)}

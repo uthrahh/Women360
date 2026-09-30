@@ -10,6 +10,18 @@ function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
+// `time` is stored as a display string ("8:00 AM", "12:30 PM"), which sorts
+// wrong as text (text order puts every AM time after every PM time once one
+// of them has two digits in the hour). Parse it back into minutes-from-
+// midnight to sort meals the way they actually happened during the day.
+function timeToMinutes(display: string): number {
+  const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(display.trim());
+  if (!match) return 0;
+  const hour12 = Number(match[1]) % 12;
+  const hour = match[3].toUpperCase() === "PM" ? hour12 + 12 : hour12;
+  return hour * 60 + Number(match[2]);
+}
+
 export const nutritionService = {
   async getDailySummary(userId: string, date?: string) {
     const day = date ?? todayISO();
@@ -17,13 +29,11 @@ export const nutritionService = {
 
     const [goal, meals, hydrationLogs, fruitVegLogs] = await Promise.all([
       prisma.nutritionGoal.findUnique({ where: { userId } }),
-      prisma.mealEntry.findMany({
-        where: { userId, date: dayStart },
-        orderBy: { time: "asc" },
-      }),
+      prisma.mealEntry.findMany({ where: { userId, date: dayStart } }),
       prisma.hydrationLog.findMany({ where: { userId, date: dayStart } }),
       prisma.fruitVegLog.findMany({ where: { userId, date: dayStart } }),
     ]);
+    meals.sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
 
     // Every nutrient total is a live sum over this day's actual meal rows —
     // never a separately-maintained counter that could drift out of sync.
@@ -67,7 +77,7 @@ export const nutritionService = {
 
   async addMeal(userId: string, input: {
     date: string; time: string; name: string; calories: number; proteinG: number; fibreG: number; servings: string;
-    carbsG?: number; fatG?: number; notes?: string;
+    carbsG?: number | null; fatG?: number | null; notes?: string | null;
   }) {
     return prisma.mealEntry.create({
       data: { userId, ...input, date: new Date(input.date) },
@@ -76,7 +86,7 @@ export const nutritionService = {
 
   async updateMeal(userId: string, id: string, input: Partial<{
     time: string; name: string; calories: number; proteinG: number; fibreG: number; servings: string;
-    carbsG: number; fatG: number; notes: string;
+    carbsG: number | null; fatG: number | null; notes: string | null;
   }>) {
     const meal = await prisma.mealEntry.findUnique({ where: { id } });
     if (!meal) throw new NotFoundError("Meal entry not found.");
