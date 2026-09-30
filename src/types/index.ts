@@ -74,6 +74,21 @@ export interface CycleProfileSettings {
   averagePeriodLength: number;
 }
 
+export interface CycleDayPhase {
+  date: string;
+  phase: "menstrual" | "follicular" | "ovulation" | "luteal" | null;
+  // False only for a day inside an actually-logged period — every other
+  // phase (including a menstrual day that's a projected future period) is
+  // an estimate from the pattern, not a logged fact.
+  estimated: boolean;
+}
+
+export interface CyclePhaseCalendar {
+  days: CycleDayPhase[];
+  cycleLength: number;
+  periodLength: number;
+}
+
 export interface MealEntry {
   id: string;
   time: string;
@@ -293,9 +308,26 @@ export interface AppNotification {
   read: boolean;
 }
 
+export interface MetricCorrelation {
+  labelA: string;
+  labelB: string;
+  r: number;
+  n: number;
+  direction: "positive" | "negative";
+  strength: "mild" | "moderate" | "strong";
+  summary: string;
+}
+
+export interface CorrelationsReport {
+  correlations: MetricCorrelation[];
+  insufficientData: boolean;
+  disclaimer: string;
+}
+
 export interface InsightsSummary {
   sleepMood: { sleep: number; mood: number }[];
   cards: { q: string; a: string }[];
+  correlations: CorrelationsReport;
 }
 
 // A ranked, cross-domain "explain this" report — never a diagnosis, always

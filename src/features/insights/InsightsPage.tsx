@@ -1,16 +1,33 @@
 import { useEffect, useState } from "react";
 import { Card, CardBody } from "@/components/ui/Card";
-import { LoadingState } from "@/components/ui/states";
+import { Badge } from "@/components/ui/Badge";
+import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { insightsService } from "@/services/insightsService";
-import type { InsightsSummary } from "@/types";
+import type { InsightsSummary, MetricCorrelation } from "@/types";
 import { ScatterChart, Scatter, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
+import { TrendingUp, TrendingDown } from "lucide-react";
+
+const STRENGTH_TONE: Record<MetricCorrelation["strength"], "accent" | "neutral"> = {
+  strong: "accent",
+  moderate: "accent",
+  mild: "neutral",
+};
 
 export default function InsightsPage() {
   const [data, setData] = useState<InsightsSummary | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    insightsService.getSummary().then(setData);
-  }, []);
+  function load() {
+    setLoadError(false);
+    setData(null);
+    insightsService.getSummary().then(setData).catch(() => setLoadError(true));
+  }
+
+  useEffect(load, []);
+
+  if (loadError) {
+    return <ErrorState title="Couldn't load your insights" description="Check your connection and try again." onRetry={load} />;
+  }
 
   if (!data) return <LoadingState label="Finding patterns in your data" />;
 
@@ -51,6 +68,53 @@ export default function InsightsPage() {
           ))}
         </div>
       </div>
+
+      <section>
+        <div className="mb-3">
+          <h2 className="font-display text-lg font-semibold">Patterns across your tracked metrics</h2>
+          <p className="text-sm text-[var(--w360-text-muted)] mt-0.5">
+            Every pair of things you log — sleep, mood, energy, stress, activity, hydration, nutrition, period pain —
+            checked against each other over the last 90 days. Only patterns strong enough to matter are shown here;
+            weak or noisy ones are left out rather than reported as a false signal.
+          </p>
+        </div>
+        {data.correlations.insufficientData ? (
+          <EmptyState
+            title="Not enough logged data yet"
+            description="Once you've logged a handful of days across a few different areas — sleep, mood, meals, activity — real patterns can start to show up here."
+          />
+        ) : data.correlations.correlations.length === 0 ? (
+          <EmptyState
+            title="No strong patterns yet"
+            description="Nothing in your logged data crosses the bar for a reliable pattern right now — that's a normal, honest result, not a gap in the analysis. Keep logging and check back."
+          />
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-3">
+            {data.correlations.correlations.map((c) => (
+              <Card key={`${c.labelA}-${c.labelB}`}>
+                <CardBody className="pt-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium">{c.labelA} & {c.labelB}</p>
+                    {c.direction === "positive" ? (
+                      <TrendingUp size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <TrendingDown size={16} className="text-maroon-600 dark:text-maroon-300 shrink-0 mt-0.5" />
+                    )}
+                  </div>
+                  <p className="text-sm text-[var(--w360-text-muted)] mt-1.5">{c.summary}</p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <Badge tone={STRENGTH_TONE[c.strength]} className="capitalize">{c.strength} pattern</Badge>
+                    <span className="text-[11px] text-[var(--w360-text-muted)]">r = {c.r} · {c.n} days logged</span>
+                  </div>
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        )}
+        {!data.correlations.insufficientData && (
+          <p className="text-[11px] text-[var(--w360-text-muted)] italic mt-3">{data.correlations.disclaimer}</p>
+        )}
+      </section>
     </div>
   );
 }
