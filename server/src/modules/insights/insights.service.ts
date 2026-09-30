@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { explainCycleDelay, explainLowMood } from "./factors";
+import { computeUserCorrelations } from "./correlations";
 
 /**
  * Read-only, descriptive trend summaries — SRS §12/BR-03/BR-04: dashboard
@@ -94,7 +95,9 @@ export const insightsService = {
       });
     }
 
-    return { sleepMood, cards };
+    const correlations = await computeUserCorrelations(userId);
+
+    return { sleepMood, cards, correlations };
   },
 
   // Cross-domain "explain this" — see factors.ts for the full rationale.
