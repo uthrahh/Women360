@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { goalService } from "@/services/goalService";
-import { goalProgress } from "@/services/mappers";
+import { goalProgress, to12Hour, to24Hour } from "@/services/mappers";
 import type { Goal } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -15,13 +15,25 @@ import { CheckCircle2, Circle, Plus, Pencil, Trash2, Check, X } from "lucide-rea
 
 const CATEGORIES: Goal["category"][] = ["sleep", "activity", "hydration", "nutrition", "strength", "cycle", "mobility"];
 
+// Every 15 minutes across the day, stored/selected in 24h but labeled in
+// 12h for readability — a fixed time slot rather than free text, so a
+// reminder is always something the backend (eventually) could actually
+// schedule against, not an arbitrary string.
+const REMINDER_TIME_OPTIONS: { value: string; label: string }[] = Array.from({ length: 24 * 4 }, (_, i) => {
+  const hh = String(Math.floor(i / 4)).padStart(2, "0");
+  const mm = String((i % 4) * 15).padStart(2, "0");
+  const value = `${hh}:${mm}`;
+  return { value, label: to12Hour(value) };
+});
+const STRICT_12H_TIME = /^\d{1,2}:\d{2}\s?(AM|PM)$/i;
+
 interface GoalFormValues {
   title: string;
   category: Goal["category"];
   currentValue: string;
   targetValue: string;
   unit: string;
-  reminder: string;
+  reminder: string; // 24h "HH:MM", or "" for no reminder
 }
 
 function emptyForm(): GoalFormValues {
@@ -35,7 +47,10 @@ function goalToForm(g: Goal): GoalFormValues {
     currentValue: String(g.currentValue),
     targetValue: String(g.targetValue),
     unit: g.unit,
-    reminder: g.reminder ?? "",
+    // Older goals may have a free-text reminder from before this became a
+    // strict time picker — only prefill the select when it's actually a
+    // clean time, otherwise leave it unset rather than guess.
+    reminder: g.reminder && STRICT_12H_TIME.test(g.reminder.trim()) ? to24Hour(g.reminder) : "",
   };
 }
 
@@ -70,15 +85,11 @@ export default function GoalsPage() {
 
   function validate(values: GoalFormValues): Record<string, string> {
     const errs: Record<string, string> = {};
-    if (!values.title.trim()) errs.title = "Enter a goal title.";
+    if (!values.title.trim()) errs.title = "Enter a goal.";
     if (!values.unit.trim()) errs.unit = "Enter a unit, e.g. \"steps\" or \"hrs\".";
     const target = Number(values.targetValue);
     if (values.targetValue === "" || Number.isNaN(target) || target <= 0) {
       errs.targetValue = "Enter a target greater than 0.";
-    }
-    const current = Number(values.currentValue);
-    if (values.currentValue !== "" && (Number.isNaN(current) || current < 0)) {
-      errs.currentValue = "Current value can't be negative.";
     }
     return errs;
   }
@@ -95,7 +106,7 @@ export default function GoalsPage() {
       currentValue: form.currentValue === "" ? 0 : Number(form.currentValue),
       targetValue: Number(form.targetValue),
       unit: form.unit.trim(),
-      reminder: form.reminder.trim() || undefined,
+      reminder: form.reminder ? to12Hour(form.reminder) : undefined,
     };
 
     setSaving(true);
@@ -124,6 +135,15 @@ export default function GoalsPage() {
       toast.show(updated.completed ? "Goal marked complete" : "Goal marked active");
     } catch (err) {
       toast.show(err instanceof Error ? err.message : "Couldn't update that goal. Please try again.", { tone: "error" });
+    }
+  }
+
+  async function incrementGoal(goal: Goal) {
+    try {
+      const updated = await goalService.update(goal.id, { currentValue: goal.currentValue + 1 });
+      setGoals((g) => (g ? g.map((x) => (x.id === updated.id ? updated : x)) : g));
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't update progress. Please try again.", { tone: "error" });
     }
   }
 
@@ -221,15 +241,25 @@ export default function GoalsPage() {
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => {
-                  setQuickEditId(g.id);
-                  setQuickValue(String(g.currentValue));
-                }}
-                className="text-xs font-medium text-maroon-700 dark:text-maroon-200 shrink-0"
-              >
-                Update progress
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => incrementGoal(g)}
+                  aria-label={`Add 1 ${g.unit} to "${g.title}"`}
+                  title={`+1 ${g.unit}`}
+                  className="inline-flex items-center gap-0.5 text-xs font-medium px-2 py-1 rounded border border-[var(--w360-border)] hover:border-maroon-400 hover:text-maroon-700 dark:hover:text-maroon-200"
+                >
+                  <Plus size={12} /> 1
+                </button>
+                <button
+                  onClick={() => {
+                    setQuickEditId(g.id);
+                    setQuickValue(String(g.currentValue));
+                  }}
+                  className="text-xs font-medium text-maroon-700 dark:text-maroon-200"
+                >
+                  Update progress
+                </button>
+              </div>
             )}
           </div>
         </CardBody>
@@ -274,7 +304,7 @@ export default function GoalsPage() {
 
       <Modal open={editingGoal !== null} onClose={() => setEditingGoal(null)} title={editingGoal === "new" ? "New goal" : "Edit goal"} size="sm">
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          <Input label="Goal title" placeholder="e.g. Walk 8,000 steps daily" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} error={errors.title} required />
+          <Input label="Goal" placeholder="e.g. Walk 8,000 steps daily" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} error={errors.title} required />
           <div className="flex flex-col gap-1.5">
             <label htmlFor="category" className="text-sm font-medium">Category</label>
             <select
@@ -288,12 +318,22 @@ export default function GoalsPage() {
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Current" type="number" min={0} value={form.currentValue} onChange={(e) => setForm((f) => ({ ...f, currentValue: e.target.value }))} error={errors.currentValue} />
-            <Input label="Target" type="number" min={0} placeholder="e.g. 8000" value={form.targetValue} onChange={(e) => setForm((f) => ({ ...f, targetValue: e.target.value }))} error={errors.targetValue} required />
-          </div>
+          <Input label="Target" type="number" min={0} placeholder="e.g. 8000" value={form.targetValue} onChange={(e) => setForm((f) => ({ ...f, targetValue: e.target.value }))} error={errors.targetValue} required />
           <Input label="Unit" placeholder="e.g. steps, hrs, L" value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} error={errors.unit} required />
-          <Input label="Reminder (optional)" placeholder="e.g. 10:30 PM wind-down" value={form.reminder} onChange={(e) => setForm((f) => ({ ...f, reminder: e.target.value }))} />
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="reminder" className="text-sm font-medium">Reminder (optional)</label>
+            <select
+              id="reminder"
+              value={form.reminder}
+              onChange={(e) => setForm((f) => ({ ...f, reminder: e.target.value }))}
+              className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm"
+            >
+              <option value="">No reminder</option>
+              {REMINDER_TIME_OPTIONS.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+          </div>
           <Button type="submit" disabled={saving}>{saving ? "Saving…" : editingGoal === "new" ? "Create goal" : "Save changes"}</Button>
         </form>
       </Modal>
