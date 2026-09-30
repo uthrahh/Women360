@@ -1,10 +1,12 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
-import { AppProvider } from "@/context/AppContext";
+import { AppProvider, useApp } from "@/context/AppContext";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AppShell } from "@/components/layout/AppShell";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
-import { LoadingState } from "@/components/ui/states";
+import { LoadingState, ErrorState } from "@/components/ui/states";
+
+const DEVICE_ONLY_MODE = import.meta.env.VITE_DEVICE_ONLY_MODE === "true";
 
 import LandingPage from "@/features/landing/LandingPage";
 import LoginPage from "@/features/auth/LoginPage";
@@ -28,13 +30,34 @@ const MessagesPage = lazy(() => import("@/features/messages/MessagesPage"));
 const SettingsPage = lazy(() => import("@/features/settings/SettingsPage"));
 import NotFoundPage from "@/pages/NotFoundPage";
 
+// In device-only testing mode there's no login screen — the app should go
+// straight to the dashboard once the device's throwaway account is set up,
+// rather than showing the marketing landing page.
+function RootRoute() {
+  const { auth } = useApp();
+  if (!DEVICE_ONLY_MODE) return <LandingPage />;
+  if (auth.bootstrapError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <ErrorState
+          title="Couldn't set up this device"
+          description={auth.bootstrapError}
+          onRetry={auth.retryDeviceSetup}
+        />
+      </div>
+    );
+  }
+  if (auth.bootstrapping) return <LoadingState label="Setting up this device" />;
+  return <Navigate to="/app/dashboard" replace />;
+}
+
 export default function App() {
   return (
     <AppProvider>
       <ToastProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<RootRoute />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />

@@ -2,17 +2,40 @@ import { useCallback, useEffect, useState } from "react";
 import type { User } from "@/types";
 import { authService } from "@/services/authService";
 
+const DEVICE_ONLY_MODE = import.meta.env.VITE_DEVICE_ONLY_MODE === "true";
+
 export function useAuth() {
   const [user, setUser] = useState<User | null>(() => authService.getCachedUser());
   const [bootstrapping, setBootstrapping] = useState(true);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const setUpDevice = useCallback((onCancelled: () => boolean) => {
+    setBootstrapping(true);
+    setBootstrapError(null);
+    authService
+      .ensureDeviceAccount()
+      .then((u) => {
+        if (!onCancelled()) setUser(u);
+      })
+      .catch((err: unknown) => {
+        if (!onCancelled()) setBootstrapError(err instanceof Error ? err.message : "Couldn't set up this device.");
+      })
+      .finally(() => {
+        if (!onCancelled()) setBootstrapping(false);
+      });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     if (!authService.hasSession()) {
-      setUser(null);
-      setBootstrapping(false);
+      if (DEVICE_ONLY_MODE) {
+        setUpDevice(() => cancelled);
+      } else {
+        setUser(null);
+        setBootstrapping(false);
+      }
     } else {
       authService
         .fetchCurrentUser()
@@ -37,7 +60,11 @@ export function useAuth() {
       cancelled = true;
       window.removeEventListener("w360:session-expired", onSessionExpired);
     };
-  }, []);
+  }, [setUpDevice]);
+
+  const retryDeviceSetup = useCallback(() => {
+    setUpDevice(() => false);
+  }, [setUpDevice]);
 
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
@@ -80,5 +107,5 @@ export function useAuth() {
     setUser(updated);
   }, []);
 
-  return { user, bootstrapping, loading, login, register, completeOnboarding, logout, refreshUser };
+  return { user, bootstrapping, bootstrapError, retryDeviceSetup, loading, login, register, completeOnboarding, logout, refreshUser };
 }

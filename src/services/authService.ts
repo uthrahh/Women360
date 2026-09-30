@@ -3,6 +3,7 @@ import type { User } from "@/types";
 import { toFrontendUser } from "./mappers";
 
 const USER_CACHE_KEY = "w360_session_user";
+const DEVICE_CREDENTIALS_KEY = "w360_device_credentials";
 
 interface AuthResponse {
   user: Parameters<typeof toFrontendUser>[0];
@@ -19,6 +20,20 @@ function persistSession(res: AuthResponse): User {
   const user = toFrontendUser(res.user);
   cacheUser(user);
   return user;
+}
+
+interface DeviceCredentials {
+  email: string;
+  password: string;
+}
+
+function getDeviceCredentials(): DeviceCredentials | null {
+  const raw = localStorage.getItem(DEVICE_CREDENTIALS_KEY);
+  return raw ? (JSON.parse(raw) as DeviceCredentials) : null;
+}
+
+function saveDeviceCredentials(creds: DeviceCredentials): void {
+  localStorage.setItem(DEVICE_CREDENTIALS_KEY, JSON.stringify(creds));
 }
 
 export const authService = {
@@ -95,4 +110,21 @@ export const authService = {
   // For pages (e.g. Settings) that update the user via a different service
   // (userService) but still need the shared session cache/state to reflect it.
   cacheUser,
+
+  // Testing-phase mode (VITE_DEVICE_ONLY_MODE): no login screen — each
+  // device gets its own throwaway account, created once and reused from
+  // then on via credentials kept in this device's own storage. Still a
+  // real account on the real backend, so every other feature (insights,
+  // reports, etc.) works exactly as it does for a normal signed-in user;
+  // reinstalling the app starts a fresh account since storage is wiped.
+  async ensureDeviceAccount(): Promise<User> {
+    const existing = getDeviceCredentials();
+    if (existing) return this.login(existing.email, existing.password);
+
+    const id = crypto.randomUUID();
+    const creds = { email: `device-${id}@women360.local`, password: `device-${id}` };
+    const user = await this.register("Me", creds.email, creds.password);
+    saveDeviceCredentials(creds);
+    return this.completeOnboarding().catch(() => user);
+  },
 };
