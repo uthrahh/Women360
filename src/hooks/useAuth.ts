@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { User } from "@/types";
 import { authService } from "@/services/authService";
-
-const DEVICE_ONLY_MODE = import.meta.env.VITE_DEVICE_ONLY_MODE === "true";
+import { isNativeApp } from "@/lib/platform";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(() => authService.getCachedUser());
@@ -30,7 +29,7 @@ export function useAuth() {
     let cancelled = false;
 
     if (!authService.hasSession()) {
-      if (DEVICE_ONLY_MODE) {
+      if (isNativeApp()) {
         setUpDevice(() => cancelled);
       } else {
         setUser(null);

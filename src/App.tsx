@@ -5,8 +5,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { AppShell } from "@/components/layout/AppShell";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { LoadingState, ErrorState } from "@/components/ui/states";
-
-const DEVICE_ONLY_MODE = import.meta.env.VITE_DEVICE_ONLY_MODE === "true";
+import { isNativeApp } from "@/lib/platform";
 
 import LandingPage from "@/features/landing/LandingPage";
 import LoginPage from "@/features/auth/LoginPage";
@@ -35,7 +34,7 @@ import NotFoundPage from "@/pages/NotFoundPage";
 // rather than showing the marketing landing page.
 function RootRoute() {
   const { auth } = useApp();
-  if (!DEVICE_ONLY_MODE) return <LandingPage />;
+  if (!isNativeApp()) return <LandingPage />;
   if (auth.bootstrapError) {
     return (
       <div className="min-h-screen flex items-center justify-center">
