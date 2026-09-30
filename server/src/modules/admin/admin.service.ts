@@ -38,6 +38,17 @@ export const adminService = {
     if (!target) throw new NotFoundError("User not found.");
 
     const updated = await prisma.user.update({ where: { id: targetUserId }, data: { role } });
+
+    // A demoted coach's old grants must not silently reactivate if they're
+    // ever made a coach again — a woman who revoked nothing would otherwise
+    // find a coach who lost the role regaining her data for free.
+    if (target.role === "COACH" && role !== "COACH") {
+      await prisma.coachAssignment.updateMany({
+        where: { coachId: targetUserId, active: true },
+        data: { active: false },
+      });
+    }
+
     await recordAudit({
       actorId,
       actorRole: "ADMIN",

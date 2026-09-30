@@ -14,7 +14,6 @@ export default function SettingsPage() {
   const [params] = useSearchParams();
   const nav = useNavigate();
   const toast = useToast();
-  const [shareWithCoach, setShareWithCoach] = useState(true);
   const [emailReminders, setEmailReminders] = useState(true);
 
   const [name, setName] = useState(auth.user?.name ?? "");
@@ -185,12 +184,10 @@ export default function SettingsPage() {
               <Card><CardBody className="pt-5 flex flex-col gap-5">
                 <ToggleRow
                   title="Share data with wellness coach"
-                  description="Your coach can only see what you explicitly share."
-                  checked={shareWithCoach}
-                  onChange={() => {
-                    setShareWithCoach((v) => !v);
-                    toast.show(!shareWithCoach ? "Coach sharing enabled" : "Coach sharing turned off");
-                  }}
+                  description="Not set up yet — no coach can see your data through this switch. Sharing will be granted per coach once this screen is built."
+                  checked={false}
+                  disabled
+                  onChange={() => {}}
                 />
                 <ToggleRow
                   title="Email reminders"
@@ -213,7 +210,7 @@ export default function SettingsPage() {
   );
 }
 
-function ToggleRow({ title, description, checked, onChange }: { title: string; description: string; checked: boolean; onChange: () => void }) {
+function ToggleRow({ title, description, checked, onChange, disabled }: { title: string; description: string; checked: boolean; onChange: () => void; disabled?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <div>
@@ -223,8 +220,9 @@ function ToggleRow({ title, description, checked, onChange }: { title: string; d
       <button
         role="switch"
         aria-checked={checked}
+        disabled={disabled}
         onClick={onChange}
-        className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${checked ? "bg-maroon-700" : "bg-warmgrey-300 dark:bg-white/15"}`}
+        className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${checked ? "bg-maroon-700" : "bg-warmgrey-300 dark:bg-white/15"} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${checked ? "translate-x-[22px]" : "translate-x-0.5"}`} />
       </button>
