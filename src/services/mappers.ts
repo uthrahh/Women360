@@ -132,6 +132,10 @@ interface ApiCycleEntry {
   mood: string | null;
   symptoms: string[];
   notes: string | null;
+  // Optional on the wire: the frontend and API deploy independently, so an
+  // older API response without these must not break the page.
+  contextTags?: string[];
+  excludeCycle?: boolean;
 }
 
 export function toFrontendCycleDay(entry: ApiCycleEntry): CycleDay {
@@ -144,6 +148,8 @@ export function toFrontendCycleDay(entry: ApiCycleEntry): CycleDay {
     energy: entry.energy ?? undefined,
     symptoms: entry.symptoms,
     notes: entry.notes ?? undefined,
+    contextTags: entry.contextTags ?? [],
+    excludeCycle: entry.excludeCycle ?? false,
   };
 }
 
@@ -163,6 +169,7 @@ interface ApiCycleSummary {
   confidence: "low" | "medium" | "high";
   irregularityNote: string | null;
   lastCycleLengths: number[];
+  predictionBasis?: CycleSummary["predictionBasis"];
   history: ApiCycleEntry[];
 }
 
@@ -183,6 +190,11 @@ export function toFrontendCycleSummary(apiSummary: ApiCycleSummary): CycleSummar
     confidence: apiSummary.confidence,
     irregularityNote: apiSummary.irregularityNote,
     lastCycleLengths: apiSummary.lastCycleLengths,
+    predictionBasis: apiSummary.predictionBasis ?? {
+      usedProfileDefault: apiSummary.lastCycleLengths.length < 2,
+      rangeHalfWidth: 3,
+      excludedCycles: 0,
+    },
     history: apiSummary.history.map(toFrontendCycleDay),
   };
 }
@@ -200,6 +212,8 @@ export function toBackendCycleEntry(entry: Partial<CycleDay>) {
     mood: entry.mood,
     symptoms: entry.symptoms,
     notes: entry.notes,
+    contextTags: entry.contextTags,
+    excludeCycle: entry.excludeCycle,
   };
 }
 
