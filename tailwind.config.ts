@@ -58,6 +58,9 @@ export default {
       boxShadow: {
         subtle: "0 1px 2px rgba(23, 19, 16, 0.06)",
         card: "0 1px 3px rgba(23, 19, 16, 0.08), 0 1px 2px rgba(23,19,16,0.04)",
+        // Only for the floating bottom nav — the one element that genuinely
+        // sits above content and needs separating from it.
+        float: "0 8px 28px rgba(23, 19, 16, 0.14), 0 2px 6px rgba(23, 19, 16, 0.08)",
       },
       maxWidth: {
         content: "1180px",

@@ -33,7 +33,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby="modal-title"
         className={clsx(
-          "relative bg-[var(--w360-bg-raised)] w-full sm:rounded-lg rounded-t-lg shadow-card border border-[var(--w360-border)] max-h-[88vh] overflow-y-auto w360-scrollbar",
+          "relative bg-[var(--w360-bg-raised)] w-full sm:rounded-[28px] rounded-t-[28px] shadow-card border border-[var(--w360-border)] max-h-[88vh] overflow-y-auto w360-scrollbar",
           size === "sm" && "sm:max-w-sm",
           size === "md" && "sm:max-w-lg",
           size === "lg" && "sm:max-w-2xl"

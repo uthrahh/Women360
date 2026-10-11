@@ -27,8 +27,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={clsx(
-          "inline-flex items-center justify-center rounded font-medium transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed",
-          "senior:rounded-[14px] senior:font-semibold",
+          "inline-flex items-center justify-center rounded-full font-medium transition-[background-color,transform] duration-150 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed",
+          "senior:font-semibold",
           variants[variant],
           sizes[size],
           fullWidth && "w-full",
