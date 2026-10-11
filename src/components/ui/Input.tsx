@@ -25,9 +25,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={clsx(
-            "px-3.5 py-2.5 rounded border bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm",
+            "px-4 py-3 rounded-xl border bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm",
             "placeholder:text-[var(--w360-text-muted)]",
-            "senior:text-lg senior:py-3.5 senior:rounded-[10px]",
+            "senior:text-lg senior:py-3.5 senior:rounded-2xl",
             error ? "border-red-400" : "border-[var(--w360-border)]",
             className
           )}

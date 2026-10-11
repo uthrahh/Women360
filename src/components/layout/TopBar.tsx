@@ -33,21 +33,27 @@ export function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 sm:px-6 h-16 border-b border-[var(--w360-border)] bg-[var(--w360-bg)]/90 backdrop-blur">
-      <Link to="/app/dashboard" className="lg:hidden font-display text-lg font-semibold">Women360</Link>
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 sm:px-6 h-16 bg-[var(--w360-bg)]/90 backdrop-blur">
+      <Link to="/app/dashboard" className="lg:hidden font-display text-xl font-semibold tracking-tight">Women360</Link>
       <div className="hidden lg:block" />
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <button
           onClick={senior.toggleSeniorMode}
           className={clsx(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
+            "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-colors",
             senior.seniorMode
               ? "bg-maroon-700 text-white border-maroon-700"
               : "border-[var(--w360-border)] text-[var(--w360-text-muted)] hover:text-[var(--w360-text)]"
           )}
           aria-pressed={senior.seniorMode}
+          aria-label={`Senior Mode ${senior.seniorMode ? "on" : "off"}`}
         >
-          Senior Mode {senior.seniorMode ? "On" : "Off"}
+          <span
+            aria-hidden
+            className={clsx("w-1.5 h-1.5 rounded-full", senior.seniorMode ? "bg-white" : "bg-warmgrey-300")}
+          />
+          <span className="sm:hidden">Senior</span>
+          <span className="hidden sm:inline">Senior Mode</span>
         </button>
         <button
           onClick={theme.toggle}
