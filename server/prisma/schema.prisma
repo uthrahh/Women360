@@ -185,6 +185,15 @@ model CycleEntry {
   mood      String?
   symptoms  String[]   @default([])
   notes     String?
+  // Why the cycle this period ended was unusual (stress, illness, travel,
+  // a medication or birth-control change...) — set on the period's start
+  // day. Lets the person tell the app what happened instead of it silently
+  // treating an outlier as her normal. Controlled vocabulary, validated in
+  // cycle.validation.ts.
+  contextTags String[] @default([])
+  // When true, the cycle that this period's start day ended is left out of
+  // cycle-length prediction (it's still shown in history).
+  excludeCycle Boolean @default(false)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 

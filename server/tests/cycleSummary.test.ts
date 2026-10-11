@@ -233,6 +233,44 @@ describe("phaseForDate", () => {
 describe("detectPeriods", () => {
   it("is exported and groups consecutive period days the same way computeCycleSummary uses internally", () => {
     const result = detectPeriods(period("2026-01-01", 5));
-    expect(result).toEqual([{ start: d("2026-01-01"), end: d("2026-01-05") }]);
+    expect(result).toEqual([{ start: d("2026-01-01"), end: d("2026-01-05"), excludeCycle: false }]);
+  });
+});
+
+describe("computeCycleSummary — cycles flagged as unusual", () => {
+  // Starts 28, 45, 45 and 28 days apart. The two 45-day cycles are the
+  // "stressful, late" ones the person tells the app about.
+  const starts = ["2026-01-01", "2026-01-29", "2026-03-15", "2026-04-29", "2026-05-27"];
+  const build = (flagged: string[]): PeriodDayInput[] =>
+    starts.flatMap((s) =>
+      period(s, 4).map((day, i) => (i === 0 && flagged.includes(s) ? { ...day, excludeCycle: true } : day))
+    );
+  const run = (periodDays: PeriodDayInput[]) =>
+    computeCycleSummary({ periodDays, today: d("2026-06-05"), profile: DEFAULT_PROFILE, isPerimenopause: false });
+
+  it("counts every cycle when nothing is flagged", () => {
+    const result = run(build([]));
+    expect(result.lastCycleLengths).toEqual([28, 45, 45, 28]);
+    expect(result.cycleLength).not.toBe(28);
+    expect(result.predictionBasis.excludedCycles).toBe(0);
+  });
+
+  it("leaves flagged cycles out of the statistics so they don't skew what counts as normal", () => {
+    const result = run(build(["2026-03-15", "2026-04-29"]));
+    expect(result.lastCycleLengths).toEqual([28, 28]);
+    expect(result.cycleLength).toBe(28);
+    expect(result.predictionBasis.excludedCycles).toBe(2);
+  });
+
+  it("still anchors the next prediction on the most recent period even when its cycle was flagged", () => {
+    const result = run(build(["2026-05-27"]));
+    expect(result.currentDay).toBe(10); // 2026-05-27 -> 2026-06-05
+    expect(result.predictionBasis.excludedCycles).toBe(1);
+  });
+
+  it("reports when the settings default was used because there isn't enough history of her own", () => {
+    const result = run(period("2026-05-27", 4));
+    expect(result.predictionBasis.usedProfileDefault).toBe(true);
+    expect(run(build([])).predictionBasis.usedProfileDefault).toBe(false);
   });
 });

@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+// A fixed vocabulary (not free text) so these can drive prediction logic and
+// be reasoned about later. Mirrors CONTEXT_TAG_OPTIONS in the frontend.
+export const CONTEXT_TAGS = [
+  "stress",
+  "illness",
+  "travel",
+  "new_medication",
+  "contraception_change",
+  "intense_exercise",
+  "weight_change",
+  "sleep_disruption",
+] as const;
+
 export const cycleEntrySchema = z.object({
   date: z.string().date(),
   isPeriod: z.boolean().default(false),
@@ -9,6 +22,8 @@ export const cycleEntrySchema = z.object({
   mood: z.string().trim().max(60).optional(),
   symptoms: z.array(z.string().trim().min(1).max(60)).max(30).optional(),
   notes: z.string().trim().max(1000).optional(),
+  contextTags: z.array(z.enum(CONTEXT_TAGS)).max(CONTEXT_TAGS.length).optional(),
+  excludeCycle: z.boolean().optional(),
 });
 
 export const cycleProfileSchema = z.object({
