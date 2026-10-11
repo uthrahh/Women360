@@ -216,3 +216,60 @@ describe("cycle summary — timezone override", () => {
     expect(clientToday.body.data.currentDay).toBe(serverToday.body.data.currentDay + 1);
   });
 });
+
+describe("cycle context tags and excluded cycles", () => {
+  it("stores context tags and the exclude flag, and an edit that omits them leaves them alone", async () => {
+    const token = await registerUser();
+    const date = daysAgo(2);
+    const put = await request(app)
+      .put(`/api/v1/cycle/entries/${date}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ isPeriod: true, contextTags: ["stress", "travel"], excludeCycle: true });
+    expect(put.status).toBe(200);
+    expect(put.body.data.contextTags).toEqual(["stress", "travel"]);
+    expect(put.body.data.excludeCycle).toBe(true);
+
+    // A later edit that doesn't mention them (e.g. the one-tap "period
+    // started today") must not silently wipe what she told the app.
+    const edit = await request(app)
+      .put(`/api/v1/cycle/entries/${date}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ isPeriod: true, flow: "MEDIUM" });
+    expect(edit.body.data.contextTags).toEqual(["stress", "travel"]);
+    expect(edit.body.data.excludeCycle).toBe(true);
+
+    // Explicitly clearing works.
+    const cleared = await request(app)
+      .put(`/api/v1/cycle/entries/${date}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ isPeriod: true, contextTags: [], excludeCycle: false });
+    expect(cleared.body.data.contextTags).toEqual([]);
+    expect(cleared.body.data.excludeCycle).toBe(false);
+  });
+
+  it("rejects a context tag outside the controlled vocabulary", async () => {
+    const token = await registerUser();
+    const res = await request(app)
+      .put(`/api/v1/cycle/entries/${daysAgo(1)}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ isPeriod: true, contextTags: ["made_up_reason"] });
+    expect(res.status).toBe(422);
+  });
+
+  it("leaves a flagged cycle out of the prediction and reports how many were excluded", async () => {
+    // Starts 28, 28 and then a 50-day gap ago -> the gap is the outlier.
+    const token = await registerAndLogStarts([140, 112, 84, 34]);
+    const before = await request(app).get("/api/v1/cycle/summary").set("Authorization", `Bearer ${token}`);
+    expect(before.body.data.lastCycleLengths).toEqual([28, 28, 50]);
+
+    await request(app)
+      .put(`/api/v1/cycle/entries/${daysAgo(34)}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ isPeriod: true, contextTags: ["illness"], excludeCycle: true });
+
+    const after = await request(app).get("/api/v1/cycle/summary").set("Authorization", `Bearer ${token}`);
+    expect(after.body.data.lastCycleLengths).toEqual([28, 28]);
+    expect(after.body.data.cycleLength).toBe(28);
+    expect(after.body.data.predictionBasis.excludedCycles).toBe(1);
+  });
+});

@@ -33,6 +33,8 @@ export type CyclePhase = "menstrual" | "follicular" | "ovulation" | "luteal" | "
 export interface PeriodDayInput {
   date: Date;
   flow: "SPOTTING" | "LIGHT" | "MEDIUM" | "HEAVY" | null;
+  /** The person flagged the cycle this period ended as unusual — leave its length out of prediction. */
+  excludeCycle?: boolean;
 }
 
 export interface CycleSummaryInput {
@@ -60,6 +62,15 @@ export interface CycleSummaryResult {
   confidence: "low" | "medium" | "high";
   irregularityNote: string | null;
   lastCycleLengths: number[];
+  /** How the prediction was built — surfaced so the UI can explain itself instead of showing a bare date. */
+  predictionBasis: {
+    /** True when there weren't enough of her own cycles, so the Cycle settings value was used. */
+    usedProfileDefault: boolean;
+    /** Half-width in days of the predicted range (the "±"). */
+    rangeHalfWidth: number;
+    /** Cycles she flagged as unusual that were left out of the statistics. */
+    excludedCycles: number;
+  };
 }
 
 /**
@@ -82,7 +93,7 @@ export interface CycleSummaryResult {
  * still counts toward its length, but spotting that precedes the real flow
  * does not (consistent with it not being able to start the period either).
  */
-export function detectPeriods(periodDays: PeriodDayInput[]): { start: Date; end: Date }[] {
+export function detectPeriods(periodDays: PeriodDayInput[]): { start: Date; end: Date; excludeCycle: boolean }[] {
   const sorted = [...periodDays].sort((a, b) => a.date.getTime() - b.date.getTime());
   const runs: PeriodDayInput[][] = [];
   let current: PeriodDayInput[] = [];
@@ -97,11 +108,17 @@ export function detectPeriods(periodDays: PeriodDayInput[]): { start: Date; end:
   }
   if (current.length > 0) runs.push(current);
 
-  const periods: { start: Date; end: Date }[] = [];
+  const periods: { start: Date; end: Date; excludeCycle: boolean }[] = [];
   for (const run of runs) {
     const startEntry = run.find((d) => d.flow !== "SPOTTING");
     if (!startEntry) continue; // entirely spotting — doesn't count as a period
-    periods.push({ start: startEntry.date, end: run[run.length - 1].date });
+    periods.push({
+      start: startEntry.date,
+      end: run[run.length - 1].date,
+      // Flagged on any day of the run (people often tick it while editing
+      // day 2, not only on the very first day).
+      excludeCycle: run.some((d) => d.excludeCycle === true),
+    });
   }
   return periods;
 }
@@ -115,7 +132,16 @@ export function computeCycleSummary(input: CycleSummaryInput): CycleSummaryResul
   const starts = periods.map((p) => p.start);
 
   const allCycleLengths: number[] = [];
+  let excludedCycles = 0;
   for (let i = 1; i < starts.length; i++) {
+    // The cycle that *ended* at an excluded period's start is the unusual
+    // one she told us about (a stressful late month, a medication change) —
+    // it stays in her history but doesn't skew what counts as "normal".
+    // The period itself still anchors the next prediction.
+    if (periods[i].excludeCycle) {
+      excludedCycles++;
+      continue;
+    }
     allCycleLengths.push(Math.round((starts[i].getTime() - starts[i - 1].getTime()) / DAY_MS));
   }
   // Only the most recent history is used for prediction — a cycle from a
@@ -238,6 +264,11 @@ export function computeCycleSummary(input: CycleSummaryInput): CycleSummaryResul
     confidence,
     irregularityNote,
     lastCycleLengths: recentLengths.slice(-6),
+    predictionBasis: {
+      usedProfileDefault: !hasEnoughHistory,
+      rangeHalfWidth,
+      excludedCycles,
+    },
   };
 }
 
@@ -355,7 +386,7 @@ export const cycleService = {
       cycleService.getProfile(userId),
       prisma.cycleEntry.findMany({
         where: { userId, isPeriod: true },
-        select: { date: true, flow: true },
+        select: { date: true, flow: true, excludeCycle: true },
         orderBy: { date: "desc" },
         take: 400,
       }),
@@ -384,7 +415,7 @@ export const cycleService = {
       cycleService.getProfile(userId),
       prisma.cycleEntry.findMany({
         where: { userId, isPeriod: true },
-        select: { date: true, flow: true },
+        select: { date: true, flow: true, excludeCycle: true },
         orderBy: { date: "desc" },
         take: 400,
       }),
