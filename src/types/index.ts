@@ -37,6 +37,10 @@ export interface CycleDay {
   energy?: number; // 0-4
   symptoms?: string[];
   notes?: string;
+  // Why the cycle this period ended was unusual, and whether to leave that
+  // cycle out of predictions. Set on a period's start day.
+  contextTags?: string[];
+  excludeCycle?: boolean;
 }
 
 export interface CycleSummary {
@@ -66,6 +70,12 @@ export interface CycleSummary {
   confidence: "low" | "medium" | "high";
   irregularityNote: string | null;
   lastCycleLengths: number[];
+  // How the prediction was built, so the UI can explain itself.
+  predictionBasis: {
+    usedProfileDefault: boolean;
+    rangeHalfWidth: number;
+    excludedCycles: number;
+  };
   history: CycleDay[];
 }
 

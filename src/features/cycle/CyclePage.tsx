@@ -13,7 +13,9 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useApp } from "@/context/AppContext";
-import { ChevronLeft, ChevronRight, Settings, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Download, Settings, Trash2, X } from "lucide-react";
+import { CONTEXT_TAG_OPTIONS } from "@/lib/cycleContext";
+import { buildCycleCsv } from "@/lib/cycleCsv";
 import { ExplainThisCard } from "@/components/ExplainThisCard";
 import { insightsService } from "@/services/insightsService";
 
@@ -85,10 +87,12 @@ interface LogFormState {
   energy: number | null;
   symptoms: string[];
   notes: string;
+  contextTags: string[];
+  excludeCycle: boolean;
 }
 
 function emptyLogForm(): LogFormState {
-  return { isPeriod: false, flow: "", pain: null, mood: "", energy: null, symptoms: [], notes: "" };
+  return { isPeriod: false, flow: "", pain: null, mood: "", energy: null, symptoms: [], notes: "", contextTags: [], excludeCycle: false };
 }
 
 function dayToLogForm(day: CycleDay): LogFormState {
@@ -100,6 +104,8 @@ function dayToLogForm(day: CycleDay): LogFormState {
     energy: day.energy ?? null,
     symptoms: day.symptoms ?? [],
     notes: day.notes ?? "",
+    contextTags: day.contextTags ?? [],
+    excludeCycle: day.excludeCycle ?? false,
   };
 }
 
@@ -169,6 +175,13 @@ export default function CyclePage() {
     setCustomSymptomInput("");
   }
 
+  function toggleContextTag(tag: string) {
+    setLogForm((f) => ({
+      ...f,
+      contextTags: f.contextTags.includes(tag) ? f.contextTags.filter((t) => t !== tag) : [...f.contextTags, tag],
+    }));
+  }
+
   function removeSymptom(symptom: string) {
     setLogForm((f) => ({ ...f, symptoms: f.symptoms.filter((s) => s !== symptom) }));
   }
@@ -186,6 +199,10 @@ export default function CyclePage() {
         energy: logForm.energy ?? undefined,
         symptoms: logForm.symptoms,
         notes: logForm.notes.trim() || undefined,
+        // Always sent (as empty/false when not a period day) so unticking
+        // actually clears what was saved — an omitted field is left alone.
+        contextTags: logForm.isPeriod ? logForm.contextTags : [],
+        excludeCycle: logForm.isPeriod ? logForm.excludeCycle : false,
       })
       .then(
         () => {
@@ -299,6 +316,45 @@ export default function CyclePage() {
           />
           Period day
         </label>
+        {logForm.isPeriod && (
+          <fieldset className="flex flex-col gap-2.5 rounded-2xl bg-[var(--w360-tint)] p-4">
+            <legend className="sr-only">What was going on this cycle</legend>
+            <p className="text-sm font-medium senior:text-lg">Was anything unusual about this cycle?</p>
+            <p className="text-xs text-[var(--w360-text-muted)] senior:text-base">
+              Optional. Tell Women360 what was going on and it won't mistake a stressful or disrupted month for your
+              normal.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {CONTEXT_TAG_OPTIONS.map((o) => {
+                const on = logForm.contextTags.includes(o.value);
+                return (
+                  <button
+                    key={o.value}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleContextTag(o.value)}
+                    className={`rounded-full border px-3.5 py-2 text-sm font-medium transition-colors senior:text-base ${
+                      on
+                        ? "bg-maroon-700 border-maroon-700 text-white dark:bg-maroon-300 dark:border-maroon-300 dark:text-ink-900"
+                        : "border-[var(--w360-border)] bg-[var(--w360-bg-raised)] hover:border-maroon-400"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+            <label className="flex items-start gap-2.5 text-sm senior:text-base">
+              <input
+                type="checkbox"
+                checked={logForm.excludeCycle}
+                onChange={(e) => setLogForm((f) => ({ ...f, excludeCycle: e.target.checked }))}
+                className="w-4 h-4 mt-0.5 accent-[#6B1D30]"
+              />
+              <span>Don't use the cycle before this period when predicting my next one</span>
+            </label>
+          </fieldset>
+        )}
         <div className="flex flex-col gap-1.5">
           <label htmlFor="flow" className="text-sm font-medium senior:text-lg">Flow</label>
           <select
@@ -672,6 +728,9 @@ function OverviewTab({ cycle }: { cycle: CycleSummary }) {
       />
       <Stat label="Cycles tracked" value={`${cycle.lastCycleLengths.length}`} />
       <div className="sm:col-span-3">
+        <PredictionExplainer cycle={cycle} />
+      </div>
+      <div className="sm:col-span-3">
         <Card>
           <CardBody className="pt-5">
             <p className="text-sm font-medium mb-3">Last 7 days</p>
@@ -688,7 +747,143 @@ function OverviewTab({ cycle }: { cycle: CycleSummary }) {
           </CardBody>
         </Card>
       </div>
+      <div className="sm:col-span-3">
+        <ExportCard />
+      </div>
     </div>
+  );
+}
+
+// Most trackers show a date and nothing else, which is why a wrong
+// prediction feels arbitrary and untrustworthy. This shows exactly what the
+// number was built from — her own cycles — and how she can correct it.
+function PredictionExplainer({ cycle }: { cycle: CycleSummary }) {
+  const { lastCycleLengths: lengths, predictionBasis: basis } = cycle;
+  const max = Math.max(...lengths, 1);
+  return (
+    <details className="group rounded-[var(--w360-radius-card)] border border-[var(--w360-border)] bg-[var(--w360-bg-raised)]">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-medium [&::-webkit-details-marker]:hidden">
+        How this prediction works
+        <ChevronRight size={16} className="shrink-0 text-[var(--w360-text-muted)] transition-transform group-open:rotate-90" aria-hidden />
+      </summary>
+      <div className="flex flex-col gap-3 px-5 pb-5 text-sm text-[var(--w360-text-muted)]">
+        {basis.usedProfileDefault ? (
+          <p>
+            You've logged {lengths.length === 1 ? "one full cycle" : `${lengths.length} full cycles`} so far — not enough
+            to find <em>your</em> pattern yet. Until then this uses the {cycle.cycleLength}-day cycle length from your
+            Cycle settings. After a few more periods it switches to your own history automatically.
+          </p>
+        ) : (
+          <>
+            <p>
+              Built only from your own last {lengths.length} cycles — never a population average. Your typical cycle is{" "}
+              <span className="font-medium text-[var(--w360-text)]">{cycle.cycleLength} days</span>, and the
+              ±{basis.rangeHalfWidth}-day range reflects how much your own cycles vary.
+            </p>
+            <div className="flex items-end gap-2 h-14" aria-hidden>
+              {lengths.map((len, i) => (
+                <div key={i} className="flex flex-1 max-w-12 flex-col items-center justify-end gap-1 h-full">
+                  <div className="w-full rounded-t bg-maroon-300 dark:bg-maroon-400/70" style={{ height: `${(len / max) * 100}%` }} />
+                </div>
+              ))}
+            </div>
+            <p className="text-xs">Cycle lengths used: {lengths.join(", ")} days.</p>
+          </>
+        )}
+        {basis.excludedCycles > 0 && (
+          <p>
+            {basis.excludedCycles === 1 ? "One cycle" : `${basis.excludedCycles} cycles`} you marked as unusual{" "}
+            {basis.excludedCycles === 1 ? "isn't" : "aren't"} counted, so {basis.excludedCycles === 1 ? "it doesn't" : "they don't"} skew
+            this.
+          </p>
+        )}
+        <p>
+          If a cycle was thrown off by something — stress, illness, travel, a medication or birth control change —
+          log your period day and tell Women360 what happened. That cycle then stops counting as your normal.
+        </p>
+      </div>
+    </details>
+  );
+}
+
+// Her history is hers: the studies on cycle apps keep finding that losing
+// years of data (a new phone, a closed account) and being unable to take it
+// elsewhere is a top frustration — and the pattern in it is exactly what a
+// clinician asks about.
+function ExportCard() {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+
+  async function loadCsv(): Promise<string | null> {
+    const days = await cycleService.listEntries("2000-01-01", localDateISO());
+    if (days.length === 0) {
+      toast.show("Nothing logged yet to export.");
+      return null;
+    }
+    return buildCycleCsv(days);
+  }
+
+  async function download() {
+    setBusy(true);
+    try {
+      const csv = await loadCsv();
+      if (!csv) return;
+      const filename = `women360-cycle-${localDateISO()}.csv`;
+      const file = new File([csv], filename, { type: "text/csv" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "My cycle data" });
+      } else {
+        const url = URL.createObjectURL(file);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.show("Export started");
+      }
+    } catch (err) {
+      // Dismissing the share sheet isn't an error.
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      toast.show("Couldn't export. Try Copy instead.", { tone: "error" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copy() {
+    setBusy(true);
+    try {
+      const csv = await loadCsv();
+      if (!csv) return;
+      await navigator.clipboard.writeText(csv);
+      toast.show("Copied — paste it into a note or spreadsheet");
+    } catch {
+      toast.show("Couldn't copy that. Please try again.", { tone: "error" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardBody className="pt-5 flex flex-col gap-3">
+        <div>
+          <p className="text-sm font-medium">Your data is yours</p>
+          <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">
+            Export every day you've logged as a spreadsheet-ready file — to keep a backup, switch apps, or bring to an
+            appointment.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" onClick={download} disabled={busy}>
+            <Download size={15} /> Export CSV
+          </Button>
+          <Button variant="ghost" size="sm" onClick={copy} disabled={busy}>
+            <Copy size={15} /> Copy as text
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
   );
 }
 
