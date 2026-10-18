@@ -119,6 +119,12 @@ export default function SettingsPage() {
                   checked={theme.theme === "dark"}
                   onChange={theme.toggle}
                 />
+                <ToggleRow
+                  title="Match my device"
+                  description="Follow your phone or computer's light and dark setting, and change with it."
+                  checked={theme.followingDevice}
+                  onChange={() => (theme.followingDevice ? theme.setTheme(theme.theme) : theme.followDevice())}
+                />
               </CardBody></Card>
             ),
           },

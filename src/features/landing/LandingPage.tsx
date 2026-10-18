@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { HeroButton } from "@/components/ui/HeroButton";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import CrystalizedBall from "@/components/reactbits/CrystalizedBall";
 import { useBrandColors } from "@/hooks/useBrandColors";
 import { Moon, Activity, Apple, CalendarHeart, Smile, ShieldCheck, ArrowRight } from "lucide-react";
@@ -35,7 +36,8 @@ export default function LandingPage() {
           <a href="#senior-mode" className="hover:text-[var(--w360-text)]">Senior Mode</a>
           <a href="#privacy" className="hover:text-[var(--w360-text)]">Privacy</a>
         </nav>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <ThemeToggle />
           <Link to="/login" className="text-sm font-medium hidden sm:inline">Log in</Link>
           <Link to="/register"><Button size="sm">Get started</Button></Link>
         </div>
