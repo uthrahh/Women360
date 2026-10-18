@@ -1,6 +1,7 @@
 import { clearTokens, getTokens, request, setTokens } from "./apiClient";
 import type { User } from "@/types";
 import { toFrontendUser } from "./mappers";
+import { randomDevicePassword } from "@/lib/devicePassword";
 
 const USER_CACHE_KEY = "w360_session_user";
 const DEVICE_CREDENTIALS_KEY = "w360_device_credentials";
@@ -45,10 +46,10 @@ export const authService = {
     return persistSession(res);
   },
 
-  async register(name: string, email: string, password: string, dateOfBirth?: string): Promise<User> {
+  async register(name: string, email: string, password: string, dateOfBirth?: string, website?: string): Promise<User> {
     const res = await request<AuthResponse>("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ name, email, password, dateOfBirth: dateOfBirth || undefined }),
+      body: JSON.stringify({ name, email, password, dateOfBirth: dateOfBirth || undefined, website: website || undefined }),
     });
     return persistSession(res);
   },
@@ -122,7 +123,7 @@ export const authService = {
     if (existing) return this.login(existing.email, existing.password);
 
     const id = crypto.randomUUID();
-    const creds = { email: `device-${id}@women360.local`, password: `device-${id}` };
+    const creds = { email: `device-${id}@women360.local`, password: randomDevicePassword() };
     const user = await this.register("Me", creds.email, creds.password);
     saveDeviceCredentials(creds);
     return this.completeOnboarding().catch(() => user);
