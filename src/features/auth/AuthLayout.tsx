@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
@@ -16,7 +17,8 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
         </div>
         <p className="text-xs text-maroon-300">Women360 · Personal health, not a diagnosis.</p>
       </div>
-      <div className="flex flex-col justify-center px-6 sm:px-12 py-16">
+      <div className="relative flex flex-col justify-center px-6 sm:px-12 py-16">
+        <ThemeToggle className="absolute top-4 right-4 sm:right-6" />
         <div className="w-full max-w-sm mx-auto">
           <Link to="/" className="lg:hidden font-display text-xl font-semibold mb-10 block">Women360</Link>
           <h1 className="font-display text-2xl font-semibold">{title}</h1>
