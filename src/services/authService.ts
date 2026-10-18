@@ -12,6 +12,23 @@ interface AuthResponse {
   refreshToken: string;
 }
 
+// A correct password for an account with two-factor on doesn't sign anyone in;
+// it returns this, to be traded for a session together with a code.
+export interface TwoFactorChallenge {
+  twoFactorRequired: true;
+  challengeToken: string;
+}
+
+export function isTwoFactorChallenge(result: User | TwoFactorChallenge): result is TwoFactorChallenge {
+  return "twoFactorRequired" in result && result.twoFactorRequired === true;
+}
+
+export interface TwoFactorStatus {
+  available: boolean;
+  enabled: boolean;
+  backupCodesRemaining: number;
+}
+
 function cacheUser(user: User): void {
   localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
 }
@@ -38,10 +55,51 @@ function saveDeviceCredentials(creds: DeviceCredentials): void {
 }
 
 export const authService = {
-  async login(email: string, password: string): Promise<User> {
-    const res = await request<AuthResponse>("/auth/login", {
+  async login(email: string, password: string): Promise<User | TwoFactorChallenge> {
+    const res = await request<AuthResponse | TwoFactorChallenge>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    });
+    if ("twoFactorRequired" in res && res.twoFactorRequired) return res;
+    return persistSession(res as AuthResponse);
+  },
+
+  async completeTwoFactorLogin(challengeToken: string, code: string): Promise<User> {
+    const res = await request<AuthResponse>("/auth/login/2fa", {
+      method: "POST",
+      body: JSON.stringify({ challengeToken, code }),
+    });
+    return persistSession(res);
+  },
+
+  // Changes the password, ends every other session, and keeps this device
+  // signed in with the fresh session the server hands back.
+  async changePassword(currentPassword: string, newPassword: string): Promise<User> {
+    const res = await request<AuthResponse>("/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    return persistSession(res);
+  },
+
+  // Ends every session on every device, this one included.
+  async logoutEverywhere(): Promise<void> {
+    await request("/auth/logout-all", { method: "POST" });
+    clearTokens();
+    localStorage.removeItem(USER_CACHE_KEY);
+  },
+
+  getTwoFactorStatus: () => request<TwoFactorStatus>("/auth/2fa"),
+  startTwoFactorSetup: () => request<{ secret: string; otpauthUri: string }>("/auth/2fa/setup", { method: "POST" }),
+  confirmTwoFactorSetup: (code: string) =>
+    request<{ backupCodes: string[] }>("/auth/2fa/confirm", { method: "POST", body: JSON.stringify({ code }) }),
+  regenerateBackupCodes: (password: string, code: string) =>
+    request<{ backupCodes: string[] }>("/auth/2fa/backup-codes", { method: "POST", body: JSON.stringify({ password, code }) }),
+  // Turning it off ends other sessions server-side and returns a fresh one.
+  async disableTwoFactor(password: string, code: string): Promise<User> {
+    const res = await request<AuthResponse>("/auth/2fa/disable", {
+      method: "POST",
+      body: JSON.stringify({ password, code }),
     });
     return persistSession(res);
   },
@@ -120,7 +178,13 @@ export const authService = {
   // reinstalling the app starts a fresh account since storage is wiped.
   async ensureDeviceAccount(): Promise<User> {
     const existing = getDeviceCredentials();
-    if (existing) return this.login(existing.email, existing.password);
+    if (existing) {
+      const result = await this.login(existing.email, existing.password);
+      // A throwaway device account has no way to type a code; it's never given
+      // a Security tab, so this only guards against it being enabled elsewhere.
+      if (isTwoFactorChallenge(result)) throw new Error("This device account needs a sign-in code it can't provide.");
+      return result;
+    }
 
     const id = crypto.randomUUID();
     const creds = { email: `device-${id}@women360.local`, password: randomDevicePassword() };
