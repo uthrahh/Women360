@@ -33,7 +33,7 @@ jobs:
       JWT_REFRESH_SECRET: ci-refresh-secret-placeholder-0123456789
       CORS_ORIGINS: http://localhost:5173
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -60,7 +60,7 @@ jobs:
     name: Frontend (lint, typecheck, build)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20
