@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { BadRequestError, NotFoundError } from "@/lib/errors";
+import { BadRequestError, ForbiddenError, NotFoundError } from "@/lib/errors";
 import { recordAudit } from "@/lib/audit";
 import type { Role } from "@prisma/client";
 
@@ -34,8 +34,19 @@ export const adminService = {
     if (actorId === targetUserId) {
       throw new BadRequestError("You can't change your own role.");
     }
+    // Admin accounts are never created or altered through the API. If a
+    // hijacked admin session could mint new admins or demote the others, one
+    // stolen session would be the whole system. They're created by someone
+    // with server access (npm run create-admin), which also means the last
+    // admin can't be removed from here.
+    if (role === "ADMIN") {
+      throw new ForbiddenError("Admin accounts can only be created by an operator with server access.");
+    }
     const target = await prisma.user.findUnique({ where: { id: targetUserId } });
     if (!target) throw new NotFoundError("User not found.");
+    if (target.role === "ADMIN") {
+      throw new ForbiddenError("Admin accounts can't be changed from here.");
+    }
 
     const updated = await prisma.user.update({ where: { id: targetUserId }, data: { role } });
 
@@ -66,6 +77,9 @@ export const adminService = {
     }
     const target = await prisma.user.findUnique({ where: { id: targetUserId } });
     if (!target) throw new NotFoundError("User not found.");
+    if (target.role === "ADMIN") {
+      throw new ForbiddenError("Admin accounts can't be deactivated from here.");
+    }
 
     await prisma.$transaction([
       prisma.user.update({ where: { id: targetUserId }, data: { deletedAt: new Date() } }),
