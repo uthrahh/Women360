@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { User } from "@/types";
-import { authService } from "@/services/authService";
+import { authService, isTwoFactorChallenge, type TwoFactorChallenge } from "@/services/authService";
 import { isNativeApp } from "@/lib/platform";
 
 export function useAuth() {
@@ -68,7 +68,21 @@ export function useAuth() {
   const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
-      const u = await authService.login(email, password);
+      const result = await authService.login(email, password);
+      // A correct password with two-factor on isn't a sign-in yet — hand the
+      // challenge back so the form can ask for the code.
+      if (isTwoFactorChallenge(result)) return result;
+      setUser(result);
+      return result;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const completeTwoFactor = useCallback(async (challenge: TwoFactorChallenge, code: string) => {
+    setLoading(true);
+    try {
+      const u = await authService.completeTwoFactorLogin(challenge.challengeToken, code);
       setUser(u);
       return u;
     } finally {
@@ -106,5 +120,5 @@ export function useAuth() {
     setUser(updated);
   }, []);
 
-  return { user, bootstrapping, bootstrapError, retryDeviceSetup, loading, login, register, completeOnboarding, logout, refreshUser };
+  return { user, bootstrapping, bootstrapError, retryDeviceSetup, loading, login, completeTwoFactor, register, completeOnboarding, logout, refreshUser };
 }

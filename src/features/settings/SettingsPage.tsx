@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Tabs } from "@/components/ui/Tabs";
 import { useToast } from "@/components/ui/Toast";
 import { useNavigate } from "react-router-dom";
+import { SecurityTab } from "./SecurityTab";
 
 export default function SettingsPage() {
   const { auth, theme, senior } = useApp();
@@ -83,7 +84,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs
-        defaultTab={params.get("tab") === "essentials" ? "essentials" : params.get("tab") === "emergency" ? "emergency" : "profile"}
+        defaultTab={["essentials", "emergency", "security"].includes(params.get("tab") ?? "") ? params.get("tab")! : "profile"}
         tabs={[
           {
             id: "profile", label: "Profile",
@@ -178,6 +179,7 @@ export default function SettingsPage() {
               </CardBody></Card>
             ),
           },
+          { id: "security", label: "Security", content: <SecurityTab /> },
           {
             id: "privacy", label: "Privacy & sharing",
             content: (
