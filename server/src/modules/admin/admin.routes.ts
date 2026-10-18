@@ -6,6 +6,7 @@ import { requireRole } from "@/middleware/rbac";
 import { requireAdminIp, requireAdminTwoFactor } from "@/middleware/adminGuards";
 import { noContent, ok, paginated } from "@/lib/response";
 import { adminService } from "./admin.service";
+import { feedbackService } from "@/modules/feedback/feedback.service";
 import {
   listAuditLogQuerySchema,
   listUsersQuerySchema,
@@ -53,6 +54,16 @@ adminRouter.get(
   asyncHandler(async (req, res) => {
     const query = req.query as unknown as { page: number; pageSize: number; action?: string };
     const { items, total } = await adminService.listAuditLog(query);
+    return paginated(res, items, { page: query.page, pageSize: query.pageSize, total });
+  })
+);
+
+adminRouter.get(
+  "/feedback",
+  validate({ query: listAuditLogQuerySchema }),
+  asyncHandler(async (req, res) => {
+    const query = req.query as unknown as { page: number; pageSize: number };
+    const { items, total } = await feedbackService.list(query);
     return paginated(res, items, { page: query.page, pageSize: query.pageSize, total });
   })
 );

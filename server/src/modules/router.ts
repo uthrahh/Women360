@@ -15,6 +15,7 @@ import { messagesRouter } from "./messages/messages.routes";
 import { notificationsRouter } from "./notifications/notifications.routes";
 import { coachRouter } from "./coach/coach.routes";
 import { adminRouter } from "./admin/admin.routes";
+import { feedbackRouter } from "./feedback/feedback.routes";
 
 export const router = Router();
 
@@ -34,3 +35,4 @@ router.use("/messages", messagesRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/coach", coachRouter);
 router.use("/admin", adminRouter);
+router.use("/feedback", feedbackRouter);

@@ -76,6 +76,7 @@ model User {
   sleepEntries      SleepEntry[]
   wellbeingEntries  WellbeingEntry[]
   goals             Goal[]
+  feedback          Feedback[]
   appointments      Appointment[]
   medications       Medication[]
   medicationLogs    MedicationLog[]
@@ -390,6 +391,34 @@ model Goal {
   completed    Boolean      @default(false)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  checkIns     GoalCheckIn[]
+}
+
+// One row = "I did this today" for a goal, on the person's own calendar day
+// (the client sends the date, so a late-night check-in lands on the right day
+// regardless of server timezone). The streak is derived from these rows, never
+// stored, so it can't drift from the data behind it.
+model GoalCheckIn {
+  id        String   @id @default(cuid())
+  goalId    String
+  goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  @@unique([goalId, date])
+}
+
+// In-app feedback from Settings. Deleted with the account.
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  message   String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 // ---------------------------------------------------------------------------
