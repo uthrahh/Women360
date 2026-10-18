@@ -8,10 +8,12 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
+import { ItemList } from "@/components/ui/ItemList";
+import { NumberField } from "@/components/ui/NumberField";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
-import { Droplet, Apple, Plus, Pencil, Trash2 } from "lucide-react";
+import { Droplet, Apple, Plus } from "lucide-react";
 
 const HYDRATION_STEP_ML = 250;
 
@@ -306,40 +308,26 @@ export default function NutritionPage() {
             action={<Button onClick={openAdd}><Plus size={16} /> Log your first meal</Button>}
           />
         ) : (
-          <Card>
-            <CardBody className="p-0 divide-y divide-[var(--w360-border)]">
-              {data.meals.map((m) => (
-                <div key={m.id} className="flex items-center justify-between gap-3 px-5 py-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{m.name}</p>
-                    <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">{m.time} · {m.servings}</p>
-                    {m.notes && <p className="text-xs text-[var(--w360-text-muted)] italic mt-0.5 truncate">{m.notes}</p>}
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="text-right text-xs tabular-nums text-[var(--w360-text-muted)] leading-relaxed">
-                      <p className="text-sm">{m.calories} kcal</p>
-                      <p>{m.protein}g protein · {m.fibre}g fibre</p>
-                      <p>{m.carbs ?? "—"}g carbs · {m.fat ?? "—"}g fat</p>
-                    </div>
-                    <button
-                      onClick={() => openEdit(m)}
-                      aria-label={`Edit ${m.name}`}
-                      className="p-1.5 rounded hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--w360-text-muted)]"
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget(m)}
-                      aria-label={`Delete ${m.name}`}
-                      className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-[var(--w360-text-muted)] hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </CardBody>
-          </Card>
+          <>
+            <p className="text-xs text-[var(--w360-text-muted)] mb-2">Select a meal to edit or delete it.</p>
+            <ItemList
+              items={data.meals.map((m) => ({
+                id: m.id,
+                meal: m,
+                title: m.name,
+                description: [
+                  `${m.time} · ${m.servings}`,
+                  `${m.protein}g protein · ${m.fibre}g fibre · ${m.carbs ?? "—"}g carbs · ${m.fat ?? "—"}g fat`,
+                  m.notes,
+                ]
+                  .filter(Boolean)
+                  .join(" · "),
+                meta: `${m.calories} kcal`,
+              }))}
+              maxHeight={460}
+              onItemSelect={(row) => openEdit(row.meal)}
+            />
+          </>
         )}
       </section>
 
@@ -347,17 +335,16 @@ export default function NutritionPage() {
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <Input label="Meal / food name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} error={errors.name} required />
           <Input label="Time" type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))} error={errors.time} required />
-          <div className="grid grid-cols-2 gap-3">
-            <Input
+          <div className="grid grid-cols-2 gap-3 items-end">
+            <NumberField
               label="Amount"
-              type="number"
               min={0.25}
+              max={100}
               step={0.25}
-              inputMode="decimal"
+              startAt={1}
               value={form.servingAmount}
-              onChange={(e) => setForm((f) => ({ ...f, servingAmount: e.target.value }))}
+              onChange={(v) => setForm((f) => ({ ...f, servingAmount: v }))}
               error={errors.servingAmount}
-              required
             />
             <div className="flex flex-col gap-1.5">
               <label htmlFor="serving-unit" className="text-sm font-medium senior:text-lg">Unit</label>
@@ -373,12 +360,12 @@ export default function NutritionPage() {
               </select>
             </div>
           </div>
-          <Input label="Calories (kcal)" type="number" min={0} step={0.1} inputMode="decimal" value={form.calories} onChange={(e) => setForm((f) => ({ ...f, calories: e.target.value }))} error={errors.calories} hint="Up to one decimal place, e.g. 420.5" required />
+          <NumberField label="Calories" suffix="kcal" max={5000} step={1} startAt={100} value={form.calories} onChange={(v) => setForm((f) => ({ ...f, calories: v }))} error={errors.calories} hint="Drag, or tap and type. One decimal place is fine, e.g. 420.5" />
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Protein (g)" type="number" min={0} step={0.1} inputMode="decimal" value={form.protein} onChange={(e) => setForm((f) => ({ ...f, protein: e.target.value }))} error={errors.protein} />
-            <Input label="Fibre (g)" type="number" min={0} step={0.1} inputMode="decimal" value={form.fibre} onChange={(e) => setForm((f) => ({ ...f, fibre: e.target.value }))} error={errors.fibre} />
-            <Input label="Carbs (g)" type="number" min={0} step={0.1} inputMode="decimal" value={form.carbs} onChange={(e) => setForm((f) => ({ ...f, carbs: e.target.value }))} error={errors.carbs} />
-            <Input label="Fat (g)" type="number" min={0} step={0.1} inputMode="decimal" value={form.fat} onChange={(e) => setForm((f) => ({ ...f, fat: e.target.value }))} error={errors.fat} />
+            <NumberField label="Protein" suffix="g" optional max={500} step={1} startAt={10} value={form.protein} onChange={(v) => setForm((f) => ({ ...f, protein: v }))} error={errors.protein} />
+            <NumberField label="Fibre" suffix="g" optional max={500} step={1} startAt={10} value={form.fibre} onChange={(v) => setForm((f) => ({ ...f, fibre: v }))} error={errors.fibre} />
+            <NumberField label="Carbs" suffix="g" optional max={500} step={1} startAt={10} value={form.carbs} onChange={(v) => setForm((f) => ({ ...f, carbs: v }))} error={errors.carbs} />
+            <NumberField label="Fat" suffix="g" optional max={500} step={1} startAt={10} value={form.fat} onChange={(v) => setForm((f) => ({ ...f, fat: v }))} error={errors.fat} />
           </div>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="meal-notes" className="text-sm font-medium">Notes (optional)</label>
@@ -391,6 +378,18 @@ export default function NutritionPage() {
             />
           </div>
           <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save meal"}</Button>
+          {editingMeal !== null && editingMeal !== "new" && (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => {
+                setDeleteTarget(editingMeal);
+                setEditingMeal(null);
+              }}
+            >
+              Delete this meal
+            </Button>
+          )}
         </form>
       </Modal>
 

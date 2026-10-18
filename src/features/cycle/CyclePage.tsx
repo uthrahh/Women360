@@ -9,6 +9,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
+import { NumberField } from "@/components/ui/NumberField";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
@@ -1173,25 +1174,25 @@ function CycleSettingsModal({ open, onClose, onSaved }: { open: boolean; onClose
           Used as a starting estimate until you've logged a few cycles of your own — after that, your own logged
           pattern takes over the prediction.
         </p>
-        <Input
-          label="Average cycle length (days)"
-          type="number"
+        <NumberField
+          label="Cycle length"
+          suffix="days"
           min={15}
           max={90}
+          startAt={28}
           value={averageCycleLength}
-          onChange={(e) => setAverageCycleLength(e.target.value)}
+          onChange={setAverageCycleLength}
           error={errors.cycleLen}
-          required
         />
-        <Input
-          label="Average period length (days)"
-          type="number"
+        <NumberField
+          label="Period length"
+          suffix="days"
           min={1}
           max={15}
+          startAt={5}
           value={averagePeriodLength}
-          onChange={(e) => setAveragePeriodLength(e.target.value)}
+          onChange={setAveragePeriodLength}
           error={errors.periodLen}
-          required
         />
         <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save settings"}</Button>
       </form>

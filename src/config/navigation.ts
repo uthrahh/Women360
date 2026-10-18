@@ -26,6 +26,25 @@ export const standardNav: NavItem[] = [
   { to: "/app/messages", label: "Messages", icon: MessageCircle },
 ];
 
+const byTo = (to: string): NavItem => {
+  const found = standardNav.find((n) => n.to === to) ?? (to === "/app/settings" ? { to, label: "Settings", icon: Settings } : undefined);
+  if (!found) throw new Error(`Unknown nav route: ${to}`);
+  return found;
+};
+
+// The signed-in menu: a few grouped branches rather than twelve flat links, so
+// the whole app is reachable from one place at any screen size. A group with a
+// single destination (Dashboard, Settings) is a plain leaf.
+export type MenuNode = { leaf: NavItem } | { label: string; items: NavItem[] };
+
+export const menuTree: MenuNode[] = [
+  { leaf: byTo("/app/dashboard") },
+  { label: "Track", items: ["/app/cycle", "/app/nutrition", "/app/activity", "/app/sleep", "/app/wellbeing"].map(byTo) },
+  { label: "Care", items: ["/app/health", "/app/goals", "/app/insights", "/app/reports"].map(byTo) },
+  { label: "Support", items: ["/app/learn", "/app/messages"].map(byTo) },
+  { leaf: byTo("/app/settings") },
+];
+
 // Primary items surfaced in the mobile bottom nav (kept short by design)
 export const mobileBottomNav: NavItem[] = [
   { to: "/app/dashboard", label: "Today", icon: LayoutGrid },

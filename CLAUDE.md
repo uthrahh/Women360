@@ -258,6 +258,24 @@ the person out of their own data. Not built: field-level coach data sharing
 upload scanning (there are no uploads), and the `react-router` v7 upgrade the
 audit flags (a deliberate separate project).
 
+**React Bits components (latest pass):** the landing hero (`CrystalizedBall`,
+`SpecularButton`), the signed-in menu (`BranchedMenu`), daily-goal check-in
+(`PulseHeart` with the fire glyph), reminders (`BellToggle`), Settings feedback
+(`PeekRating`), number entry (`ScrubField`), the dashboard's "To do today"
+(`SpringCheck`) and every list (`AnimatedList`) are vendored, unmodified apart
+from commented "Women360 change" edits, in `src/components/reactbits/` as
+`.jsx` + hand-written `.d.ts` (the repo doesn't `allowJs`). App code uses
+them through typed wrappers in `src/components/ui/` (`NumberField`, `ItemList`,
+`HeroButton`) rather than directly where there's a wrapper. Traps: (1) canvas
+components that call `loseContext()` in an effect cleanup break under React
+StrictMode, which re-runs effects on the same canvas — `SpecularButton` had this
+and no longer does it; (2) a `position: fixed` panel rendered inside an element
+with `backdrop-filter` (the top bar) is clipped to that element — portal it to
+`<body>` (`MobileMenu` does); (3) `NumberField` never pre-fills an empty field —
+an unentered value must stay unentered, so an optional macro isn't logged as 0;
+(4) streaks (`GoalCheckIn`) are derived from check-in rows on the person's own
+calendar day (client sends the date) and have no "lost streak" state by design.
+
 Known concrete defects to fix as part of any related work:
 - No `robots.txt`/`sitemap.xml`, no favicon files, no legal pages
   (privacy/terms/cookies), no SEO metadata per route (single static

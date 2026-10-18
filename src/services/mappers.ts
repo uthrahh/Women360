@@ -395,6 +395,8 @@ interface ApiGoal {
   unit: string;
   reminder: string | null;
   completed: boolean;
+  streak?: number;
+  checkedInToday?: boolean;
 }
 
 export function toFrontendGoal(apiGoal: ApiGoal): Goal {
@@ -407,6 +409,8 @@ export function toFrontendGoal(apiGoal: ApiGoal): Goal {
     unit: apiGoal.unit,
     reminder: apiGoal.reminder ?? undefined,
     completed: apiGoal.completed,
+    streak: apiGoal.streak ?? 0,
+    checkedInToday: apiGoal.checkedInToday ?? false,
   };
 }
 

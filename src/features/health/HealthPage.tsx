@@ -4,16 +4,17 @@ import { healthService } from "@/services/healthService";
 import { localDateISO } from "@/services/mappers";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Tabs } from "@/components/ui/Tabs";
-import { Badge } from "@/components/ui/Badge";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
+import { ItemList } from "@/components/ui/ItemList";
+import { NumberField } from "@/components/ui/NumberField";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { useApp } from "@/context/AppContext";
 import type { Appointment, Medication, MedicationAdherence, MedicationDose, VitalMeasurement } from "@/types";
-import { Pill, CalendarClock, Plus, Pencil, Trash2, Check, X as XIcon } from "lucide-react";
+import { Pill, CalendarClock, Plus, Check, X as XIcon } from "lucide-react";
 
 interface MedFormValues {
   name: string;
@@ -277,7 +278,7 @@ export default function HealthPage() {
         <Input label="Name" value={medForm.name} onChange={(e) => setMedForm((f) => ({ ...f, name: e.target.value }))} error={medErrors.name} required />
         <Input label="Dose" placeholder="e.g. 500mg" value={medForm.dose} onChange={(e) => setMedForm((f) => ({ ...f, dose: e.target.value }))} error={medErrors.dose} required />
         <Input label="Schedule" placeholder="e.g. Every morning" value={medForm.schedule} onChange={(e) => setMedForm((f) => ({ ...f, schedule: e.target.value }))} error={medErrors.schedule} required />
-        <Input label="Remaining (optional)" type="number" min={0} value={medForm.remaining} onChange={(e) => setMedForm((f) => ({ ...f, remaining: e.target.value }))} error={medErrors.remaining} />
+        <NumberField label="Remaining" suffix="left" optional max={1000} startAt={30} value={medForm.remaining} onChange={(v) => setMedForm((f) => ({ ...f, remaining: v }))} error={medErrors.remaining} hint="Optional: how many doses you have left." />
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-medium senior:text-lg">Reminder times (optional)</span>
           <p className="text-xs text-[var(--w360-text-muted)]">Shown in-app as due/overdue when you open Women360 — not a push notification.</p>
@@ -304,6 +305,18 @@ export default function HealthPage() {
           </Button>
         </div>
         <Button type="submit" disabled={medSaving}>{medSaving ? "Saving…" : "Save medicine"}</Button>
+        {medModal !== null && medModal !== "new" && (
+          <Button
+            type="button"
+            variant="danger"
+            onClick={() => {
+              setMedDeleteTarget(medModal);
+              setMedModal(null);
+            }}
+          >
+            Delete this medicine
+          </Button>
+        )}
       </form>
     </Modal>
   );
@@ -333,6 +346,18 @@ export default function HealthPage() {
           </select>
         </div>
         <Button type="submit" disabled={apptSaving}>{apptSaving ? "Saving…" : "Save appointment"}</Button>
+        {apptModal !== null && apptModal !== "new" && (
+          <Button
+            type="button"
+            variant="danger"
+            onClick={() => {
+              setApptDeleteTarget(apptModal);
+              setApptModal(null);
+            }}
+          >
+            Delete this appointment
+          </Button>
+        )}
       </form>
     </Modal>
   );
@@ -365,17 +390,16 @@ export default function HealthPage() {
                 {vitals.length === 0 ? (
                   <EmptyState title="No measurements yet" description="Log your first weight, blood pressure or resting heart rate." />
                 ) : (
-                  <Card><CardBody className="p-0 divide-y divide-[var(--w360-border)]">
-                    {vitals.map((v) => (
-                      <div key={v.id} className="flex items-center justify-between px-5 py-4">
-                        <span className="text-sm font-medium capitalize">{v.type.replace(/([A-Z])/g, " $1")}</span>
-                        <div className="text-right">
-                          <p className="text-sm tabular-nums font-medium">{v.value}</p>
-                          <p className="text-xs text-[var(--w360-text-muted)]">{v.date}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </CardBody></Card>
+                  <ItemList
+                    selectOnHover={false}
+                    maxHeight={460}
+                    items={vitals.map((v) => ({
+                      id: v.id,
+                      title: v.type.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()),
+                      description: v.date,
+                      meta: v.value,
+                    }))}
+                  />
                 )}
               </div>
             ),
@@ -430,28 +454,21 @@ export default function HealthPage() {
                 {meds.length === 0 ? (
                   <EmptyState title="No medicines added yet" description="Add a medicine to keep track of your dose and schedule." />
                 ) : (
-                  meds.map((m) => (
-                    <Card key={m.id}>
-                      <CardBody className="flex items-center justify-between pt-5 gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Pill size={18} className="text-maroon-700 dark:text-maroon-200 shrink-0" />
-                          <div className="min-w-0">
-                            <p className="font-medium truncate">{m.name} · {m.dose}</p>
-                            <p className="text-xs text-[var(--w360-text-muted)]">{m.schedule}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {m.remaining !== undefined && <Badge tone={m.remaining <= 7 ? "warning" : "neutral"}>{m.remaining} left</Badge>}
-                          <button onClick={() => openEditMed(m)} aria-label={`Edit ${m.name}`} className="p-1.5 rounded hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--w360-text-muted)]">
-                            <Pencil size={16} />
-                          </button>
-                          <button onClick={() => setMedDeleteTarget(m)} aria-label={`Delete ${m.name}`} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-[var(--w360-text-muted)] hover:text-red-600">
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </CardBody>
-                    </Card>
-                  ))
+                  <>
+                    <p className="text-xs text-[var(--w360-text-muted)]">Select a medicine to edit or delete it.</p>
+                    <ItemList
+                      maxHeight={460}
+                      items={meds.map((m) => ({
+                        id: m.id,
+                        med: m,
+                        icon: <Pill size={18} aria-hidden />,
+                        title: `${m.name} · ${m.dose}`,
+                        description: m.schedule,
+                        meta: m.remaining !== undefined ? `${m.remaining} left` : undefined,
+                      }))}
+                      onItemSelect={(row) => openEditMed(row.med)}
+                    />
+                  </>
                 )}
               </div>
             ),
@@ -466,31 +483,21 @@ export default function HealthPage() {
                 {appts.length === 0 ? (
                   <EmptyState title="No appointments yet" description="Add an upcoming checkup, screening or coach session." />
                 ) : (
-                  appts.map((a) => (
-                    <Card key={a.id}>
-                      <CardBody className="flex items-center justify-between pt-5 gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <CalendarClock size={18} className="text-maroon-700 dark:text-maroon-200 shrink-0" />
-                          <div className="min-w-0">
-                            <p className="font-medium truncate">{a.title}</p>
-                            <p className="text-xs text-[var(--w360-text-muted)]">{a.provider} · {a.location}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <div className="text-right">
-                            <p className="text-sm font-medium tabular-nums">{new Date(a.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</p>
-                            <p className="text-xs text-[var(--w360-text-muted)]">{a.time}</p>
-                          </div>
-                          <button onClick={() => openEditAppt(a)} aria-label={`Edit ${a.title}`} className="p-1.5 rounded hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--w360-text-muted)]">
-                            <Pencil size={16} />
-                          </button>
-                          <button onClick={() => setApptDeleteTarget(a)} aria-label={`Delete ${a.title}`} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-[var(--w360-text-muted)] hover:text-red-600">
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </CardBody>
-                    </Card>
-                  ))
+                  <>
+                    <p className="text-xs text-[var(--w360-text-muted)]">Select an appointment to edit or delete it.</p>
+                    <ItemList
+                      maxHeight={460}
+                      items={appts.map((a) => ({
+                        id: a.id,
+                        appt: a,
+                        icon: <CalendarClock size={18} aria-hidden />,
+                        title: a.title,
+                        description: `${a.provider} · ${a.location}`,
+                        meta: `${new Date(a.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })} · ${a.time}`,
+                      }))}
+                      onItemSelect={(row) => openEditAppt(row.appt)}
+                    />
+                  </>
                 )}
               </div>
             ),

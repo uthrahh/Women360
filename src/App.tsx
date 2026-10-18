@@ -7,13 +7,15 @@ import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { LoadingState, ErrorState } from "@/components/ui/states";
 import { isNativeApp } from "@/lib/platform";
 
-import LandingPage from "@/features/landing/LandingPage";
 import LoginPage from "@/features/auth/LoginPage";
 import RegisterPage from "@/features/auth/RegisterPage";
 import ForgotPasswordPage from "@/features/auth/ForgotPasswordPage";
 import ResetPasswordPage from "@/features/auth/ResetPasswordPage";
 import OnboardingPage from "@/features/onboarding/OnboardingPage";
 
+// Lazy: the landing page carries the WebGL hero, which the signed-in app (and the
+// phone app, which never shows the landing page) shouldn't download.
+const LandingPage = lazy(() => import("@/features/landing/LandingPage"));
 const DashboardPage = lazy(() => import("@/features/dashboard/DashboardPage"));
 const HealthPage = lazy(() => import("@/features/health/HealthPage"));
 const CyclePage = lazy(() => import("@/features/cycle/CyclePage"));
@@ -34,7 +36,12 @@ import NotFoundPage from "@/pages/NotFoundPage";
 // rather than showing the marketing landing page.
 function RootRoute() {
   const { auth } = useApp();
-  if (!isNativeApp()) return <LandingPage />;
+  if (!isNativeApp())
+    return (
+      <Suspense fallback={<LoadingState label="Loading" />}>
+        <LandingPage />
+      </Suspense>
+    );
   if (auth.bootstrapError) {
     return (
       <div className="min-h-screen flex items-center justify-center">

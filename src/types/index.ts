@@ -193,6 +193,9 @@ export interface Goal {
   unit: string;
   reminder?: string;
   completed: boolean;
+  /** Consecutive days with a daily check-in (see goalService.checkIn). */
+  streak: number;
+  checkedInToday: boolean;
 }
 
 export interface Appointment {

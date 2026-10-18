@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { NumberField } from "@/components/ui/NumberField";
 import { useApp } from "@/context/AppContext";
 import { useToast } from "@/components/ui/Toast";
 import { Check } from "lucide-react";
@@ -96,7 +97,7 @@ function StepContent({ step }: { step: number }) {
     return (
       <FormStep title="Menstrual health" subtitle="Skip if this doesn't apply to you.">
         <ChoiceGroup label="Where are you in your reproductive life?" options={["Regular cycles", "Perimenopause", "Menopause", "Prefer not to say"]} />
-        <Input label="Typical cycle length (days)" type="number" placeholder="e.g. 28" />
+        <CycleLengthField />
       </FormStep>
     );
 
@@ -185,4 +186,9 @@ function ChoiceGroup({ label, options, multi }: { label: string; options: string
       </div>
     </div>
   );
+}
+
+function CycleLengthField() {
+  const [value, setValue] = useState("");
+  return <NumberField label="Cycle length" suffix="days" optional min={15} max={90} startAt={28} value={value} onChange={setValue} hint="Your typical cycle, if you know it." />;
 }
