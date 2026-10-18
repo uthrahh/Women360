@@ -232,6 +232,32 @@ suppression, baseline-deviation detection, medication adherence math
 including a retroactive-same-day-log edge case) plus live browser
 verification of every new surface against a seeded dev database.
 
+**Security hardening (latest pass):** audited against an external checklist;
+only the real gaps were built. Passwords need 12+ characters and must not be
+common, contain a run/sequence, or contain the person's name/email
+(`server/src/lib/passwordPolicy.ts`, mirrored client-side for live feedback;
+the common-password list stays server-only). Sign-in lockout (5 per account /
+40 per IP, 15 minutes) lives in the database (`AuthThrottle`), not memory —
+the free-tier API sleeps and an in-memory counter silently resets — and counts
+unknown emails too so it can't enumerate accounts. Access tokens carry a
+millisecond issued-at so a password change / "sign out everywhere"
+(`User.sessionsValidAfter`) ends them instantly. TOTP two-factor
+(`lib/security/totp.ts`, AES-256-GCM-encrypted secrets, single-use codes,
+backup codes) is opt-in by deployment: it needs `TWO_FACTOR_ENCRYPTION_KEY`
+and reports itself unavailable without it. Admin accounts can never be
+created or changed through the API (`npm run create-admin`), admins need
+two-factor in production, and `ADMIN_IP_ALLOWLIST` is optional. Sign-in
+outcomes are logged as `security.*` audit events (masked IP, never an email
+or secret) and swept after 90 days. `vercel.json` now sends a CSP and the
+other headers for the web app. **Two traps for future work:** the phone's
+throwaway device account must keep an independent random password (the policy
+rejects one derived from its email), and Settings > Security is deliberately
+hidden for that account, since a password change or sign-in code would lock
+the person out of their own data. Not built: field-level coach data sharing
+(a product decision), cookie-consent UI (no cookies/trackers are set),
+upload scanning (there are no uploads), and the `react-router` v7 upgrade the
+audit flags (a deliberate separate project).
+
 Known concrete defects to fix as part of any related work:
 - No `robots.txt`/`sitemap.xml`, no favicon files, no legal pages
   (privacy/terms/cookies), no SEO metadata per route (single static
