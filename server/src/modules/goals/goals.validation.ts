@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidIsoDay } from "./streak";
 
 export const createGoalSchema = z.object({
   title: z.string().trim().min(1).max(160),
@@ -19,3 +20,10 @@ export const updateGoalSchema = z.object({
 });
 
 export const idParamSchema = z.object({ id: z.string().min(1) });
+
+// The person's own calendar day, sent by the client — see GoalCheckIn.
+const isoDay = z.string().refine(isValidIsoDay, "Use a date in YYYY-MM-DD format.");
+
+export const listGoalsQuerySchema = z.object({ today: isoDay.optional() });
+export const checkInBodySchema = z.object({ date: isoDay });
+export const checkInParamSchema = z.object({ id: z.string().min(1), date: isoDay });
