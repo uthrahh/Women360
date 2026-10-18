@@ -16,6 +16,8 @@ export default defineConfig({
       JWT_ACCESS_SECRET: "test-access-secret-please-override-0123456789",
       JWT_REFRESH_SECRET: "test-refresh-secret-please-override-0123456789",
       CORS_ORIGINS: "http://localhost:5173",
+      // Test-only key (32 zero-padded bytes, base64) so two-factor is exercised.
+      TWO_FACTOR_ENCRYPTION_KEY: "dzM2MHRlc3R3MzYwdGVzdHczNjB0ZXN0dzM2MHRlc3Q=",
     },
   },
   resolve: {

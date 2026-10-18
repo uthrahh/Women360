@@ -2,13 +2,7 @@ import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { assertPasswordAcceptable } from "@/lib/passwordPolicy";
-import {
-  signAccessToken,
-  generateRefreshToken,
-  hashToken,
-  ttlToDate,
-} from "@/lib/jwt";
-import { env } from "@/config/env";
+import { hashToken } from "@/lib/jwt";
 import { BadRequestError, ConflictError, TooManyRequestsError, UnauthorizedError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { publicUser } from "@/lib/publicUser";
@@ -22,6 +16,9 @@ import {
   recordFailure,
 } from "@/lib/security/throttle";
 import { recordSecurityEvent } from "@/lib/security/events";
+import { issueSession, revokeEverySession } from "./session";
+import { TwoFactorUnavailableError, twoFactorService } from "./twoFactor.service";
+import { env } from "@/config/env";
 
 function initialsFrom(name: string): string {
   return name
@@ -32,19 +29,6 @@ function initialsFrom(name: string): string {
     .join("");
 }
 
-async function issueSession(userId: string, role: "WOMAN" | "COACH" | "ADMIN") {
-  const accessToken = signAccessToken({ sub: userId, role });
-  const refreshToken = generateRefreshToken();
-  await prisma.refreshToken.create({
-    data: {
-      userId,
-      tokenHash: hashToken(refreshToken),
-      expiresAt: ttlToDate(env.JWT_REFRESH_TTL),
-    },
-  });
-  return { accessToken, refreshToken };
-}
-
 // A real argon2 hash to verify against when the email doesn't exist, so
 // "no such account" costs the same time as "wrong password" and response
 // timing can't be used to find out who is registered.
@@ -52,13 +36,6 @@ let dummyHash: Promise<string> | undefined;
 function getDummyHash(): Promise<string> {
   dummyHash ??= hashPassword(crypto.randomBytes(16).toString("hex"));
   return dummyHash;
-}
-
-async function revokeEverySession(userId: string) {
-  await prisma.$transaction([
-    prisma.user.update({ where: { id: userId }, data: { sessionsValidAfter: new Date() } }),
-    prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } }),
-  ]);
 }
 
 export const authService = {
@@ -113,10 +90,19 @@ export const authService = {
       throw new UnauthorizedError("That email or password is incorrect.");
     }
 
+    if (user.twoFactorEnabled) {
+      // If the key was removed from the server's config, fail closed — never
+      // quietly skip the second factor someone chose to turn on.
+      if (!env.twoFactorAvailable) throw new TwoFactorUnavailableError();
+      // The failure counter is deliberately NOT cleared yet: whoever has only
+      // the password must not get to reset their guess budget for the code.
+      return { twoFactorRequired: true as const, challengeToken: twoFactorService.createChallenge(user.id) };
+    }
+
     await clearFailures(keys[0]);
     await recordSecurityEvent({ type: "login_success", userId: user.id, role: user.role, ip });
     const session = await issueSession(user.id, user.role);
-    return { user: publicUser(user), ...session };
+    return { twoFactorRequired: false as const, user: publicUser(user), ...session };
   },
 
   async refresh(refreshToken: string) {

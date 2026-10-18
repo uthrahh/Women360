@@ -50,7 +50,14 @@ model User {
   // password or "sign out everywhere" takes effect immediately instead of
   // after the 15-minute access-token lifetime.
   sessionsValidAfter DateTime?
+  // Two-factor sign-in (TOTP). The secret is AES-256-GCM encrypted (never
+  // plaintext); twoFactorLastStep is the last accepted 30-second time step,
+  // so a code can't be used twice.
+  twoFactorEnabled   Boolean   @default(false)
+  twoFactorSecretEnc String?
+  twoFactorLastStep  Int?
 
+  twoFactorBackupCodes TwoFactorBackupCode[]
   refreshTokens        RefreshToken[]
   passwordResetTokens  PasswordResetToken[]
   healthProfile        HealthProfile?
@@ -95,6 +102,19 @@ model RefreshToken {
   expiresAt  DateTime
   revokedAt  DateTime?
   createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// Single-use recovery codes for someone who's lost their authenticator. Only
+// a SHA-256 of each code is stored; they're 50 random bits each, shown once.
+model TwoFactorBackupCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String    @unique
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 
   @@index([userId])
 }

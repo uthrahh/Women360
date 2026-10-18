@@ -30,6 +30,22 @@ export const resetPasswordSchema = z.object({
   newPassword: z.string().min(1, "Password is required").max(1024),
 });
 
+// A 6-digit authenticator code or a backup code ("abcde-fghij") — bounded so a
+// huge string can't be used to make the server do work.
+const secondFactorCode = z.string().trim().min(6, "Enter your code").max(32);
+
+export const twoFactorLoginSchema = z.object({
+  challengeToken: z.string().min(1),
+  code: secondFactorCode,
+});
+
+export const twoFactorConfirmSchema = z.object({ code: secondFactorCode });
+
+export const twoFactorReauthSchema = z.object({
+  password: z.string().min(1, "Enter your password").max(1024),
+  code: secondFactorCode,
+});
+
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "Enter your current password").max(1024),
   newPassword: z.string().min(1, "Password is required").max(1024),
