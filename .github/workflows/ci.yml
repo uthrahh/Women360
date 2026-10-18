@@ -41,12 +41,16 @@ jobs:
           cache-dependency-path: server/package-lock.json
       - run: npm install
       - run: npm run prisma:generate
-      # No committed migration yet (see prisma/migrations/README.md) — this
-      # pushes the schema straight to the ephemeral CI database. Once a
-      # real migration has been generated locally with
-      # `npm run prisma:migrate` and committed, switch this line to
-      # `npm run prisma:migrate:deploy` instead.
-      - run: npx prisma db push --accept-data-loss
+      # Apply the committed migrations to an empty database, exactly as the
+      # production deploy does (`prisma migrate deploy` in render.yaml) — the
+      # previous `db push` never exercised the migration files at all.
+      - run: npm run prisma:migrate:deploy
+      # Fails if schema.prisma has changes with no migration behind them, i.e.
+      # code that would run in CI but break on a real deploy.
+      - name: Check schema.prisma matches the migrations
+        run: npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
@@ -63,5 +67,8 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm install
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
+      - run: npm test
       - run: npm run build

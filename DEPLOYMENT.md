@@ -104,3 +104,39 @@ Both Render and Vercel auto-redeploy on every push to `main` once connected
 — you don't need to repeat these steps for future changes, just commit and
 push. A new Prisma migration gets applied automatically too, since
 `prisma migrate deploy` is part of Render's build command.
+
+## 7. Security settings
+
+These are optional, and nothing breaks if you skip them, but you should set
+them before real people use the app.
+
+**Two-factor sign-in.** In Render → `women360-api` → Environment, add
+`TWO_FACTOR_ENCRYPTION_KEY` with the output of `openssl rand -base64 32`
+(or `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`).
+Until it's set, Settings → Security shows "Not available on this server yet".
+Back the key up somewhere safe: if it's lost, everyone with two-factor on has
+to have it reset. Don't change it casually — it can't decrypt secrets saved
+under the old one.
+
+**Admin accounts.** There is deliberately no API to create or change an admin.
+Have the person register normally (so the password rules apply), then from
+`server/` with the production `DATABASE_URL` set:
+
+```bash
+npm run create-admin -- their.email@example.com
+```
+
+In production an admin must turn on two-factor sign-in before admin tools
+unlock — and if `TWO_FACTOR_ENCRYPTION_KEY` isn't set at all, admin tools stay
+locked, by design. Optionally set `ADMIN_IP_ALLOWLIST` to a comma-separated
+list of IP addresses to restrict `/admin` further (everyone else gets a 404).
+
+**Content-Security-Policy.** `vercel.json` pins `connect-src` to
+`https://women360-api.onrender.com`. If you ever move the API to a different
+host, update that value there too, or the deployed app (and the phone app,
+which loads it) will block every request to the new host.
+
+**Migrations run on every API deploy** (`prisma migrate deploy` in the build
+command). If one fails the build fails and the previous version keeps serving.
+CI now applies them to an empty database and fails if `schema.prisma` has
+changes with no migration behind them.

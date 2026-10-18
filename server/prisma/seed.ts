@@ -5,10 +5,18 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/lib/password";
+import { isLocalDatabaseUrl } from "../src/lib/security/localDatabase";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  // This script creates an admin with a published password. Never let it
+  // touch a database that isn't this machine's.
+  if (!isLocalDatabaseUrl(process.env.DATABASE_URL)) {
+    console.error("Refusing to seed: DATABASE_URL isn't a local database. The demo seed creates an admin with a published password and is for local development only.");
+    process.exit(1);
+  }
+
   const demoPassword = await hashPassword("Demo-Password-123");
 
   const admin = await prisma.user.upsert({
