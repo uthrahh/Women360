@@ -6,11 +6,16 @@ import type { Role } from "@prisma/client";
 export interface AccessTokenPayload {
   sub: string; // user id
   role: Role;
+  iat?: number; // seconds; set by jsonwebtoken at signing
+  // Milliseconds. `iat` only has one-second resolution, so a token issued in
+  // the same second as a password change couldn't be told apart from the one
+  // being revoked. This can.
+  iatMs?: number;
 }
 
-export function signAccessToken(payload: AccessTokenPayload): string {
+export function signAccessToken(payload: Pick<AccessTokenPayload, "sub" | "role">): string {
   const options: jwt.SignOptions = { expiresIn: env.JWT_ACCESS_TTL as jwt.SignOptions["expiresIn"] };
-  return jwt.sign(payload, env.JWT_ACCESS_SECRET, options);
+  return jwt.sign({ ...payload, iatMs: Date.now() }, env.JWT_ACCESS_SECRET, options);
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {

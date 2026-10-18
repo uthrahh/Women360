@@ -6,6 +6,7 @@ import { authRateLimiter } from "@/middleware/rateLimit";
 import { created, ok } from "@/lib/response";
 import { authService } from "./auth.service";
 import {
+  changePasswordSchema,
   loginSchema,
   refreshSchema,
   registerSchema,
@@ -20,7 +21,7 @@ authRouter.post(
   authRateLimiter,
   validate({ body: registerSchema }),
   asyncHandler(async (req, res) => {
-    const result = await authService.register(req.body);
+    const result = await authService.register(req.body, req.ip);
     return created(res, result);
   })
 );
@@ -30,7 +31,7 @@ authRouter.post(
   authRateLimiter,
   validate({ body: loginSchema }),
   asyncHandler(async (req, res) => {
-    const result = await authService.login(req.body.email, req.body.password);
+    const result = await authService.login(req.body.email, req.body.password, req.ip);
     return ok(res, result);
   })
 );
@@ -70,8 +71,28 @@ authRouter.post(
   authRateLimiter,
   validate({ body: resetPasswordSchema }),
   asyncHandler(async (req, res) => {
-    await authService.resetPassword(req.body.token, req.body.newPassword);
+    await authService.resetPassword(req.body.token, req.body.newPassword, req.ip);
     return ok(res, { reset: true });
+  })
+);
+
+authRouter.post(
+  "/change-password",
+  requireAuth,
+  authRateLimiter,
+  validate({ body: changePasswordSchema }),
+  asyncHandler(async (req, res) => {
+    const result = await authService.changePassword(req.user!.id, req.body.currentPassword, req.body.newPassword, req.ip);
+    return ok(res, result);
+  })
+);
+
+authRouter.post(
+  "/logout-all",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    await authService.logoutEverywhere(req.user!.id, req.ip);
+    return ok(res, { loggedOut: true });
   })
 );
 

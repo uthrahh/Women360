@@ -46,6 +46,10 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
+  // Any access token issued before this instant is rejected, so changing a
+  // password or "sign out everywhere" takes effect immediately instead of
+  // after the 15-minute access-token lifetime.
+  sessionsValidAfter DateTime?
 
   refreshTokens        RefreshToken[]
   passwordResetTokens  PasswordResetToken[]
@@ -105,6 +109,16 @@ model PasswordResetToken {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+}
+
+// Sign-in attempt counters, kept in the database (not memory) so they survive
+// the API restarting or sleeping. `key` is "acct:<sha256 of email>" or
+// "ip:<address>"; no plaintext email is stored.
+model AuthThrottle {
+  key         String    @id
+  failures    Int       @default(0)
+  lockedUntil DateTime?
+  updatedAt   DateTime  @updatedAt
 }
 
 // ---------------------------------------------------------------------------
