@@ -3,6 +3,7 @@ import { asyncHandler } from "@/lib/asyncHandler";
 import { validate } from "@/middleware/validate";
 import { requireAuth } from "@/middleware/auth";
 import { requireRole } from "@/middleware/rbac";
+import { requireAdminIp, requireAdminTwoFactor } from "@/middleware/adminGuards";
 import { noContent, ok, paginated } from "@/lib/response";
 import { adminService } from "./admin.service";
 import {
@@ -13,7 +14,9 @@ import {
 } from "./admin.validation";
 
 export const adminRouter = Router();
-adminRouter.use(requireAuth, requireRole("ADMIN"));
+// Order matters: the IP check is first so outsiders learn nothing, and the
+// two-factor check is last so it only ever runs for a real, authenticated admin.
+adminRouter.use(requireAdminIp, requireAuth, requireRole("ADMIN"), asyncHandler(requireAdminTwoFactor));
 
 adminRouter.get(
   "/users",
