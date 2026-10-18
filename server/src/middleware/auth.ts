@@ -34,10 +34,17 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     const payload = verifyAccessToken(header.slice("Bearer ".length));
     const user = await prisma.user.findFirst({
       where: { id: payload.sub, deletedAt: null },
-      select: { id: true, role: true },
+      select: { id: true, role: true, sessionsValidAfter: true },
     });
     if (!user) return next(new UnauthorizedError());
-    req.user = user;
+    // A password change or "sign out everywhere" sets sessionsValidAfter;
+    // tokens issued before it are dead immediately, not 15 minutes later.
+    // Millisecond claim where present; older tokens fall back to iat.
+    const issuedAtMs = payload.iatMs ?? (payload.iat ?? 0) * 1000;
+    if (user.sessionsValidAfter && issuedAtMs < user.sessionsValidAfter.getTime()) {
+      return next(new UnauthorizedError("Your session has ended. Please sign in again."));
+    }
+    req.user = { id: user.id, role: user.role };
     return next();
   } catch {
     return next(new UnauthorizedError("Your session has expired. Please sign in again."));

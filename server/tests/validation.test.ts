@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loginSchema, registerSchema } from "@/modules/auth/auth.validation";
+import { checkPassword } from "@/lib/passwordPolicy";
 import { cycleEntrySchema } from "@/modules/cycle/cycle.validation";
 import { sleepEntrySchema } from "@/modules/sleep/sleep.validation";
 import { mealEntrySchema } from "@/modules/nutrition/nutrition.validation";
@@ -18,13 +19,14 @@ describe("auth validation", () => {
     }
   });
 
-  it("rejects a short password", () => {
-    const result = registerSchema.safeParse({
-      name: "Sarah Menon",
-      email: "sarah@example.com",
-      password: "short",
-    });
-    expect(result.success).toBe(false);
+  it("rejects a short password (enforced by the password policy, not the schema, so the person sees the specific reason)", () => {
+    const body = { name: "Sarah Menon", email: "sarah@example.com", password: "short" };
+    expect(registerSchema.safeParse(body).success).toBe(true);
+    expect(checkPassword(body.password, body)[0]).toMatch(/at least 12/);
+  });
+
+  it("still rejects an empty password at the schema level", () => {
+    expect(registerSchema.safeParse({ name: "Sarah Menon", email: "sarah@example.com", password: "" }).success).toBe(false);
   });
 
   it("rejects a malformed email on login", () => {
