@@ -18,6 +18,8 @@
   --w360-tint-text: #521626;
   --w360-nav-surface: rgba(255, 255, 255, 0.92);
   --w360-radius-card: 22px;
+  /* Streak flame: the one warm accent, used only for the daily check-in. */
+  --w360-flame: #D9480F;
 }
 
 .dark {
@@ -33,6 +35,7 @@
   --w360-tint: #2B1B21;
   --w360-tint-text: #F1D3DB;
   --w360-nav-surface: rgba(37, 30, 25, 0.92);
+  --w360-flame: #FF8A4C;
 }
 
 * { border-color: var(--w360-border); }
@@ -94,3 +97,7 @@ body {
 .w360-scrollbar::-webkit-scrollbar-thumb { background: var(--w360-border); border-radius: 8px; }
 
 .tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* The scrub chip draws its own focus ring (focus-within), so the inner input
+   shouldn't add the global focus outline on top of it. */
+.scrub-field__input:focus-visible { outline: none; }

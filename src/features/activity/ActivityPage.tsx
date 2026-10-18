@@ -5,9 +5,10 @@ import type { ActivitySummary, CycleSummary } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
+import { ItemList } from "@/components/ui/ItemList";
+import { NumberField } from "@/components/ui/NumberField";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
@@ -16,6 +17,11 @@ import { Plus, Trash2, X } from "lucide-react";
 import type { ActivityEntry } from "@/types";
 import { ACTIVITY_TEMPLATES, LOW_INTENSITY_TEMPLATES, type ActivityTemplate } from "./activityTemplates";
 
+function DurationField({ initial }: { initial: string }) {
+  const [value, setValue] = useState(initial);
+  return <NumberField name="duration" label="Duration" suffix="min" min={1} max={600} startAt={30} value={value} onChange={setValue} />;
+}
+
 export default function ActivityPage() {
   const [data, setData] = useState<ActivitySummary | null>(null);
   const [cycle, setCycle] = useState<CycleSummary | null>(null);
@@ -23,6 +29,7 @@ export default function ActivityPage() {
   const [prefill, setPrefill] = useState<ActivityTemplate | null>(null);
   const [formKey, setFormKey] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<ActivityEntry | null>(null);
+  const [detail, setDetail] = useState<ActivityEntry | null>(null);
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
   const toast = useToast();
 
@@ -44,6 +51,10 @@ export default function ActivityPage() {
     const form = new FormData(e.currentTarget);
     const type = String(form.get("type") ?? "Activity");
     const duration = Number(form.get("duration") ?? 0);
+    if (!(duration >= 1)) {
+      toast.show("Enter how many minutes it lasted.", { tone: "error" });
+      return;
+    }
     const intensity = String(form.get("intensity") ?? "moderate") as "low" | "moderate" | "high";
     activityService
       .logActivity({ type, duration, intensity, date: "Today" })
@@ -165,36 +176,27 @@ export default function ActivityPage() {
         {data.entries.length === 0 ? (
           <EmptyState title="No activity logged yet" description="Log a workout or walk to see it here." />
         ) : (
-          <Card>
-            <CardBody className="p-0 divide-y divide-[var(--w360-border)]">
-              {data.entries.map((e) => (
-                <div key={e.id} className="flex items-center justify-between gap-3 px-5 py-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{e.type}</p>
-                    <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">{e.date}{e.notes ? ` · ${e.notes}` : ""}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge tone={e.intensity === "high" ? "warning" : "neutral"}>{e.intensity}</Badge>
-                    <span className="text-sm tabular-nums text-[var(--w360-text-muted)]">{e.duration} min</span>
-                    <button
-                      onClick={() => setDeleteTarget(e)}
-                      aria-label={`Delete ${e.type} entry`}
-                      className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-[var(--w360-text-muted)] hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </CardBody>
-          </Card>
+          <>
+            <p className="text-xs text-[var(--w360-text-muted)] mb-2">Select an entry for details or to delete it.</p>
+            <ItemList
+              maxHeight={460}
+              items={data.entries.map((e) => ({
+                id: e.id,
+                entry: e,
+                title: e.type,
+                description: [e.date, e.notes].filter(Boolean).join(" · "),
+                meta: `${e.duration} min · ${e.intensity}`,
+              }))}
+              onItemSelect={(row) => setDetail(row.entry)}
+            />
+          </>
         )}
       </section>
 
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add activity" size="sm">
         <form key={formKey} className="flex flex-col gap-4" onSubmit={handleAdd}>
           <Input label="Activity type" name="type" defaultValue={prefill?.type ?? ""} placeholder="e.g. Brisk walk" required />
-          <Input label="Duration (minutes)" name="duration" type="number" min={1} defaultValue={prefill ? String(prefill.duration) : ""} placeholder="e.g. 30" required />
+          <DurationField initial={prefill ? String(prefill.duration) : ""} />
           <div className="flex flex-col gap-1.5">
             <label htmlFor="intensity" className="text-sm font-medium">Intensity</label>
             <select
@@ -210,6 +212,37 @@ export default function ActivityPage() {
           </div>
           <Button type="submit">Save activity</Button>
         </form>
+      </Modal>
+
+      <Modal open={detail !== null} onClose={() => setDetail(null)} title={detail?.type ?? "Activity"} size="sm">
+        {detail && (
+          <div className="flex flex-col gap-4">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+              <dt className="text-[var(--w360-text-muted)]">When</dt>
+              <dd>{detail.date}</dd>
+              <dt className="text-[var(--w360-text-muted)]">Duration</dt>
+              <dd className="tabular-nums">{detail.duration} min</dd>
+              <dt className="text-[var(--w360-text-muted)]">Intensity</dt>
+              <dd className="capitalize">{detail.intensity}</dd>
+              {detail.notes && (
+                <>
+                  <dt className="text-[var(--w360-text-muted)]">Notes</dt>
+                  <dd>{detail.notes}</dd>
+                </>
+              )}
+            </dl>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => {
+                setDeleteTarget(detail);
+                setDetail(null);
+              }}
+            >
+              <Trash2 size={15} /> Delete this entry
+            </Button>
+          </div>
+        )}
       </Modal>
 
       <ConfirmDialog

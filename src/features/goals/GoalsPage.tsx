@@ -8,10 +8,15 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
+import { NumberField } from "@/components/ui/NumberField";
+import PulseHeart from "@/components/reactbits/PulseHeart";
+import BellToggle from "@/components/reactbits/BellToggle";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { CheckCircle2, Circle, Plus, Pencil, Trash2, Check, X } from "lucide-react";
+
+const DEFAULT_REMINDER = "09:00";
 
 const CATEGORIES: Goal["category"][] = ["sleep", "activity", "hydration", "nutrition", "strength", "cycle", "mobility"];
 
@@ -63,6 +68,9 @@ export default function GoalsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Goal | null>(null);
   const [quickEditId, setQuickEditId] = useState<string | null>(null);
   const [quickValue, setQuickValue] = useState("");
+  // Bumped when a check-in fails, to remount the hearts so a count they already
+  // animated up snaps back to what the server actually holds.
+  const [heartEpoch, setHeartEpoch] = useState(0);
   const toast = useToast();
 
   useEffect(() => {
@@ -147,6 +155,16 @@ export default function GoalsPage() {
     }
   }
 
+  async function setCheckIn(goal: Goal, checkedIn: boolean) {
+    try {
+      const updated = await (checkedIn ? goalService.checkIn(goal.id) : goalService.undoCheckIn(goal.id));
+      setGoals((g) => (g ? g.map((x) => (x.id === updated.id ? updated : x)) : g));
+    } catch (err) {
+      setHeartEpoch((n) => n + 1);
+      toast.show(err instanceof Error ? err.message : "Couldn't save your check-in. Please try again.", { tone: "error" });
+    }
+  }
+
   async function saveQuickProgress(goal: Goal) {
     const value = Number(quickValue);
     if (Number.isNaN(value) || value < 0) {
@@ -224,15 +242,17 @@ export default function GoalsPage() {
             </p>
             {quickEditId === g.id ? (
               <div className="flex items-center gap-1 shrink-0">
-                <input
-                  type="number"
-                  min={0}
-                  autoFocus
-                  value={quickValue}
-                  onChange={(e) => setQuickValue(e.target.value)}
-                  className="w-16 px-1.5 py-1 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-xs"
-                  aria-label={`New progress value for "${g.title}"`}
-                />
+                <div className="w-40">
+                  <NumberField
+                    label="Progress"
+                    suffix={g.unit}
+                    min={0}
+                    max={Math.max(g.targetValue * 3, 100)}
+                    step={1}
+                    value={quickValue}
+                    onChange={setQuickValue}
+                  />
+                </div>
                 <button onClick={() => saveQuickProgress(g)} aria-label="Save progress" className="p-1 rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40">
                   <Check size={14} />
                 </button>
@@ -262,6 +282,29 @@ export default function GoalsPage() {
               </div>
             )}
           </div>
+          {!g.completed && (
+            <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-[var(--w360-border)]">
+              <div className="min-w-0">
+                <p className="text-xs font-medium">Daily check-in</p>
+                <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">
+                  {g.checkedInToday ? "Done for today" : "Tap when you've done it today"}
+                </p>
+              </div>
+              <PulseHeart
+                key={`${g.id}-${heartEpoch}`}
+                icon="fire"
+                size={26}
+                liked={g.checkedInToday}
+                count={g.streak}
+                onChange={(liked) => setCheckIn(g, liked)}
+                label={`Check in for ${g.title}, day streak`}
+                likedColor="var(--w360-flame)"
+                idleColor="var(--w360-text-muted)"
+                pillColor="var(--w360-tint)"
+                textColor="var(--w360-text)"
+              />
+            </div>
+          )}
         </CardBody>
       </Card>
     );
@@ -318,21 +361,38 @@ export default function GoalsPage() {
               ))}
             </select>
           </div>
-          <Input label="Target" type="number" min={0} placeholder="e.g. 8000" value={form.targetValue} onChange={(e) => setForm((f) => ({ ...f, targetValue: e.target.value }))} error={errors.targetValue} required />
+          <NumberField label="Target" suffix={form.unit.trim() || undefined} min={0} max={100000} step={1} startAt={1} value={form.targetValue} onChange={(v) => setForm((f) => ({ ...f, targetValue: v }))} error={errors.targetValue} />
           <Input label="Unit" placeholder="e.g. steps, hrs, L" value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} error={errors.unit} required />
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="reminder" className="text-sm font-medium">Reminder (optional)</label>
-            <select
-              id="reminder"
-              value={form.reminder}
-              onChange={(e) => setForm((f) => ({ ...f, reminder: e.target.value }))}
-              className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm"
-            >
-              <option value="">No reminder</option>
-              {REMINDER_TIME_OPTIONS.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
+          <div className="flex flex-col gap-2">
+            <BellToggle
+              size="sm"
+              offLabel="Remind me"
+              onLabel="Reminder on"
+              label="Daily reminder"
+              badge={false}
+              pressed={form.reminder !== ""}
+              onChange={(on) => setForm((f) => ({ ...f, reminder: on ? DEFAULT_REMINDER : "" }))}
+              color="var(--w360-text)"
+              background="var(--w360-bg-warm)"
+              onColor="var(--w360-bg-raised)"
+              onBackground="var(--w360-accent)"
+            />
+            {form.reminder !== "" && (
+              <>
+                <label htmlFor="reminder" className="text-sm font-medium">Reminder time</label>
+                <select
+                  id="reminder"
+                  value={form.reminder}
+                  onChange={(e) => setForm((f) => ({ ...f, reminder: e.target.value }))}
+                  className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm"
+                >
+                  {REMINDER_TIME_OPTIONS.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-[var(--w360-text-muted)]">Shown in your Today list when you open Women360 — not a push notification.</p>
+              </>
+            )}
           </div>
           <Button type="submit" disabled={saving}>{saving ? "Saving…" : editingGoal === "new" ? "Create goal" : "Save changes"}</Button>
         </form>

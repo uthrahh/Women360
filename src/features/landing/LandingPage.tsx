@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
+import { HeroButton } from "@/components/ui/HeroButton";
+import CrystalizedBall from "@/components/reactbits/CrystalizedBall";
+import { useBrandColors } from "@/hooks/useBrandColors";
 import { Moon, Activity, Apple, CalendarHeart, Smile, ShieldCheck, ArrowRight } from "lucide-react";
 
 const capabilities = [
@@ -19,6 +22,10 @@ const lifeStages = [
 ];
 
 export default function LandingPage() {
+  const brand = useBrandColors();
+  // Phones get a lighter particle budget; the effect is the same shape either way.
+  const particles = typeof window !== "undefined" && window.innerWidth < 640 ? 8000 : 15000;
+
   return (
     <div className="min-h-screen">
       <header className="flex items-center justify-between px-6 sm:px-10 h-20 border-b border-[var(--w360-border)] max-w-content mx-auto">
@@ -35,7 +42,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28 max-w-content mx-auto">
+      <section className="px-6 sm:px-10 py-14 sm:py-20 max-w-content mx-auto grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-10 lg:gap-6 items-center">
         <div className="max-w-2xl">
           <p className="text-xs font-semibold tracking-[0.14em] uppercase text-maroon-700 dark:text-maroon-300 mb-5">
             A personal health operating system
@@ -46,10 +53,24 @@ export default function LandingPage() {
           <p className="text-lg text-[var(--w360-text-muted)] mt-6 max-w-xl">
             Women360 brings your cycle, nutrition, activity, sleep and wellbeing into one calm, honest view — built for every stage of your life, from your twenties to your nineties.
           </p>
-          <div className="flex items-center gap-3 mt-8">
-            <Link to="/register"><Button size="lg">Create your account <ArrowRight size={16} /></Button></Link>
-            <Link to="/login"><Button size="lg" variant="secondary">Log in</Button></Link>
+          <div className="flex flex-wrap items-center gap-3 mt-8">
+            <HeroButton to="/register">Create your account <ArrowRight size={16} /></HeroButton>
+            <HeroButton to="/login" variant="secondary">Log in</HeroButton>
           </div>
+        </div>
+        {/* Decorative: the canvas is aria-hidden and nothing on the page depends on it. */}
+        <div aria-hidden className="relative aspect-square w-full max-w-[460px] lg:max-w-none mx-auto">
+          <CrystalizedBall
+            preset="plasma"
+            color={brand.accent}
+            theme={brand.dark ? "dark" : "light"}
+            size={0.8}
+            crackle={0.6}
+            sparks={0.4}
+            glow={0.85}
+            particleCount={particles}
+            hoverStrength={0.6}
+          />
         </div>
       </section>
 

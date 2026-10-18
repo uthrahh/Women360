@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { learnService } from "@/services/learnService";
 import type { LearnArticle } from "@/types";
-import { Card, CardBody } from "@/components/ui/Card";
+import { ItemList } from "@/components/ui/ItemList";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
@@ -65,20 +65,17 @@ export default function LearnPage() {
       {filtered.length === 0 ? (
         <EmptyState title="No articles found" description="Try a different search term or topic." />
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {filtered.map((a) => (
-            <button key={a.id} onClick={() => setOpenArticle(a)} className="text-left">
-              <Card className="hover:border-maroon-400 dark:hover:border-maroon-600 transition-colors cursor-pointer h-full">
-                <CardBody className="pt-5">
-                  <Badge tone="accent">{a.category}</Badge>
-                  <h3 className="font-display text-lg font-semibold mt-2 leading-snug">{a.title}</h3>
-                  <p className="text-sm text-[var(--w360-text-muted)] mt-1">{a.dek}</p>
-                  <p className="text-xs text-[var(--w360-text-muted)] mt-3">{a.readMins} min read</p>
-                </CardBody>
-              </Card>
-            </button>
-          ))}
-        </div>
+        <ItemList
+          maxHeight={560}
+          items={filtered.map((a) => ({
+            id: a.id,
+            article: a,
+            title: a.title,
+            description: a.dek,
+            meta: `${a.category} · ${a.readMins} min`,
+          }))}
+          onItemSelect={(row) => setOpenArticle(row.article)}
+        />
       )}
 
       <Modal open={!!openArticle} onClose={() => setOpenArticle(null)} title={openArticle?.title ?? ""} size="lg">

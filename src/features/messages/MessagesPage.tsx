@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { messageService } from "@/services/messageService";
 import type { Message } from "@/types";
-import { Card, CardBody } from "@/components/ui/Card";
+import { ItemList } from "@/components/ui/ItemList";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -48,29 +48,18 @@ export default function MessagesPage() {
       {messages.length === 0 ? (
         <EmptyState icon={<MessageCircle size={30} />} title="No messages yet" description="When your coach reaches out, you'll see it here." />
       ) : (
-        <Card>
-          <CardBody className="p-0 divide-y divide-[var(--w360-border)]">
-            {messages.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => openMessage(m)}
-                className="w-full text-left flex items-center gap-3 px-5 py-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
-              >
-                <div className="w-10 h-10 rounded-full bg-maroon-100 dark:bg-maroon-900/50 flex items-center justify-center font-medium text-maroon-800 dark:text-maroon-200 shrink-0">
-                  {m.from.split(" ").map((w) => w[0]).slice(0, 2).join("")}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className={`text-sm ${m.unread ? "font-semibold" : "font-medium"}`}>{m.from}</p>
-                    <span className="text-xs text-[var(--w360-text-muted)] shrink-0">{m.time}</span>
-                  </div>
-                  <p className="text-sm text-[var(--w360-text-muted)] truncate">{m.preview}</p>
-                </div>
-                {m.unread && <span className="w-2 h-2 rounded-full bg-maroon-600 shrink-0" />}
-              </button>
-            ))}
-          </CardBody>
-        </Card>
+        <ItemList
+          maxHeight={520}
+          items={messages.map((m) => ({
+            id: m.id,
+            message: m,
+            icon: <span className="text-sm font-medium">{m.from.split(" ").map((w) => w[0]).slice(0, 2).join("")}</span>,
+            title: m.unread ? `${m.from} · unread` : m.from,
+            description: m.preview,
+            meta: m.time,
+          }))}
+          onItemSelect={(row) => openMessage(row.message)}
+        />
       )}
 
       <Modal open={!!openThread} onClose={() => setOpenThread(null)} title={openThread?.from ?? ""} size="md">

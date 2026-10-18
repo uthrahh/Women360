@@ -1,14 +1,17 @@
-import { Bell, Moon, Sun, UserCircle2 } from "lucide-react";
+import { Bell, Menu, Moon, Sun, UserCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { notificationService } from "@/services/notificationService";
+import { ItemList } from "@/components/ui/ItemList";
+import { MobileMenu } from "./MobileMenu";
 import type { AppNotification } from "@/types";
 import clsx from "clsx";
 
 export function TopBar() {
   const { theme, senior } = useApp();
   const [notifOpen, setNotifOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [notifs, setNotifs] = useState<AppNotification[] | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -32,10 +35,31 @@ export function TopBar() {
     });
   }
 
+  const rows = useMemo(
+    () =>
+      (notifs ?? []).map((n) => ({
+        id: n.id,
+        title: n.title,
+        description: n.detail,
+        meta: n.read ? n.time : `${n.time} · unread`,
+      })),
+    [notifs]
+  );
+
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 sm:px-6 h-16 bg-[var(--w360-bg)]/90 backdrop-blur">
-      <Link to="/app/dashboard" className="lg:hidden font-display text-xl font-semibold tracking-tight">Women360</Link>
-      <div className="hidden lg:block" />
+      <div className="flex items-center gap-1 min-w-0">
+        <button
+          onClick={() => setMenuOpen(true)}
+          aria-label="Open menu"
+          aria-haspopup="dialog"
+          className="lg:hidden p-2 -ml-2 rounded hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+        >
+          <Menu size={20} />
+        </button>
+        <Link to="/app/dashboard" className="lg:hidden font-display text-xl font-semibold tracking-tight">Women360</Link>
+      </div>
+      <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
       <div className="flex items-center gap-1.5">
         <button
           onClick={senior.toggleSeniorMode}
@@ -65,7 +89,7 @@ export function TopBar() {
         <div className="relative" ref={panelRef}>
           <button
             onClick={() => setNotifOpen((v) => !v)}
-            aria-label="Notifications"
+            aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
             aria-expanded={notifOpen}
             className="p-2 rounded hover:bg-black/[0.04] dark:hover:bg-white/[0.06] relative"
           >
@@ -76,29 +100,27 @@ export function TopBar() {
             <div className="absolute right-0 mt-2 w-80 max-w-[85vw] rounded-lg border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] shadow-card z-40 overflow-hidden">
               <div className="px-4 py-3 border-b border-[var(--w360-border)]">
                 <p className="text-sm font-semibold">Notifications</p>
-              </div>
-              <div className="max-h-80 overflow-y-auto w360-scrollbar divide-y divide-[var(--w360-border)]">
-                {!notifs || notifs.length === 0 ? (
-                  <p className="px-4 py-6 text-sm text-[var(--w360-text-muted)] text-center">You're all caught up.</p>
-                ) : (
-                  notifs.map((n) => (
-                    <button
-                      key={n.id}
-                      onClick={() => !n.read && markRead(n.id)}
-                      disabled={n.read}
-                      aria-label={n.read ? `${n.title} (read)` : `${n.title} — mark as read`}
-                      className="w-full text-left px-4 py-3 flex items-start gap-2.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] disabled:cursor-default"
-                    >
-                      {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-maroon-600 mt-1.5 shrink-0" aria-hidden />}
-                      <div className={n.read ? "pl-4" : ""}>
-                        <p className="text-sm font-medium">{n.title}</p>
-                        <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">{n.detail}</p>
-                        <p className="text-[10px] text-[var(--w360-text-muted)] mt-1">{n.time}</p>
-                      </div>
-                    </button>
-                  ))
+                {rows.length > 0 && (
+                  <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">Select one to mark it as read.</p>
                 )}
               </div>
+              {rows.length === 0 ? (
+                <p className="px-4 py-6 text-sm text-[var(--w360-text-muted)] text-center">You're all caught up.</p>
+              ) : (
+                <div className="p-1">
+                  <ItemList
+                    items={rows}
+                    maxHeight={320}
+                    gap={6}
+                    radius={12}
+                    animation="fade"
+                    onItemSelect={(item) => {
+                      const n = notifs?.find((x) => x.id === item.id);
+                      if (n && !n.read) markRead(n.id);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

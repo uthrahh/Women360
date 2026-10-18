@@ -7,11 +7,12 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
+import { ItemList } from "@/components/ui/ItemList";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
-import { Moon, Sunrise, Plus, Pencil, Trash2 } from "lucide-react";
+import { Moon, Sunrise, Plus } from "lucide-react";
 
 interface SleepFormValues {
   date: string;
@@ -154,6 +155,18 @@ export default function SleepPage() {
           />
         </div>
         <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+        {editingEntry !== null && editingEntry !== "new" && (
+          <Button
+            type="button"
+            variant="danger"
+            onClick={() => {
+              setDeleteTarget(editingEntry);
+              setEditingEntry(null);
+            }}
+          >
+            Delete this record
+          </Button>
+        )}
       </form>
     </Modal>
   );
@@ -214,39 +227,22 @@ export default function SleepPage() {
 
       <section>
         <h2 className="font-display text-lg font-semibold mb-3">Recent nights</h2>
-        <Card>
-          <CardBody className="p-0 divide-y divide-[var(--w360-border)]">
-            {data.history.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between gap-3 px-5 py-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">
-                    {new Date(entry.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-                  </p>
-                  <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">
-                    {entry.bedtime} → {entry.wakeTime} · {entry.durationHours}h · {entry.quality}/5 {SLEEP_QUALITY_LABELS[entry.quality]}
-                  </p>
-                  {entry.notes && <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">{entry.notes}</p>}
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => openEdit(entry)}
-                    aria-label={`Edit sleep record for ${entry.date}`}
-                    className="p-1.5 rounded hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-[var(--w360-text-muted)]"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    onClick={() => setDeleteTarget(entry)}
-                    aria-label={`Delete sleep record for ${entry.date}`}
-                    className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/40 text-[var(--w360-text-muted)] hover:text-red-600"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </CardBody>
-        </Card>
+        <p className="text-xs text-[var(--w360-text-muted)] mb-2">Select a night to edit or delete it.</p>
+        <ItemList
+          items={data.history.map((entry) => ({
+            id: entry.id,
+            entry,
+            title: new Date(entry.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }),
+            description: [
+              `${entry.bedtime} → ${entry.wakeTime} · ${entry.durationHours}h · ${entry.quality}/5 ${SLEEP_QUALITY_LABELS[entry.quality]}`,
+              entry.notes,
+            ]
+              .filter(Boolean)
+              .join(" · "),
+          }))}
+          maxHeight={460}
+          onItemSelect={(row) => openEdit(row.entry)}
+        />
       </section>
 
       {logModal}

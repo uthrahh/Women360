@@ -1,12 +1,14 @@
 import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
 import { SeniorTileGrid } from "@/components/layout/SeniorNav";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { LoadingState } from "@/components/ui/states";
+import { ItemList } from "@/components/ui/ItemList";
+import { TodayTasks } from "./TodayTasks";
 import { cycleService } from "@/services/cycleService";
 import { sleepService } from "@/services/sleepService";
 import { activityService } from "@/services/activityService";
@@ -51,6 +53,7 @@ export default function DashboardPage() {
 
 function StandardDashboard() {
   const { auth } = useApp();
+  const nav = useNavigate();
   const [cycle, setCycle] = useState<CycleSummary | null>(null);
   const [sleep, setSleep] = useState<SleepSummary | null>(null);
   const [activity, setActivity] = useState<ActivitySummary | null>(null);
@@ -103,7 +106,17 @@ function StandardDashboard() {
             <CycleHero cycle={cycle} />
           </section>
 
-          <section className="w360-rise" style={{ "--i": 2 } as CSSProperties} aria-label="Quick log">
+          <section className="w360-rise" style={{ "--i": 2 } as CSSProperties} aria-label="To do today">
+            <SectionHeading title="To do today" />
+            <TodayTasks
+              goals={goals}
+              onGoalChange={(g) => setGoals((list) => (list ? list.map((x) => (x.id === g.id ? g : x)) : list))}
+              todayMood={todayMood}
+              appointments={appts}
+            />
+          </section>
+
+          <section className="w360-rise" style={{ "--i": 3 } as CSSProperties} aria-label="Quick log">
             <SectionHeading title="Log something" />
             <div className="-mx-4 sm:mx-0 px-4 sm:px-0 flex gap-2 overflow-x-auto sm:overflow-visible sm:flex-wrap pb-1 w360-hide-scrollbar">
               {QUICK_LOG.map((a) => (
@@ -118,7 +131,7 @@ function StandardDashboard() {
             </div>
           </section>
 
-          <section className="w360-rise" style={{ "--i": 3 } as CSSProperties} aria-label="Today">
+          <section className="w360-rise" style={{ "--i": 4 } as CSSProperties} aria-label="Today">
             <SectionHeading title="Today" />
             <Card>
               <CardBody className="p-0 divide-y divide-[var(--w360-border)]">
@@ -164,7 +177,7 @@ function StandardDashboard() {
         </div>
 
         <div className="flex flex-col gap-10 min-w-0">
-          <section className="w360-rise" style={{ "--i": 4 } as CSSProperties} aria-label="This week">
+          <section className="w360-rise" style={{ "--i": 5 } as CSSProperties} aria-label="This week">
             <SectionHeading title="This week" />
             <Card>
               <CardBody className="pt-5 grid grid-cols-2 gap-4">
@@ -193,7 +206,7 @@ function StandardDashboard() {
             </Card>
           </section>
 
-          <section className="w360-rise" style={{ "--i": 5 } as CSSProperties} aria-label="Upcoming">
+          <section className="w360-rise" style={{ "--i": 6 } as CSSProperties} aria-label="Upcoming">
             <SectionHeading
               title="Upcoming"
               action={<Link to="/app/health" className="text-sm font-medium text-maroon-700 dark:text-maroon-200">View all</Link>}
@@ -206,22 +219,16 @@ function StandardDashboard() {
                 </Link>
               </p>
             ) : (
-              <Card>
-                <CardBody className="p-0 divide-y divide-[var(--w360-border)]">
-                  {appts.slice(0, 3).map((a) => (
-                    <div key={a.id} className="flex items-center justify-between gap-4 px-5 py-4">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{a.title}</p>
-                        <p className="text-xs text-[var(--w360-text-muted)] mt-0.5 truncate">{a.provider} · {a.location}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-medium tabular-nums">{shortDate(a.date)}</p>
-                        <p className="text-xs text-[var(--w360-text-muted)]">{a.time}</p>
-                      </div>
-                    </div>
-                  ))}
-                </CardBody>
-              </Card>
+              <ItemList
+                items={appts.slice(0, 5).map((x) => ({
+                  id: x.id,
+                  title: x.title,
+                  description: [x.provider, x.location].filter(Boolean).join(" · "),
+                  meta: `${shortDate(x.date)} · ${x.time}`,
+                }))}
+                maxHeight={320}
+                onItemSelect={() => nav("/app/health?tab=appointments")}
+              />
             )}
           </section>
         </div>
