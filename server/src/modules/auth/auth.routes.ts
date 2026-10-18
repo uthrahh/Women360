@@ -5,6 +5,7 @@ import { requireAuth } from "@/middleware/auth";
 import { authRateLimiter } from "@/middleware/rateLimit";
 import { created, ok } from "@/lib/response";
 import { authService } from "./auth.service";
+import { twoFactorService } from "./twoFactor.service";
 import {
   changePasswordSchema,
   loginSchema,
@@ -12,6 +13,9 @@ import {
   registerSchema,
   requestPasswordResetSchema,
   resetPasswordSchema,
+  twoFactorConfirmSchema,
+  twoFactorLoginSchema,
+  twoFactorReauthSchema,
 } from "./auth.validation";
 
 export const authRouter = Router();
@@ -34,6 +38,60 @@ authRouter.post(
     const result = await authService.login(req.body.email, req.body.password, req.ip);
     return ok(res, result);
   })
+);
+
+// Step two of signing in when two-factor is on.
+authRouter.post(
+  "/login/2fa",
+  authRateLimiter,
+  validate({ body: twoFactorLoginSchema }),
+  asyncHandler(async (req, res) => {
+    const result = await twoFactorService.completeLogin(req.body.challengeToken, req.body.code, req.ip ?? "unknown");
+    return ok(res, result);
+  })
+);
+
+authRouter.get(
+  "/2fa",
+  requireAuth,
+  asyncHandler(async (req, res) => ok(res, await twoFactorService.status(req.user!.id)))
+);
+
+authRouter.post(
+  "/2fa/setup",
+  requireAuth,
+  authRateLimiter,
+  asyncHandler(async (req, res) => ok(res, await twoFactorService.beginSetup(req.user!.id)))
+);
+
+authRouter.post(
+  "/2fa/confirm",
+  requireAuth,
+  authRateLimiter,
+  validate({ body: twoFactorConfirmSchema }),
+  asyncHandler(async (req, res) =>
+    ok(res, await twoFactorService.confirmSetup(req.user!.id, req.body.code, req.ip ?? "unknown"))
+  )
+);
+
+authRouter.post(
+  "/2fa/disable",
+  requireAuth,
+  authRateLimiter,
+  validate({ body: twoFactorReauthSchema }),
+  asyncHandler(async (req, res) =>
+    ok(res, await twoFactorService.disable(req.user!.id, req.body.password, req.body.code, req.ip ?? "unknown"))
+  )
+);
+
+authRouter.post(
+  "/2fa/backup-codes",
+  requireAuth,
+  authRateLimiter,
+  validate({ body: twoFactorReauthSchema }),
+  asyncHandler(async (req, res) =>
+    ok(res, await twoFactorService.regenerateBackupCodes(req.user!.id, req.body.password, req.body.code, req.ip ?? "unknown"))
+  )
 );
 
 authRouter.post(

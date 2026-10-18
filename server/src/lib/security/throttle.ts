@@ -42,10 +42,13 @@ export async function recordFailure(key: string, limit: number): Promise<void> {
     now.getTime() - existing.updatedAt.getTime() > WINDOW_MS;
   const failures = stale ? 1 : existing.failures + 1;
   const lockedUntil = failures >= limit ? new Date(now.getTime() + LOCK_MS) : null;
+  // updatedAt is set explicitly from the same clock the staleness check reads,
+  // rather than left to Prisma's @updatedAt, so the window logic doesn't
+  // depend on two clocks agreeing.
   await prisma.authThrottle.upsert({
     where: { key },
-    create: { key, failures, lockedUntil },
-    update: { failures, lockedUntil },
+    create: { key, failures, lockedUntil, updatedAt: now },
+    update: { failures, lockedUntil, updatedAt: now },
   });
 }
 
