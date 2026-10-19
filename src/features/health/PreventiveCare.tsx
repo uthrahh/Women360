@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CalendarCheck, ChevronDown, ExternalLink } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Banner } from "@/components/ui/Banner";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { LoadingState, ErrorState } from "@/components/ui/states";
@@ -191,6 +192,10 @@ export function PreventiveCare() {
 
   return (
     <div className="flex flex-col gap-4">
+      <Banner tone="warning" title={plan.reviewStatus}>
+        Guidance last checked {fmt(plan.reviewedOn)}. Treat the schedule below as a starting point and confirm it with your doctor.
+      </Banner>
+
       <p className="text-sm text-[var(--w360-text-muted)]">
         Regular check-ups catch problems early, often before you feel anything. These follow guidance used in {plan.region}. Tap once when you've had one and we'll work out when it's next due.
       </p>
@@ -216,10 +221,7 @@ export function PreventiveCare() {
         ))}
       </ul>
 
-      <div className="text-xs text-[var(--w360-text-muted)] flex flex-col gap-1 border-t border-[var(--w360-border)] pt-3">
-        <p>{plan.disclaimer}</p>
-        <p>{plan.reviewStatus}. Guidance last checked {fmt(plan.reviewedOn)}. This is reference information, not a diagnosis, and it doesn't replace advice from a doctor.</p>
-      </div>
+      <Banner tone="info">{plan.disclaimer} This is reference information, not a diagnosis.</Banner>
     </div>
   );
 }
