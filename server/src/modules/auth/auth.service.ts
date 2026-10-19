@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { assertPasswordAcceptable } from "@/lib/passwordPolicy";
 import { hashToken } from "@/lib/jwt";
-import { BadRequestError, ConflictError, TooManyRequestsError, UnauthorizedError } from "@/lib/errors";
+import { BadRequestError, ConflictError, ForbiddenError, TooManyRequestsError, UnauthorizedError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { publicUser } from "@/lib/publicUser";
 import {
@@ -167,6 +167,32 @@ export const authService = {
     // Issued after sessionsValidAfter was set, so this one is honoured.
     const session = await issueSession(user.id, user.role);
     return { user: publicUser(user), ...session };
+  },
+
+  /**
+   * Permanent self-service erasure. Every table that holds this person's data
+   * references the user with ON DELETE CASCADE, so one delete removes it all.
+   * Needs the password again so a stolen access token alone can't do it, and
+   * failures count toward the same lockout as sign-in.
+   */
+  async deleteAccount(userId: string, password: string, ip = "unknown") {
+    const user = await prisma.user.findFirstOrThrow({ where: { id: userId, deletedAt: null } });
+    // Admins are never created or changed through the API, and that includes removal.
+    if (user.role === "ADMIN") throw new ForbiddenError("Administrator accounts can't be deleted from the app.");
+
+    const keys = [accountKey(user.email), ipKey(ip)];
+    await assertNotLocked(keys);
+    if (!(await verifyPassword(user.passwordHash, password))) {
+      await Promise.all([recordFailure(keys[0], ACCOUNT_FAILURE_LIMIT), recordFailure(keys[1], IP_FAILURE_LIMIT)]);
+      await recordSecurityEvent({ type: "login_failed", userId, ip, detail: { where: "delete_account" } });
+      throw new UnauthorizedError("That password isn't right.");
+    }
+
+    await prisma.user.delete({ where: { id: userId } });
+    await clearFailures(keys[0]);
+    // The actor row is gone, so this records only that a deletion happened:
+    // no id, no email, no name.
+    await recordSecurityEvent({ type: "account_deleted", userId: null, role: user.role, ip });
   },
 
   async completeOnboarding(userId: string) {

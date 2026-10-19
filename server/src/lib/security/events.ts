@@ -32,6 +32,7 @@ export type SecurityEventType =
   | "password_changed"
   | "password_reset"
   | "sessions_revoked"
+  | "account_deleted"
   | "bot_blocked"
   | "admin_access_denied";
 

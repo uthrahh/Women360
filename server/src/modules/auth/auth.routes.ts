@@ -3,11 +3,12 @@ import { asyncHandler } from "@/lib/asyncHandler";
 import { validate } from "@/middleware/validate";
 import { requireAuth } from "@/middleware/auth";
 import { authRateLimiter } from "@/middleware/rateLimit";
-import { created, ok } from "@/lib/response";
+import { created, noContent, ok } from "@/lib/response";
 import { authService } from "./auth.service";
 import { twoFactorService } from "./twoFactor.service";
 import {
   changePasswordSchema,
+  deleteAccountSchema,
   loginSchema,
   refreshSchema,
   registerSchema,
@@ -142,6 +143,17 @@ authRouter.post(
   asyncHandler(async (req, res) => {
     const result = await authService.changePassword(req.user!.id, req.body.currentPassword, req.body.newPassword, req.ip);
     return ok(res, result);
+  })
+);
+
+authRouter.post(
+  "/delete-account",
+  requireAuth,
+  authRateLimiter,
+  validate({ body: deleteAccountSchema }),
+  asyncHandler(async (req, res) => {
+    await authService.deleteAccount(req.user!.id, req.body.password, req.ip);
+    return noContent(res);
   })
 );
 

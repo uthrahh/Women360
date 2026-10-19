@@ -15,6 +15,70 @@ const DEFAULT_ESSENTIALS: { key: SeniorEssentialKey; enabled: boolean }[] = [
 ];
 
 export const usersService = {
+  /**
+   * Everything the app holds about this person, as plain JSON they can keep.
+   * Built from an explicit list of their own tables, so credentials (password
+   * hash, two-factor secrets, backup codes, refresh tokens) are never in it.
+   */
+  async exportData(userId: string) {
+    const u = await prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      include: {
+        healthProfile: true,
+        emergencyContact: true,
+        seniorEssentials: true,
+        nutritionGoal: true,
+        activityGoal: true,
+        cycleProfile: true,
+        cycleEntries: true,
+        mealEntries: true,
+        hydrationLogs: true,
+        fruitVegLogs: true,
+        activityEntries: true,
+        stepsLogs: true,
+        sleepEntries: true,
+        wellbeingEntries: true,
+        goals: { include: { checkIns: true } },
+        appointments: true,
+        medications: true,
+        medicationLogs: true,
+        vitals: true,
+        reports: true,
+        notifications: true,
+        receivedMessages: true,
+        feedback: true,
+      },
+    });
+    return {
+      exportedAt: new Date().toISOString(),
+      format: "women360-export-v1",
+      account: publicUser(u),
+      healthProfile: u.healthProfile,
+      emergencyContact: u.emergencyContact,
+      seniorEssentials: u.seniorEssentials,
+      nutritionGoal: u.nutritionGoal,
+      activityGoal: u.activityGoal,
+      cycleProfile: u.cycleProfile,
+      cycleEntries: u.cycleEntries,
+      mealEntries: u.mealEntries,
+      hydrationLogs: u.hydrationLogs,
+      fruitVegLogs: u.fruitVegLogs,
+      activityEntries: u.activityEntries,
+      stepsLogs: u.stepsLogs,
+      sleepEntries: u.sleepEntries,
+      wellbeingEntries: u.wellbeingEntries,
+      goals: u.goals,
+      appointments: u.appointments,
+      medications: u.medications,
+      medicationLogs: u.medicationLogs,
+      vitals: u.vitals,
+      reports: u.reports,
+      notifications: u.notifications,
+      messages: u.receivedMessages,
+      feedback: u.feedback,
+    };
+  },
+
   async updateProfile(
     userId: string,
     input: { name?: string; dateOfBirth?: string; lifeStage?: LifeStage }
