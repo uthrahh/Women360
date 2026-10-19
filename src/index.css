@@ -130,3 +130,12 @@ body {
 .w360-grow { transform-box: fill-box; transform-origin: bottom; animation: w360-grow 900ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 .w360-select { animation: w360-select 7s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
 .w360-panel-in { animation: w360-panel-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* ---- Softly landing preview ------------------------------------------------
+   Slow background drift and a gentle pulse; reduced-motion users get neither
+   (the rule near the top collapses them, and the markup uses motion-safe). */
+@keyframes w360-float { from { transform: translateY(-10px); } to { transform: translateY(10px); } }
+@keyframes w360-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--w360-accent) 35%, transparent); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 18px color-mix(in srgb, var(--w360-accent) 0%, transparent); }
+}
