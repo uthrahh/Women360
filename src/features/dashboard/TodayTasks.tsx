@@ -4,10 +4,10 @@ import { CalendarClock } from "lucide-react";
 import SpringCheck from "@/components/reactbits/SpringCheck";
 import { Card, CardBody } from "@/components/ui/Card";
 import { useToast } from "@/components/ui/Toast";
-import { goalService } from "@/services/goalService";
+import { habitService } from "@/services/habitService";
 import { healthService } from "@/services/healthService";
 import { localDateISO } from "@/services/mappers";
-import type { Appointment, Goal, MedicationDose, WellbeingEntry } from "@/types";
+import type { Appointment, Habit, MedicationDose, WellbeingEntry } from "@/types";
 
 interface Task {
   id: string;
@@ -25,19 +25,19 @@ function timeOf(iso: string): string {
 
 /**
  * Everything the person still has to do today, drawn only from things they've
- * actually set up: medicine doses, goals they check in on, today's
+ * actually set up: medicine doses, habits they're building, today's
  * appointments, and the mood check-in. Ticking one does the real thing (logs
  * the dose, records the check-in); a task that needs a form (mood) opens that
  * form and ticks itself once the entry exists. Nothing here is invented.
  */
 export function TodayTasks({
-  goals,
-  onGoalChange,
+  habits,
+  onHabitChange,
   todayMood,
   appointments,
 }: {
-  goals: Goal[];
-  onGoalChange: (goal: Goal) => void;
+  habits: Habit[];
+  onHabitChange: (habit: Habit) => void;
   todayMood: WellbeingEntry | null;
   appointments: Appointment[];
 }) {
@@ -94,17 +94,21 @@ export function TodayTasks({
       });
     }
 
-    for (const goal of goals.filter((g) => !g.completed)) {
-      const id = `goal:${goal.id}`;
+    // A habit is due until today's tick; an "N days a week" habit stops being
+    // due once the week's quota is met (unless it was ticked today, so it still
+    // shows as done).
+    for (const habit of habits) {
+      if (!habit.doneToday && habit.daysPerWeek < 7 && habit.thisWeek >= habit.daysPerWeek) continue;
+      const id = `habit:${habit.id}`;
       list.push({
         id,
-        label: goal.title,
-        detail: goal.reminder,
-        done: goal.checkedInToday,
+        label: habit.title,
+        detail: habit.reminder ?? (habit.target ? `${habit.target.toLocaleString()}${habit.unit ? ` ${habit.unit}` : ""}` : undefined),
+        done: habit.doneToday,
         toggle: (next) =>
           run(id, next, async () => {
-            onGoalChange(await (next ? goalService.checkIn(goal.id) : goalService.undoCheckIn(goal.id)));
-          }, "Couldn't save your check-in. Please try again."),
+            onHabitChange(await (next ? habitService.log(habit.id) : habitService.unlog(habit.id)));
+          }, "Couldn't save that. Please try again."),
       });
     }
 
@@ -119,7 +123,7 @@ export function TodayTasks({
     // Open first, then done; the order inside each group is the order above.
     return [...list.filter((t) => !(optimistic[t.id] ?? t.done)), ...list.filter((t) => optimistic[t.id] ?? t.done)];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doses, goals, todayMood, optimistic]);
+  }, [doses, habits, todayMood, optimistic]);
 
   const open = tasks.filter((t) => !(optimistic[t.id] ?? t.done)).length;
   const loading = doses === null;

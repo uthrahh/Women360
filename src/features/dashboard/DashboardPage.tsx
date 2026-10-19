@@ -15,11 +15,12 @@ import { activityService } from "@/services/activityService";
 import { nutritionService } from "@/services/nutritionService";
 import { healthService } from "@/services/healthService";
 import { goalService } from "@/services/goalService";
+import { habitService } from "@/services/habitService";
 import { wellbeingService } from "@/services/wellbeingService";
 import { MOOD_LABELS } from "@/services/mappers";
 import { SLEEP_QUALITY_LABELS } from "@/types";
-import type { CycleSummary, SleepSummary, ActivitySummary, NutritionSummary, Appointment, Goal, WellbeingEntry } from "@/types";
-import { Droplet, Moon, Activity as ActivityIcon, Smile, CalendarClock, Plus, ChevronRight, type LucideIcon } from "lucide-react";
+import type { CycleSummary, SleepSummary, ActivitySummary, NutritionSummary, Appointment, Goal, Habit, WellbeingEntry } from "@/types";
+import { Droplet, Moon, Activity as ActivityIcon, Smile, CalendarClock, Plus, ChevronRight, Flame, type LucideIcon } from "lucide-react";
 
 const PHASE_LABEL: Record<string, string> = {
   menstrual: "Menstrual phase",
@@ -60,6 +61,7 @@ function StandardDashboard() {
   const [nutrition, setNutrition] = useState<NutritionSummary | null>(null);
   const [appts, setAppts] = useState<Appointment[]>([]);
   const [goals, setGoals] = useState<Goal[] | null>(null);
+  const [habits, setHabits] = useState<Habit[] | null>(null);
   const [todayMood, setTodayMood] = useState<WellbeingEntry | null>(null);
   const [moodLoaded, setMoodLoaded] = useState(false);
 
@@ -70,13 +72,14 @@ function StandardDashboard() {
     nutritionService.getToday().then(setNutrition);
     healthService.getAppointments().then(setAppts);
     goalService.list().then(setGoals);
+    habitService.list().then(setHabits);
     wellbeingService.getTodayMood().then((m) => {
       setTodayMood(m);
       setMoodLoaded(true);
     });
   }, []);
 
-  const loaded = cycle && sleep && activity && nutrition && goals && moodLoaded;
+  const loaded = cycle && sleep && activity && nutrition && goals && habits && moodLoaded;
   const now = new Date();
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
@@ -109,8 +112,8 @@ function StandardDashboard() {
           <section className="w360-rise" style={{ "--i": 2 } as CSSProperties} aria-label="To do today">
             <SectionHeading title="To do today" />
             <TodayTasks
-              goals={goals}
-              onGoalChange={(g) => setGoals((list) => (list ? list.map((x) => (x.id === g.id ? g : x)) : list))}
+              habits={habits}
+              onHabitChange={(h) => setHabits((list) => (list ? list.map((x) => (x.id === h.id ? h : x)) : list))}
               todayMood={todayMood}
               appointments={appts}
             />
@@ -163,6 +166,13 @@ function StandardDashboard() {
                   value={todayMood ? MOOD_LABELS[todayMood.mood] : "Not logged"}
                   sub={todayMood ? "logged today" : "Tap to check in"}
                   to="/app/wellbeing"
+                />
+                <TodayRow
+                  icon={Flame}
+                  label="Habits"
+                  value={habits.length ? `${habits.filter((h) => h.doneToday).length}/${habits.length}` : "None yet"}
+                  sub={habits.length ? "done today" : "Add your first one"}
+                  to="/app/habits"
                 />
                 <TodayRow
                   icon={CalendarClock}

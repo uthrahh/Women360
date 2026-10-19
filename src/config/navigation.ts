@@ -1,7 +1,7 @@
 import {
   LayoutGrid, HeartPulse, CalendarHeart, Apple, Activity, Moon, Smile,
   Target, TrendingUp, FileBarChart2, BookOpen, MessageCircle, Settings,
-  Pill, CalendarClock, Phone,
+  Pill, CalendarClock, Phone, Flame,
 } from "lucide-react";
 import type { SeniorEssential, SeniorEssentialKey } from "@/types";
 
@@ -19,6 +19,7 @@ export const standardNav: NavItem[] = [
   { to: "/app/activity", label: "Activity", icon: Activity },
   { to: "/app/sleep", label: "Sleep", icon: Moon },
   { to: "/app/wellbeing", label: "Wellbeing", icon: Smile },
+  { to: "/app/habits", label: "Habits", icon: Flame },
   { to: "/app/goals", label: "Goals", icon: Target },
   { to: "/app/insights", label: "Insights", icon: TrendingUp },
   { to: "/app/reports", label: "Reports", icon: FileBarChart2 },
@@ -39,7 +40,7 @@ export type MenuNode = { leaf: NavItem } | { label: string; items: NavItem[] };
 
 export const menuTree: MenuNode[] = [
   { leaf: byTo("/app/dashboard") },
-  { label: "Track", items: ["/app/cycle", "/app/nutrition", "/app/activity", "/app/sleep", "/app/wellbeing"].map(byTo) },
+  { label: "Track", items: ["/app/habits", "/app/cycle", "/app/nutrition", "/app/activity", "/app/sleep", "/app/wellbeing"].map(byTo) },
   { label: "Care", items: ["/app/health", "/app/goals", "/app/insights", "/app/reports"].map(byTo) },
   { label: "Support", items: ["/app/learn", "/app/messages"].map(byTo) },
   { leaf: byTo("/app/settings") },
@@ -50,7 +51,7 @@ export const mobileBottomNav: NavItem[] = [
   { to: "/app/dashboard", label: "Today", icon: LayoutGrid },
   { to: "/app/cycle", label: "Cycle", icon: CalendarHeart },
   { to: "/app/insights", label: "Insights", icon: TrendingUp },
-  { to: "/app/goals", label: "Goals", icon: Target },
+  { to: "/app/habits", label: "Habits", icon: Flame },
   { to: "/app/settings", label: "Settings", icon: Settings },
 ];
 

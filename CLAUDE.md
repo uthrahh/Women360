@@ -30,6 +30,13 @@ reminders, risk-factor awareness, habit goals). Screening schedules and risk
 statements are medical claims: they need a named guideline source, a target
 region and clinical review, so ask before writing them.
 
+**Ease of use is a primary requirement, alongside prevention.** Tracking health
+must not drain her time: fewest taps and fields, one-tap daily logging, templates
+and sensible defaults instead of blank forms, only the essential fields required,
+progressive disclosure, never everything at once, no streak guilt. When adding or
+reviewing a screen, count the taps and fields and cut. Prefer pre-filling from her
+own history over asking again.
+
 **Senior Mode is a core, load-bearing USP**, not an accessibility toggle. It
 restructures navigation and information architecture (large plain-language
 tiles the user chooses in Settings → Customize essentials), it is not a
@@ -284,8 +291,8 @@ and no longer does it; (2) a `position: fixed` panel rendered inside an element
 with `backdrop-filter` (the top bar) is clipped to that element — portal it to
 `<body>` (`MobileMenu` does); (3) `NumberField` never pre-fills an empty field —
 an unentered value must stay unentered, so an optional macro isn't logged as 0;
-(4) streaks (`GoalCheckIn`) are derived from check-in rows on the person's own
-calendar day (client sends the date) and have no "lost streak" state by design.
+(4) streaks are derived from log rows on the person's own calendar day (the
+client sends the date) and have no "lost streak" state by design.
 
 **Privacy, public pages and the log popover (latest pass):** a signed-in
 person can download everything held about them (`GET /users/me/export`, built
@@ -309,6 +316,23 @@ function or focus snaps back to the first field on every keystroke; (3) only one
 `LogPopover` per page may be open-bound to a given state, so empty-state buttons
 stay plain `Button`s that set that state; (4) motion animations stall in a
 hidden browser pane, so verify open/close with the pane shown.
+
+**Habits and goals are different things (latest pass).** A *habit* is a routine she
+repeats (walk 10,000 steps, take a vitamin): `Habit` + `HabitLog`, tracked with a
+one-tap daily tick, a streak (days for every-day habits, weeks for "N days a
+week"), last-7-days dots, and an amount when it has a target (an amount habit is
+done when the logged amount reaches the target; one tap logs exactly the target).
+A *goal* has a finish line and a `kind` that decides its fields: `REACH` (a number
+moves from where it started to a target, progress measured from `startValue` in
+either direction), `TOTAL` (build up to a number), `ONE_OFF` (a single thing, e.g.
+book a check-up). Progress is always computed from the numbers
+(`server/src/modules/goals/progress.ts`, mirrored in `mappers.ts#goalProgress`).
+Existing goals became `TOTAL`, which is how they already behaved. The old goal
+check-in streak was replaced by habits: the `GoalCheckIn` table is no longer read
+or written but was **not dropped** (that would destroy data); drop it in a
+migration once the owner confirms. The bottom bar now shows Habits instead of
+Goals, since habits are the daily-use screen. Dependabot is monthly and grouped
+so it opens one pull request per ecosystem instead of a branch per package.
 
 Known concrete defects to fix as part of any related work:
 - No `sitemap.xml` (needs the production domain), no terms of use page, no

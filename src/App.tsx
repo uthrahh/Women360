@@ -25,6 +25,7 @@ const ActivityPage = lazy(() => import("@/features/activity/ActivityPage"));
 const SleepPage = lazy(() => import("@/features/sleep/SleepPage"));
 const WellbeingPage = lazy(() => import("@/features/wellbeing/WellbeingPage"));
 const GoalsPage = lazy(() => import("@/features/goals/GoalsPage"));
+const HabitsPage = lazy(() => import("@/features/habits/HabitsPage"));
 const InsightsPage = lazy(() => import("@/features/insights/InsightsPage"));
 const ReportsPage = lazy(() => import("@/features/reports/ReportsPage"));
 const LearnPage = lazy(() => import("@/features/learn/LearnPage"));
@@ -105,6 +106,10 @@ export default function App() {
                 <Route
                   path="goals"
                   element={<Suspense fallback={<LoadingState label="Loading" />}><GoalsPage /></Suspense>}
+                />
+                <Route
+                  path="habits"
+                  element={<Suspense fallback={<LoadingState label="Loading" />}><HabitsPage /></Suspense>}
                 />
                 <Route
                   path="insights"

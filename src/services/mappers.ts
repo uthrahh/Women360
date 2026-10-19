@@ -12,6 +12,7 @@ import type {
   CycleDay,
   CycleSummary,
   Goal,
+  Habit,
   MealEntry,
   Medication,
   Message,
@@ -86,9 +87,21 @@ export function hasAtMostOneDecimal(value: number): boolean {
 
 // Progress is always derived from real numbers, never trusted from a
 // separately-stored percentage that could drift out of sync.
-export function goalProgress(goal: Pick<Goal, "currentValue" | "targetValue">): number {
+// (Mirrors server/src/modules/goals/progress.ts on purpose: the page shows the
+// number immediately while the server stays the one that reports it.)
+export function goalProgress(
+  goal: Pick<Goal, "currentValue" | "targetValue"> & Partial<Pick<Goal, "kind" | "completed" | "startValue">>
+): number {
+  const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+  if (goal.kind === "oneOff") return goal.completed ? 100 : 0;
+  if (goal.kind === "reach") {
+    const start = goal.startValue ?? goal.currentValue;
+    const span = goal.targetValue - start;
+    if (span === 0) return goal.currentValue === goal.targetValue ? 100 : 0;
+    return clamp(((goal.currentValue - start) / span) * 100);
+  }
   if (goal.targetValue <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.round((goal.currentValue / goal.targetValue) * 100)));
+  return clamp((goal.currentValue / goal.targetValue) * 100);
 }
 
 function initialsFromName(name: string): string {
@@ -386,17 +399,21 @@ export function toBackendWellbeingEntry(entry: Omit<WellbeingEntry, "date">) {
 
 // --- Goals ------------------------------------------------------------------
 
+const KIND_FROM_API: Record<string, Goal["kind"]> = { TOTAL: "total", REACH: "reach", ONE_OFF: "oneOff" };
+const KIND_TO_API: Record<Goal["kind"], string> = { total: "TOTAL", reach: "REACH", oneOff: "ONE_OFF" };
+
 interface ApiGoal {
   id: string;
   title: string;
   category: string;
+  kind: string;
   currentValue: number;
   targetValue: number;
+  startValue: number | null;
   unit: string;
   reminder: string | null;
   completed: boolean;
-  streak?: number;
-  checkedInToday?: boolean;
+  dueDate: string | null;
 }
 
 export function toFrontendGoal(apiGoal: ApiGoal): Goal {
@@ -404,31 +421,73 @@ export function toFrontendGoal(apiGoal: ApiGoal): Goal {
     id: apiGoal.id,
     title: apiGoal.title,
     category: lower<Goal["category"]>(apiGoal.category),
+    kind: KIND_FROM_API[apiGoal.kind] ?? "total",
     currentValue: apiGoal.currentValue,
     targetValue: apiGoal.targetValue,
+    startValue: apiGoal.startValue ?? undefined,
     unit: apiGoal.unit,
     reminder: apiGoal.reminder ?? undefined,
     completed: apiGoal.completed,
-    streak: apiGoal.streak ?? 0,
-    checkedInToday: apiGoal.checkedInToday ?? false,
+    dueDate: apiGoal.dueDate ? apiGoal.dueDate.slice(0, 10) : undefined,
   };
 }
 
-export function toBackendGoalInput(input: {
+/** What the create form sends; only the fields a kind needs are filled. */
+export interface GoalInput {
   title: string;
-  category: Goal["category"];
-  currentValue: number;
-  targetValue: number;
-  unit: string;
+  kind: Goal["kind"];
+  category?: Goal["category"];
+  currentValue?: number;
+  targetValue?: number;
+  unit?: string;
   reminder?: string;
-}) {
+  dueDate?: string;
+}
+
+export function toBackendGoalInput(input: GoalInput) {
   return {
     title: input.title,
-    category: upper(input.category),
+    kind: KIND_TO_API[input.kind],
+    category: input.category ? upper(input.category) : undefined,
     currentValue: input.currentValue,
     targetValue: input.targetValue,
     unit: input.unit,
     reminder: input.reminder,
+    dueDate: input.dueDate,
+  };
+}
+
+// --- Habits -----------------------------------------------------------------
+
+interface ApiHabit {
+  id: string;
+  title: string;
+  target: number | null;
+  unit: string | null;
+  daysPerWeek: number;
+  reminder: string | null;
+  doneToday: boolean;
+  amountToday: number | null;
+  streak: number;
+  streakUnit: "day" | "week";
+  thisWeek: number;
+  last7: boolean[];
+}
+
+export function toFrontendHabit(h: ApiHabit): Habit {
+  return {
+    id: h.id,
+    title: h.title,
+    target: h.target ?? undefined,
+    unit: h.unit ?? undefined,
+    daysPerWeek: h.daysPerWeek,
+    reminder: h.reminder ?? undefined,
+    doneToday: h.doneToday,
+    amountToday: h.amountToday ?? undefined,
+    streak: h.streak,
+    streakUnit: h.streakUnit,
+    thisWeek: h.thisWeek,
+    last7: h.last7,
   };
 }
 

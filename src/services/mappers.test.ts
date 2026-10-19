@@ -119,4 +119,16 @@ describe("goalProgress", () => {
   it("never goes negative and guards against a zero target", () => {
     expect(goalProgress({ currentValue: 5, targetValue: 0 })).toBe(0);
   });
+
+  it("a reach goal is measured from where it started, going down or up", () => {
+    expect(goalProgress({ kind: "reach", startValue: 72, currentValue: 69.5, targetValue: 67 })).toBe(50);
+    expect(goalProgress({ kind: "reach", startValue: 50, currentValue: 55, targetValue: 60 })).toBe(50);
+    expect(goalProgress({ kind: "reach", startValue: 72, currentValue: 74, targetValue: 67 })).toBe(0);
+    expect(goalProgress({ kind: "reach", startValue: 72, currentValue: 65, targetValue: 67 })).toBe(100);
+  });
+
+  it("a one-off goal is done or not", () => {
+    expect(goalProgress({ kind: "oneOff", completed: false, currentValue: 0, targetValue: 1 })).toBe(0);
+    expect(goalProgress({ kind: "oneOff", completed: true, currentValue: 1, targetValue: 1 })).toBe(100);
+  });
 });

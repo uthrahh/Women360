@@ -1,31 +1,33 @@
 import { prisma } from "@/lib/prisma";
-import { BadRequestError, ForbiddenError, NotFoundError } from "@/lib/errors";
-import type { Goal, GoalCategory } from "@prisma/client";
-import { computeStreak, dayNumber, toIsoDay } from "./streak";
+import { ForbiddenError, NotFoundError } from "@/lib/errors";
+import type { GoalCategory, GoalKind } from "@prisma/client";
 
 interface CreateGoalInput {
   title: string;
-  category: GoalCategory;
+  kind: GoalKind;
+  category?: GoalCategory;
   currentValue?: number;
-  targetValue: number;
-  unit: string;
+  startValue?: number;
+  targetValue?: number;
+  unit?: string;
   reminder?: string;
+  dueDate?: string;
 }
 
 interface UpdateGoalInput {
   title?: string;
+  category?: GoalCategory;
   currentValue?: number;
   targetValue?: number;
   unit?: string;
   reminder?: string;
   completed?: boolean;
+  dueDate?: string | null;
 }
 
-// How far from the server's own UTC date a client-supplied "today" may be.
-// Real timezones span UTC-12..UTC+14, so a day of slack either side is honest;
-// anything further is a wrong clock or a hand-made request.
-const FUTURE_SLACK_DAYS = 1;
-const BACKFILL_DAYS = 7;
+const DEFAULT_CATEGORY: Record<GoalKind, GoalCategory> = { TOTAL: "OTHER", REACH: "BODY", ONE_OFF: "OTHER" };
+
+const asDate = (day: string) => new Date(`${day}T00:00:00.000Z`);
 
 async function assertOwner(userId: string, id: string) {
   const goal = await prisma.goal.findUnique({ where: { id } });
@@ -34,75 +36,49 @@ async function assertOwner(userId: string, id: string) {
   return goal;
 }
 
-export function assertPlausibleDay(isoDay: string, now = new Date()) {
-  const offset = dayNumber(isoDay) - dayNumber(toIsoDay(now));
-  if (offset > FUTURE_SLACK_DAYS) throw new BadRequestError("You can't check in for a future day.");
-  if (offset < -BACKFILL_DAYS) throw new BadRequestError("That day is too far back to check in for.");
-}
-
-type GoalWithCheckIns = Goal & { checkIns: { date: Date }[] };
-
-function present(goal: GoalWithCheckIns, today: string) {
-  const { checkIns, ...rest } = goal;
-  return { ...rest, ...computeStreak(checkIns.map((c) => toIsoDay(c.date)), today) };
-}
-
 export const goalsService = {
-  async list(userId: string, today = toIsoDay(new Date())) {
-    const goals = await prisma.goal.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      include: { checkIns: { select: { date: true }, orderBy: { date: "desc" } } },
+  async list(userId: string) {
+    return prisma.goal.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
+  },
+
+  async create(userId: string, input: CreateGoalInput) {
+    const { kind, dueDate, startValue, currentValue, targetValue, ...rest } = input;
+    // A one-off has nothing to count: it's 0 of 1 until it's done.
+    const oneOff = kind === "ONE_OFF";
+    const now = oneOff ? 0 : (currentValue ?? startValue ?? 0);
+    return prisma.goal.create({
+      data: {
+        ...rest,
+        userId,
+        kind,
+        category: input.category ?? DEFAULT_CATEGORY[kind],
+        unit: input.unit ?? "",
+        currentValue: now,
+        // Progress on a REACH goal is measured from where it started.
+        startValue: kind === "REACH" ? (startValue ?? currentValue ?? 0) : null,
+        targetValue: oneOff ? 1 : (targetValue ?? 100),
+        dueDate: dueDate ? asDate(dueDate) : null,
+      },
     });
-    return goals.map((g) => present(g, today));
   },
 
-  async create(userId: string, input: CreateGoalInput, today = toIsoDay(new Date())) {
-    const goal = await prisma.goal.create({ data: { ...input, userId }, include: { checkIns: { select: { date: true } } } });
-    return present(goal, today);
-  },
-
-  async update(userId: string, id: string, input: UpdateGoalInput, today = toIsoDay(new Date())) {
-    await assertOwner(userId, id);
-    const goal = await prisma.goal.update({
+  async update(userId: string, id: string, input: UpdateGoalInput) {
+    const goal = await assertOwner(userId, id);
+    const { dueDate, ...rest } = input;
+    return prisma.goal.update({
       where: { id },
-      data: input,
-      include: { checkIns: { select: { date: true } } },
+      data: {
+        ...rest,
+        ...(dueDate === undefined ? {} : { dueDate: dueDate === null ? null : asDate(dueDate) }),
+        // Ticking a one-off done also moves its 0-of-1 counter, so anything that
+        // reads the numbers (reports) agrees with the flag.
+        ...(goal.kind === "ONE_OFF" && input.completed !== undefined ? { currentValue: input.completed ? 1 : 0 } : {}),
+      },
     });
-    return present(goal, today);
   },
 
   async remove(userId: string, id: string) {
     await assertOwner(userId, id);
     await prisma.goal.delete({ where: { id } });
-  },
-
-  // Idempotent: checking in twice for the same day is the same as once.
-  async checkIn(userId: string, id: string, day: string) {
-    await assertOwner(userId, id);
-    assertPlausibleDay(day);
-    const date = new Date(`${day}T00:00:00.000Z`);
-    await prisma.goalCheckIn.upsert({
-      where: { goalId_date: { goalId: id, date } },
-      create: { goalId: id, date },
-      update: {},
-    });
-    return this.getOne(userId, id, day);
-  },
-
-  async undoCheckIn(userId: string, id: string, day: string) {
-    await assertOwner(userId, id);
-    assertPlausibleDay(day);
-    await prisma.goalCheckIn.deleteMany({ where: { goalId: id, date: new Date(`${day}T00:00:00.000Z`) } });
-    return this.getOne(userId, id, day);
-  },
-
-  async getOne(userId: string, id: string, today: string) {
-    const goal = await prisma.goal.findFirst({
-      where: { id, userId },
-      include: { checkIns: { select: { date: true } } },
-    });
-    if (!goal) throw new NotFoundError("Goal not found.");
-    return present(goal, today);
   },
 };

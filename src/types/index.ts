@@ -184,18 +184,51 @@ export interface WellbeingEntry {
   note?: string;
 }
 
+/**
+ * What kind of finish line a goal has. "total" builds up to a number (read 12
+ * books), "reach" moves a number from where it is to a target (weight 72 -> 67),
+ * "oneOff" is a single thing to do (book a check-up). Routines done every day or
+ * some days a week are Habits.
+ */
+export type GoalKind = "total" | "reach" | "oneOff";
+
 export interface Goal {
   id: string;
   title: string;
-  category: "sleep" | "activity" | "hydration" | "nutrition" | "strength" | "cycle" | "mobility";
+  category:
+    | "sleep" | "activity" | "hydration" | "nutrition" | "strength" | "cycle" | "mobility"
+    | "body" | "learning" | "preventive" | "other";
+  kind: GoalKind;
   currentValue: number;
   targetValue: number;
+  /** Where a "reach" goal started, so progress is measured from there. */
+  startValue?: number;
   unit: string;
   reminder?: string;
   completed: boolean;
-  /** Consecutive days with a daily check-in (see goalService.checkIn). */
+  /** YYYY-MM-DD, if the goal has a date to aim for. */
+  dueDate?: string;
+}
+
+/** A routine: every day, or some days a week. With a target it records an amount each day. */
+export interface Habit {
+  id: string;
+  title: string;
+  /** Set for an amount habit ("10,000 steps"); absent for one that is simply ticked off. */
+  target?: number;
+  unit?: string;
+  /** 7 = every day. */
+  daysPerWeek: number;
+  reminder?: string;
+  doneToday: boolean;
+  amountToday?: number;
+  /** Consecutive days (daily habits) or weeks (N-a-week habits) that were met. */
   streak: number;
-  checkedInToday: boolean;
+  streakUnit: "day" | "week";
+  /** Days done so far this Mon-Sun week. */
+  thisWeek: number;
+  /** The last seven days, oldest first, ending today. */
+  last7: boolean[];
 }
 
 export interface Appointment {
