@@ -76,6 +76,7 @@ model User {
   sleepEntries      SleepEntry[]
   wellbeingEntries  WellbeingEntry[]
   goals             Goal[]
+  habits            Habit[]
   feedback          Feedback[]
   appointments      Appointment[]
   medications       Medication[]
@@ -379,6 +380,20 @@ enum GoalCategory {
   STRENGTH
   CYCLE
   MOBILITY
+  BODY
+  LEARNING
+  PREVENTIVE
+  OTHER
+}
+
+// What kind of finish line a goal has. TOTAL builds up to a number (read 12
+// books), REACH moves a number from where it is to a target (weight 72 -> 67),
+// ONE_OFF is a single thing to do (book a check-up). Daily or weekly routines
+// are Habits, not Goals.
+enum GoalKind {
+  TOTAL
+  REACH
+  ONE_OFF
 }
 
 model Goal {
@@ -392,9 +407,47 @@ model Goal {
   unit         String       @default("")
   reminder     String?
   completed    Boolean      @default(false)
+  kind         GoalKind     @default(TOTAL)
+  // Where a REACH goal started, so progress is measured from there.
+  startValue   Float?
+  dueDate      DateTime?    @db.Date
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  // Superseded by Habit/HabitLog; no code reads or writes this any more. The
+  // table is kept (not dropped) until the owner confirms nothing needs it.
   checkIns     GoalCheckIn[]
+}
+
+// A routine done every day, or some days a week: walk 10,000 steps, take a
+// vitamin, stretch. A habit with a target records an amount each day and counts
+// as done when the amount reaches it; one without is simply ticked off.
+model Habit {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  target      Float?
+  unit        String?
+  daysPerWeek Int        @default(7)
+  reminder    String?
+  archivedAt  DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  logs        HabitLog[]
+
+  @@index([userId])
+}
+
+// One row = this habit was logged on this day, on the person's own calendar day.
+model HabitLog {
+  id        String   @id @default(cuid())
+  habitId   String
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  amount    Float?
+  createdAt DateTime @default(now())
+
+  @@unique([habitId, date])
 }
 
 // One row = "I did this today" for a goal, on the person's own calendar day
