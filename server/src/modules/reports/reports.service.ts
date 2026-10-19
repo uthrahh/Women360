@@ -1,3 +1,4 @@
+import { goalProgressPct } from "@/modules/goals/progress";
 import { prisma } from "@/lib/prisma";
 import { ForbiddenError, NotFoundError } from "@/lib/errors";
 import { cycleService } from "@/modules/cycle/cycle.service";
@@ -125,7 +126,9 @@ export const reportsService = {
           currentValue: g.currentValue,
           targetValue: g.targetValue,
           unit: g.unit,
-          progressPct: g.targetValue > 0 ? Math.max(0, Math.min(100, Math.round((g.currentValue / g.targetValue) * 100))) : 0,
+          kind: g.kind,
+          dueDate: g.dueDate ? g.dueDate.toISOString().slice(0, 10) : null,
+          progressPct: goalProgressPct(g),
         })),
       completed: goals.filter((g) => g.completed).map((g) => ({ title: g.title, category: g.category })),
     };
