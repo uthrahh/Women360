@@ -1,0 +1,9 @@
+# Public pages only. The signed-in app and account screens hold personal
+# health information and have no reason to appear in search results.
+User-agent: *
+Disallow: /app/
+Disallow: /onboarding
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password

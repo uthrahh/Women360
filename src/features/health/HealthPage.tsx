@@ -7,6 +7,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { LogPopover } from "@/components/ui/LogPopover";
 import { Input } from "@/components/ui/Input";
 import { ItemList } from "@/components/ui/ItemList";
 import { NumberField } from "@/components/ui/NumberField";
@@ -250,8 +251,7 @@ export default function HealthPage() {
     }
   }
 
-  const addModal = (
-    <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add a measurement" size="sm">
+  const vitalForm = (
       <form className="flex flex-col gap-4" onSubmit={handleAddVital}>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="vtype" className="text-sm font-medium senior:text-lg">What are you logging?</label>
@@ -269,11 +269,15 @@ export default function HealthPage() {
         <Input label="Value" name="value" placeholder="e.g. 68kg or 118/76" required />
         <Button type="submit" size="lg">Save measurement</Button>
       </form>
+  );
+
+  const addModal = (
+    <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add a measurement" size="sm">
+      {vitalForm}
     </Modal>
   );
 
-  const medModalUi = (
-    <Modal open={medModal !== null} onClose={() => setMedModal(null)} title={medModal === "new" ? "Add medicine" : "Edit medicine"} size="sm">
+  const medForm_ = (
       <form className="flex flex-col gap-4" onSubmit={handleSubmitMed}>
         <Input label="Name" value={medForm.name} onChange={(e) => setMedForm((f) => ({ ...f, name: e.target.value }))} error={medErrors.name} required />
         <Input label="Dose" placeholder="e.g. 500mg" value={medForm.dose} onChange={(e) => setMedForm((f) => ({ ...f, dose: e.target.value }))} error={medErrors.dose} required />
@@ -318,11 +322,15 @@ export default function HealthPage() {
           </Button>
         )}
       </form>
+  );
+
+  const medModalUi = (
+    <Modal open={medModal !== null && medModal !== "new"} onClose={() => setMedModal(null)} title="Edit medicine" size="sm">
+      {medForm_}
     </Modal>
   );
 
-  const apptModalUi = (
-    <Modal open={apptModal !== null} onClose={() => setApptModal(null)} title={apptModal === "new" ? "Add appointment" : "Edit appointment"} size="sm">
+  const apptForm_ = (
       <form className="flex flex-col gap-4" onSubmit={handleSubmitAppt}>
         <Input label="What's it for?" placeholder="e.g. Annual wellness checkup" value={apptForm.title} onChange={(e) => setApptForm((f) => ({ ...f, title: e.target.value }))} error={apptErrors.title} required />
         <Input label="Provider" placeholder="e.g. Dr. Anita Rao" value={apptForm.provider} onChange={(e) => setApptForm((f) => ({ ...f, provider: e.target.value }))} error={apptErrors.provider} required />
@@ -359,6 +367,11 @@ export default function HealthPage() {
           </Button>
         )}
       </form>
+  );
+
+  const apptModalUi = (
+    <Modal open={apptModal !== null && apptModal !== "new"} onClose={() => setApptModal(null)} title="Edit appointment" size="sm">
+      {apptForm_}
     </Modal>
   );
 
@@ -385,7 +398,16 @@ export default function HealthPage() {
             content: (
               <div className="flex flex-col gap-3">
                 <div className="flex justify-end">
-                  <Button size="sm" variant="secondary" onClick={() => setAddOpen(true)}><Plus size={15} /> Add measurement</Button>
+                  <LogPopover
+                    open={addOpen}
+                    onOpenChange={setAddOpen}
+                    triggerLabel="Add measurement"
+                    triggerIcon={<Plus size={15} />}
+                    triggerVariant="secondary"
+                    title="Add a measurement"
+                  >
+                    {vitalForm}
+                  </LogPopover>
                 </div>
                 {vitals.length === 0 ? (
                   <EmptyState title="No measurements yet" description="Log your first weight, blood pressure or resting heart rate." />
@@ -409,7 +431,16 @@ export default function HealthPage() {
             content: (
               <div className="flex flex-col gap-3">
                 <div className="flex justify-end">
-                  <Button size="sm" variant="secondary" onClick={openAddMed}><Plus size={15} /> Add medicine</Button>
+                  <LogPopover
+                    open={medModal === "new"}
+                    onOpenChange={(o) => (o ? openAddMed() : setMedModal(null))}
+                    triggerLabel="Add medicine"
+                    triggerIcon={<Plus size={15} />}
+                    triggerVariant="secondary"
+                    title="Add medicine"
+                  >
+                    {medForm_}
+                  </LogPopover>
                 </div>
                 {todayDoses.length > 0 && (
                   <Card>
@@ -478,7 +509,16 @@ export default function HealthPage() {
             content: (
               <div className="flex flex-col gap-3">
                 <div className="flex justify-end">
-                  <Button size="sm" variant="secondary" onClick={openAddAppt}><Plus size={15} /> Add appointment</Button>
+                  <LogPopover
+                    open={apptModal === "new"}
+                    onOpenChange={(o) => (o ? openAddAppt() : setApptModal(null))}
+                    triggerLabel="Add appointment"
+                    triggerIcon={<Plus size={15} />}
+                    triggerVariant="secondary"
+                    title="Add appointment"
+                  >
+                    {apptForm_}
+                  </LogPopover>
                 </div>
                 {appts.length === 0 ? (
                   <EmptyState title="No appointments yet" description="Add an upcoming checkup, screening or coach session." />

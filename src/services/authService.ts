@@ -82,6 +82,14 @@ export const authService = {
     return persistSession(res);
   },
 
+  // Permanently erases the account and all its data (the server re-checks the
+  // password). Local state is cleared without calling /logout: there's nothing left to revoke.
+  async deleteAccount(password: string): Promise<void> {
+    await request("/auth/delete-account", { method: "POST", body: JSON.stringify({ password }) });
+    clearTokens();
+    localStorage.removeItem(USER_CACHE_KEY);
+  },
+
   // Ends every session on every device, this one included.
   async logoutEverywhere(): Promise<void> {
     await request("/auth/logout-all", { method: "POST" });

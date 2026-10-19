@@ -9,6 +9,8 @@ export interface EmergencyContact {
 }
 
 export const userService = {
+  /** Everything held about this account, as the JSON the server returns. */
+  exportData: () => request<Record<string, unknown>>("/users/me/export"),
   async updateProfile(patch: { name?: string; dateOfBirth?: string }): Promise<User> {
     const apiUser = await request<Parameters<typeof toFrontendUser>[0]>("/users/me", {
       method: "PATCH",

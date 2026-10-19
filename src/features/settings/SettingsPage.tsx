@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useNavigate } from "react-router-dom";
 import { SecurityTab } from "./SecurityTab";
 import { FeedbackTab } from "./FeedbackTab";
+import { YourDataTab } from "./YourDataTab";
 
 export default function SettingsPage() {
   const { auth, theme, senior } = useApp();
@@ -85,7 +86,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs
-        defaultTab={["essentials", "emergency", "security", "feedback"].includes(params.get("tab") ?? "") ? params.get("tab")! : "profile"}
+        defaultTab={["essentials", "emergency", "security", "data", "feedback"].includes(params.get("tab") ?? "") ? params.get("tab")! : "profile"}
         tabs={[
           {
             id: "profile", label: "Profile",
@@ -187,6 +188,7 @@ export default function SettingsPage() {
             ),
           },
           { id: "security", label: "Security", content: <SecurityTab /> },
+          { id: "data", label: "Your data", content: <YourDataTab /> },
           { id: "feedback", label: "Feedback", content: <FeedbackTab /> },
           {
             id: "privacy", label: "Privacy & sharing",

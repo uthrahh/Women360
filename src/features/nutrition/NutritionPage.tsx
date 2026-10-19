@@ -7,6 +7,7 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { LogPopover } from "@/components/ui/LogPopover";
 import { Input } from "@/components/ui/Input";
 import { ItemList } from "@/components/ui/ItemList";
 import { NumberField } from "@/components/ui/NumberField";
@@ -251,6 +252,68 @@ export default function NutritionPage() {
     }
   }
 
+  const mealForm = (
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          <Input label="Meal / food name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} error={errors.name} required />
+          <Input label="Time" type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))} error={errors.time} required />
+          <div className="grid grid-cols-2 gap-3 items-end">
+            <NumberField
+              label="Amount"
+              min={0.25}
+              max={100}
+              step={0.25}
+              startAt={1}
+              value={form.servingAmount}
+              onChange={(v) => setForm((f) => ({ ...f, servingAmount: v }))}
+              error={errors.servingAmount}
+            />
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="serving-unit" className="text-sm font-medium senior:text-lg">Unit</label>
+              <select
+                id="serving-unit"
+                value={form.servingUnit}
+                onChange={(e) => setForm((f) => ({ ...f, servingUnit: e.target.value }))}
+                className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg senior:py-3.5"
+              >
+                {SERVING_UNITS.map((u) => (
+                  <option key={u.value} value={u.value}>{u.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <NumberField label="Calories" suffix="kcal" max={5000} step={1} startAt={100} value={form.calories} onChange={(v) => setForm((f) => ({ ...f, calories: v }))} error={errors.calories} hint="Drag, or tap and type. One decimal place is fine, e.g. 420.5" />
+          <div className="grid grid-cols-2 gap-3">
+            <NumberField label="Protein" suffix="g" optional max={500} step={1} startAt={10} value={form.protein} onChange={(v) => setForm((f) => ({ ...f, protein: v }))} error={errors.protein} />
+            <NumberField label="Fibre" suffix="g" optional max={500} step={1} startAt={10} value={form.fibre} onChange={(v) => setForm((f) => ({ ...f, fibre: v }))} error={errors.fibre} />
+            <NumberField label="Carbs" suffix="g" optional max={500} step={1} startAt={10} value={form.carbs} onChange={(v) => setForm((f) => ({ ...f, carbs: v }))} error={errors.carbs} />
+            <NumberField label="Fat" suffix="g" optional max={500} step={1} startAt={10} value={form.fat} onChange={(v) => setForm((f) => ({ ...f, fat: v }))} error={errors.fat} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="meal-notes" className="text-sm font-medium">Notes (optional)</label>
+            <textarea
+              id="meal-notes"
+              rows={2}
+              value={form.notes}
+              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg"
+            />
+          </div>
+          <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save meal"}</Button>
+          {editingMeal !== null && editingMeal !== "new" && (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => {
+                setDeleteTarget(editingMeal);
+                setEditingMeal(null);
+              }}
+            >
+              Delete this meal
+            </Button>
+          )}
+        </form>
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
@@ -258,7 +321,15 @@ export default function NutritionPage() {
           <h1 className="font-display text-3xl font-semibold">Nutrition</h1>
           <p className="text-[var(--w360-text-muted)] mt-1">Meals, hydration and the essentials — kept simple.</p>
         </div>
-        <Button onClick={openAdd}><Plus size={16} /> Add meal</Button>
+        <LogPopover
+          open={editingMeal === "new"}
+          onOpenChange={(o) => (o ? openAdd() : setEditingMeal(null))}
+          triggerLabel="Add meal"
+          triggerIcon={<Plus size={16} />}
+          title="Add meal"
+        >
+          {mealForm}
+        </LogPopover>
       </div>
 
       {recentMeals.length > 0 && (
@@ -331,66 +402,8 @@ export default function NutritionPage() {
         )}
       </section>
 
-      <Modal open={editingMeal !== null} onClose={() => setEditingMeal(null)} title={editingMeal === "new" ? "Add meal" : "Edit meal"} size="sm">
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          <Input label="Meal / food name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} error={errors.name} required />
-          <Input label="Time" type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))} error={errors.time} required />
-          <div className="grid grid-cols-2 gap-3 items-end">
-            <NumberField
-              label="Amount"
-              min={0.25}
-              max={100}
-              step={0.25}
-              startAt={1}
-              value={form.servingAmount}
-              onChange={(v) => setForm((f) => ({ ...f, servingAmount: v }))}
-              error={errors.servingAmount}
-            />
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="serving-unit" className="text-sm font-medium senior:text-lg">Unit</label>
-              <select
-                id="serving-unit"
-                value={form.servingUnit}
-                onChange={(e) => setForm((f) => ({ ...f, servingUnit: e.target.value }))}
-                className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg senior:py-3.5"
-              >
-                {SERVING_UNITS.map((u) => (
-                  <option key={u.value} value={u.value}>{u.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <NumberField label="Calories" suffix="kcal" max={5000} step={1} startAt={100} value={form.calories} onChange={(v) => setForm((f) => ({ ...f, calories: v }))} error={errors.calories} hint="Drag, or tap and type. One decimal place is fine, e.g. 420.5" />
-          <div className="grid grid-cols-2 gap-3">
-            <NumberField label="Protein" suffix="g" optional max={500} step={1} startAt={10} value={form.protein} onChange={(v) => setForm((f) => ({ ...f, protein: v }))} error={errors.protein} />
-            <NumberField label="Fibre" suffix="g" optional max={500} step={1} startAt={10} value={form.fibre} onChange={(v) => setForm((f) => ({ ...f, fibre: v }))} error={errors.fibre} />
-            <NumberField label="Carbs" suffix="g" optional max={500} step={1} startAt={10} value={form.carbs} onChange={(v) => setForm((f) => ({ ...f, carbs: v }))} error={errors.carbs} />
-            <NumberField label="Fat" suffix="g" optional max={500} step={1} startAt={10} value={form.fat} onChange={(v) => setForm((f) => ({ ...f, fat: v }))} error={errors.fat} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="meal-notes" className="text-sm font-medium">Notes (optional)</label>
-            <textarea
-              id="meal-notes"
-              rows={2}
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg"
-            />
-          </div>
-          <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save meal"}</Button>
-          {editingMeal !== null && editingMeal !== "new" && (
-            <Button
-              type="button"
-              variant="danger"
-              onClick={() => {
-                setDeleteTarget(editingMeal);
-                setEditingMeal(null);
-              }}
-            >
-              Delete this meal
-            </Button>
-          )}
-        </form>
+      <Modal open={editingMeal !== null && editingMeal !== "new"} onClose={() => setEditingMeal(null)} title="Edit meal" size="sm">
+        {mealForm}
       </Modal>
 
       <ConfirmDialog

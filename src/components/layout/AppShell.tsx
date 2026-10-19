@@ -1,12 +1,18 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+import { menuTree } from "@/config/navigation";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useApp } from "@/context/AppContext";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
 import { SeniorTopBar } from "./SeniorNav";
 
+const ROUTE_TITLES = menuTree.flatMap((n) => ("leaf" in n ? [n.leaf] : n.items));
+
 export function AppShell() {
   const { senior } = useApp();
+  const { pathname } = useLocation();
+  usePageTitle(ROUTE_TITLES.find((r) => pathname === r.to || pathname.startsWith(`${r.to}/`))?.label);
 
   if (senior.seniorMode) {
     return (

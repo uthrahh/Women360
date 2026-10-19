@@ -21,21 +21,24 @@ const sizes: Record<string, string> = {
   xl: "text-lg px-6 py-4 gap-3",
 };
 
+type Variant = NonNullable<ButtonProps["variant"]>;
+type Size = NonNullable<ButtonProps["size"]>;
+
+/** The Button's look as a class string, for elements that must be a button but aren't <Button> (e.g. a popover trigger). */
+export function buttonClasses({ variant = "primary", size = "md", fullWidth }: { variant?: Variant; size?: Size; fullWidth?: boolean } = {}) {
+  return clsx(
+    "inline-flex items-center justify-center rounded-full font-medium transition-[background-color,transform] duration-150 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed",
+    "senior:font-semibold",
+    variants[variant],
+    sizes[size],
+    fullWidth && "w-full"
+  );
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = "primary", size = "md", fullWidth, className, children, ...props }, ref) => {
     return (
-      <button
-        ref={ref}
-        className={clsx(
-          "inline-flex items-center justify-center rounded-full font-medium transition-[background-color,transform] duration-150 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed",
-          "senior:font-semibold",
-          variants[variant],
-          sizes[size],
-          fullWidth && "w-full",
-          className
-        )}
-        {...props}
-      >
+      <button ref={ref} className={clsx(buttonClasses({ variant, size, fullWidth }), className)} {...props}>
         {children}
       </button>
     );

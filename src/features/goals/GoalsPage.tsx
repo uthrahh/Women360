@@ -7,6 +7,7 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { LogPopover } from "@/components/ui/LogPopover";
 import { Input } from "@/components/ui/Input";
 import { NumberField } from "@/components/ui/NumberField";
 import PulseHeart from "@/components/reactbits/PulseHeart";
@@ -310,42 +311,7 @@ export default function GoalsPage() {
     );
   }
 
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-3xl font-semibold">Goals</h1>
-          <p className="text-[var(--w360-text-muted)] mt-1">Small, trackable commitments you're building on.</p>
-        </div>
-        <Button onClick={openAdd}><Plus size={16} /> New goal</Button>
-      </div>
-
-      {goals.length === 0 ? (
-        <EmptyState
-          title="No goals yet"
-          description="Set your first goal to start tracking progress over time."
-          action={<Button onClick={openAdd}><Plus size={16} /> New goal</Button>}
-        />
-      ) : (
-        <>
-          <section>
-            <h2 className="font-display text-lg font-semibold mb-3">Active</h2>
-            {active.length === 0 ? (
-              <EmptyState title="No active goals" description="Every goal is complete, or you haven't set one yet." />
-            ) : (
-              <div className="grid sm:grid-cols-2 gap-4">{active.map(renderGoal)}</div>
-            )}
-          </section>
-          {completed.length > 0 && (
-            <section>
-              <h2 className="font-display text-lg font-semibold mb-3">Completed</h2>
-              <div className="grid sm:grid-cols-2 gap-4">{completed.map(renderGoal)}</div>
-            </section>
-          )}
-        </>
-      )}
-
-      <Modal open={editingGoal !== null} onClose={() => setEditingGoal(null)} title={editingGoal === "new" ? "New goal" : "Edit goal"} size="sm">
+  const goalForm = (
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <Input label="Goal" placeholder="e.g. Walk 8,000 steps daily" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} error={errors.title} required />
           <div className="flex flex-col gap-1.5">
@@ -396,6 +362,53 @@ export default function GoalsPage() {
           </div>
           <Button type="submit" disabled={saving}>{saving ? "Saving…" : editingGoal === "new" ? "Create goal" : "Save changes"}</Button>
         </form>
+  );
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-3xl font-semibold">Goals</h1>
+          <p className="text-[var(--w360-text-muted)] mt-1">Small, trackable commitments you're building on.</p>
+        </div>
+        <LogPopover
+          open={editingGoal === "new"}
+          onOpenChange={(o) => (o ? openAdd() : setEditingGoal(null))}
+          triggerLabel="New goal"
+          triggerIcon={<Plus size={16} />}
+          title="New goal"
+        >
+          {goalForm}
+        </LogPopover>
+      </div>
+
+      {goals.length === 0 ? (
+        <EmptyState
+          title="No goals yet"
+          description="Set your first goal to start tracking progress over time."
+          action={<Button onClick={openAdd}><Plus size={16} /> New goal</Button>}
+        />
+      ) : (
+        <>
+          <section>
+            <h2 className="font-display text-lg font-semibold mb-3">Active</h2>
+            {active.length === 0 ? (
+              <EmptyState title="No active goals" description="Every goal is complete, or you haven't set one yet." />
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">{active.map(renderGoal)}</div>
+            )}
+          </section>
+          {completed.length > 0 && (
+            <section>
+              <h2 className="font-display text-lg font-semibold mb-3">Completed</h2>
+              <div className="grid sm:grid-cols-2 gap-4">{completed.map(renderGoal)}</div>
+            </section>
+          )}
+        </>
+      )}
+
+      <Modal open={editingGoal !== null && editingGoal !== "new"} onClose={() => setEditingGoal(null)} title="Edit goal" size="sm">
+        {goalForm}
       </Modal>
 
       <ConfirmDialog

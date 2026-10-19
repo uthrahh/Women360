@@ -6,6 +6,7 @@ import { SLEEP_QUALITY_LABELS, type SleepEntry, type SleepSummary } from "@/type
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { LogPopover } from "@/components/ui/LogPopover";
 import { Input } from "@/components/ui/Input";
 import { ItemList } from "@/components/ui/ItemList";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -99,8 +100,7 @@ export default function SleepPage() {
     }
   }
 
-  const logModal = (
-    <Modal open={editingEntry !== null} onClose={() => setEditingEntry(null)} title={editingEntry === "new" ? "Log sleep" : "Edit sleep record"} size="sm">
+  const sleepForm = (
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <Input
           label="Date"
@@ -168,7 +168,24 @@ export default function SleepPage() {
           </Button>
         )}
       </form>
+  );
+
+  const logModal = (
+    <Modal open={editingEntry !== null && editingEntry !== "new"} onClose={() => setEditingEntry(null)} title="Edit sleep record" size="sm">
+      {sleepForm}
     </Modal>
+  );
+
+  const logPopover = (
+    <LogPopover
+      open={editingEntry === "new"}
+      onOpenChange={(o) => (o ? openAdd() : setEditingEntry(null))}
+      triggerLabel="Log sleep"
+      triggerIcon={<Plus size={16} />}
+      title="Log sleep"
+    >
+      {sleepForm}
+    </LogPopover>
   );
 
   if (data.history.length === 0) {
@@ -181,7 +198,7 @@ export default function SleepPage() {
         <EmptyState
           title="No sleep logged yet"
           description="Log tonight's bedtime and wake time to start tracking your sleep."
-          action={<Button onClick={openAdd}><Plus size={16} /> Log sleep</Button>}
+          action={logPopover}
         />
         {logModal}
       </div>
@@ -195,7 +212,7 @@ export default function SleepPage() {
           <h1 className="font-display text-3xl font-semibold">Sleep</h1>
           <p className="text-[var(--w360-text-muted)] mt-1">How well you're resting and recovering.</p>
         </div>
-        <Button onClick={openAdd}><Plus size={16} /> Log sleep</Button>
+        {logPopover}
       </div>
 
       <div className="grid sm:grid-cols-3 gap-3">
