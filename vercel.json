@@ -32,7 +32,7 @@
       ]
     },
     {
-      "source": "/(app/.*|onboarding|login|register|forgot-password|reset-password|softly)",
+      "source": "/(app/.*|onboarding|login|register|forgot-password|reset-password)",
       "headers": [
         {
           "key": "X-Robots-Tag",
