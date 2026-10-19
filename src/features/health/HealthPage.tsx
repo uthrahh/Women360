@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useApp } from "@/context/AppContext";
 import type { Appointment, Medication, MedicationAdherence, MedicationDose, VitalMeasurement } from "@/types";
 import { Pill, CalendarClock, Plus, Check, X as XIcon } from "lucide-react";
+import { PreventiveCare } from "./PreventiveCare";
 
 interface MedFormValues {
   name: string;
@@ -548,15 +549,7 @@ export default function HealthPage() {
           },
           {
             id: "preventive", label: "Preventive care",
-            content: (
-              <Card><CardBody className="pt-5">
-                {appts[1] ? (
-                  <p className="text-sm">Your next preventive screening is a <span className="font-medium">{appts[1].title.toLowerCase()}</span>, scheduled for {new Date(appts[1].date).toLocaleDateString()}.</p>
-                ) : (
-                  <p className="text-sm text-[var(--w360-text-muted)]">No preventive screenings scheduled yet — add one under Appointments.</p>
-                )}
-              </CardBody></Card>
-            ),
+            content: <PreventiveCare />,
           },
         ]}
       />
@@ -613,6 +606,12 @@ function SeniorHealth({
               </CardBody></Card>
             ))}
           </div>
+        </section>
+      )}
+      {(!focusTab || focusTab === "preventive") && (
+        <section>
+          <h2 className="font-display text-2xl font-semibold mb-3">My check-ups</h2>
+          <PreventiveCare />
         </section>
       )}
       <Button size="xl" onClick={onAdd}><Plus size={20}/> Add something new</Button>

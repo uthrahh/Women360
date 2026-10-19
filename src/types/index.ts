@@ -383,3 +383,33 @@ export interface FactorReport {
   insufficientData: boolean;
   disclaimer: string;
 }
+
+export type ScreeningStatus = "needs_dob" | "later" | "beyond" | "not_recorded" | "due" | "soon" | "up_to_date";
+
+/** One recommended check-up, with where the advice comes from and where she stands on it. */
+export interface ScreeningItem {
+  id: string;
+  title: string;
+  method: string;
+  why: string;
+  startAge: number;
+  endAge?: number;
+  intervalMonths: number;
+  note?: string;
+  caveats: string[];
+  sources: { label: string; url?: string }[];
+  status: ScreeningStatus;
+  lastDoneOn: string | null;
+  nextDueOn: string | null;
+  startsInYears: number | null;
+  lastRecordId: string | null;
+}
+
+export interface ScreeningPlan {
+  region: string;
+  reviewedOn: string;
+  reviewStatus: string;
+  disclaimer: string;
+  hasDateOfBirth: boolean;
+  items: ScreeningItem[];
+}

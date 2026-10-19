@@ -334,6 +334,22 @@ migration once the owner confirms. The bottom bar now shows Habits instead of
 Goals, since habits are the daily-use screen. Dependabot is monthly and grouped
 so it opens one pull request per ecosystem instead of a branch per package.
 
+**Preventive screening (latest pass):** Health > Preventive care now lists
+the check-ups India's national programme (NPCDCS / NP-NCD: blood pressure and
+blood sugar yearly from 30; oral, breast and cervical screening every 5 years,
+30-65) and WHO suggest, works out "next due" from the person's own date of
+birth and the date she last had each, and records it in one tap
+(`ScreeningRecord`; `server/src/modules/screening/`). The rules, intervals and
+their named sources live in one file, `guidelines.ts`, and are served to the
+client, so the UI states no medical claim of its own. **They are marked "Draft:
+not yet reviewed by a clinician" and must stay so until one has.** Rules worth
+keeping: with no record the state is "not recorded yet", never "overdue" (that
+would alarm everyone on day one); past the stated age range with no record it
+says "ask your doctor", not "stop"; "due" is the only state that surfaces on the
+Today list. Mammography is described only as what WHO says (usually 50-69),
+because India has no national programme for it; the HPV-vaccination rollout was
+reported only by non-official outlets and is deliberately not stated.
+
 Known concrete defects to fix as part of any related work:
 - No `sitemap.xml` (needs the production domain), no terms of use page, no
   Open Graph image or canonical URLs (same reason). Per-route titles exist for
