@@ -1,8 +1,11 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { HeroButton } from "@/components/ui/HeroButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import CrystalizedBall from "@/components/reactbits/CrystalizedBall";
+import DitherVeil from "@/components/reactbits/DitherVeil";
+import AnimatedContent from "@/components/reactbits/AnimatedContent";
+import { portraitDataUri } from "./portrait";
 import { useBrandColors } from "@/hooks/useBrandColors";
 import { Moon, Activity, Apple, CalendarHeart, Smile, ShieldCheck, ArrowRight } from "lucide-react";
 
@@ -22,10 +25,11 @@ const lifeStages = [
   { stage: "60+", note: "Preventive screenings, mobility, simplicity — Senior Mode" },
 ];
 
+const REVEAL = { distance: 24, duration: 0.7, ease: "power2.out", threshold: 0.12 } as const;
+
 export default function LandingPage() {
   const brand = useBrandColors();
-  // Phones get a lighter particle budget; the effect is the same shape either way.
-  const particles = typeof window !== "undefined" && window.innerWidth < 640 ? 8000 : 15000;
+  const portrait = useMemo(() => portraitDataUri(brand.dark), [brand.dark]);
 
   return (
     <div className="min-h-screen">
@@ -45,7 +49,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="px-6 sm:px-10 py-14 sm:py-20 max-w-content mx-auto grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-10 lg:gap-6 items-center">
-        <div className="max-w-2xl">
+        <AnimatedContent className="max-w-2xl" {...REVEAL} trigger="mount" stagger={0.09}>
           <p className="text-xs font-semibold tracking-[0.14em] uppercase text-maroon-700 dark:text-maroon-300 mb-5">
             A personal health operating system
           </p>
@@ -59,25 +63,31 @@ export default function LandingPage() {
             <HeroButton to="/register">Create your account <ArrowRight size={16} /></HeroButton>
             <HeroButton to="/login" variant="secondary">Log in</HeroButton>
           </div>
-        </div>
-        {/* Decorative: the canvas is aria-hidden and nothing on the page depends on it. */}
-        <div aria-hidden className="relative aspect-square w-full max-w-[460px] lg:max-w-none mx-auto">
-          <CrystalizedBall
-            preset="plasma"
-            color={brand.accent}
-            theme={brand.dark ? "dark" : "light"}
-            size={0.8}
-            crackle={0.6}
-            sparks={0.4}
-            glow={0.85}
-            particleCount={particles}
-            hoverStrength={0.6}
+        </AnimatedContent>
+        {/* Decorative: nothing on the page depends on it. Stippled in ink and paper
+            until the cursor (or, on touch, a slow drift) lifts the colour. */}
+        <div aria-hidden className="relative aspect-[4/5] w-full max-w-[440px] lg:max-w-none mx-auto rounded-[28px] overflow-hidden border border-[var(--w360-border)]">
+          <DitherVeil
+            src={portrait}
+            fit="cover"
+            pattern="floyd"
+            pixelSize={3}
+            inkColor={brand.dark ? "#15100E" : "#521626"}
+            paperColor={brand.dark ? "#E6BFC9" : "#FBF8F4"}
+            rimColor={brand.dark ? "#D0899A" : "#B85468"}
+            rim={0.16}
+            contrast={1.1}
+            revealRadius={170}
+            softness={0.7}
+            linger={1.4}
+            wander
           />
         </div>
       </section>
 
       {/* Product preview */}
       <section className="px-6 sm:px-10 pb-24 max-w-content mx-auto">
+        <AnimatedContent {...REVEAL}>
         <div className="rounded-lg border border-[var(--w360-border)] bg-[var(--w360-bg-warm)] p-2 sm:p-3">
           <div className="rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] p-6 sm:p-10">
             <div className="grid sm:grid-cols-3 gap-4">
@@ -90,13 +100,14 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
+        </AnimatedContent>
       </section>
 
       {/* Capabilities */}
       <section id="capabilities" className="px-6 sm:px-10 py-20 border-t border-[var(--w360-border)]">
         <div className="max-w-content mx-auto">
           <h2 className="font-display text-3xl font-semibold max-w-md">Everything that makes up your health, in one place.</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+          <AnimatedContent className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12" {...REVEAL} stagger={0.07}>
             {capabilities.map((c) => (
               <div key={c.title}>
                 <c.icon size={22} strokeWidth={1.6} className="text-maroon-700 dark:text-maroon-300 mb-3" />
@@ -104,7 +115,7 @@ export default function LandingPage() {
                 <p className="text-sm text-[var(--w360-text-muted)] mt-1.5">{c.desc}</p>
               </div>
             ))}
-          </div>
+          </AnimatedContent>
         </div>
       </section>
 
@@ -112,20 +123,20 @@ export default function LandingPage() {
       <section className="px-6 sm:px-10 py-20 border-t border-[var(--w360-border)] bg-[var(--w360-bg-warm)]">
         <div className="max-w-content mx-auto">
           <h2 className="font-display text-3xl font-semibold max-w-md">Built for the whole of a woman's life — 18 to 100.</h2>
-          <div className="grid sm:grid-cols-4 gap-6 mt-12">
+          <AnimatedContent className="grid sm:grid-cols-4 gap-6 mt-12" {...REVEAL} stagger={0.09}>
             {lifeStages.map((l) => (
               <div key={l.stage} className="border-t-2 border-maroon-700 dark:border-maroon-300 pt-4">
                 <p className="font-display text-2xl font-semibold">{l.stage}</p>
                 <p className="text-sm text-[var(--w360-text-muted)] mt-1.5">{l.note}</p>
               </div>
             ))}
-          </div>
+          </AnimatedContent>
         </div>
       </section>
 
       {/* Senior Mode USP */}
       <section id="senior-mode" className="px-6 sm:px-10 py-20 border-t border-[var(--w360-border)]">
-        <div className="max-w-content mx-auto grid lg:grid-cols-2 gap-12 items-center">
+        <AnimatedContent className="max-w-content mx-auto grid lg:grid-cols-2 gap-12 items-center" {...REVEAL} stagger={0.15}>
           <div>
             <p className="text-xs font-semibold tracking-[0.14em] uppercase text-maroon-700 dark:text-maroon-300 mb-4">Senior Mode</p>
             <h2 className="font-display text-3xl font-semibold">Not a bigger font. A different way of using the app.</h2>
@@ -144,23 +155,25 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-        </div>
+        </AnimatedContent>
       </section>
 
       {/* Privacy */}
       <section id="privacy" className="px-6 sm:px-10 py-20 border-t border-[var(--w360-border)] bg-[var(--w360-bg-warm)]">
-        <div className="max-w-content mx-auto max-w-2xl">
+        <AnimatedContent className="max-w-content mx-auto max-w-2xl" {...REVEAL}>
           <h2 className="font-display text-2xl font-semibold">Your health information stays yours.</h2>
           <p className="text-[var(--w360-text-muted)] mt-3">
             Coaches only see what you choose to share. Women360 is a wellness and tracking tool, not a diagnostic system — it points you toward professional care rather than replacing it.
           </p>
-        </div>
+        </AnimatedContent>
       </section>
 
       {/* CTA */}
       <section className="px-6 sm:px-10 py-24 text-center">
+        <AnimatedContent {...REVEAL}>
         <h2 className="font-display text-3xl sm:text-4xl font-semibold max-w-lg mx-auto">Start with today's snapshot.</h2>
         <Link to="/register" className="inline-block mt-8"><Button size="lg">Create your account</Button></Link>
+        </AnimatedContent>
       </section>
 
       <footer className="px-6 sm:px-10 py-8 border-t border-[var(--w360-border)] text-sm text-[var(--w360-text-muted)] flex items-center justify-between max-w-content mx-auto">
