@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, ClipboardCheck } from "lucide-react";
 import SpringCheck from "@/components/reactbits/SpringCheck";
 import { Card, CardBody } from "@/components/ui/Card";
 import { useToast } from "@/components/ui/Toast";
 import { habitService } from "@/services/habitService";
 import { healthService } from "@/services/healthService";
+import { screeningService } from "@/services/screeningService";
 import { localDateISO } from "@/services/mappers";
 import type { Appointment, Habit, MedicationDose, WellbeingEntry } from "@/types";
 
@@ -44,12 +45,15 @@ export function TodayTasks({
   const nav = useNavigate();
   const toast = useToast();
   const [doses, setDoses] = useState<MedicationDose[] | null>(null);
+  // Check-ups whose interval has passed. Never "not recorded yet": that would nag everyone on day one.
+  const [checkupsDue, setCheckupsDue] = useState(0);
   // What the person just ticked, shown immediately while the request is in
   // flight; dropped again if it fails.
   const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     healthService.getTodayMedications().then(setDoses).catch(() => setDoses([]));
+    screeningService.list().then((p) => setCheckupsDue(p.items.filter((i) => i.status === "due").length)).catch(() => setCheckupsDue(0));
   }, []);
 
   const todayISO = localDateISO();
@@ -158,6 +162,14 @@ export function TodayTasks({
               </li>
             );
           })}
+          {checkupsDue > 0 && (
+            <li>
+              <Link to="/app/health?tab=preventive" className="flex items-center gap-3 py-3 text-base">
+                <ClipboardCheck size={22} strokeWidth={1.75} className="text-[var(--w360-text-muted)] shrink-0" aria-hidden />
+                <span className="min-w-0 flex-1 truncate">{checkupsDue === 1 ? "A health check-up is due" : `${checkupsDue} health check-ups are due`}</span>
+              </Link>
+            </li>
+          )}
           {todaysAppointments.map((a) => (
             <li key={a.id}>
               <Link to="/app/health?tab=appointments" className="flex items-center gap-3 py-3 text-base">

@@ -77,6 +77,7 @@ model User {
   wellbeingEntries  WellbeingEntry[]
   goals             Goal[]
   habits            Habit[]
+  screeningRecords  ScreeningRecord[]
   feedback          Feedback[]
   appointments      Appointment[]
   medications       Medication[]
@@ -436,6 +437,20 @@ model Habit {
   logs        HabitLog[]
 
   @@index([userId])
+}
+
+// When she last had a preventive screening (blood pressure, cervical, ...). The
+// screening ids and their intervals live in code (modules/screening/guidelines.ts);
+// this only records what she did. History is kept; the latest row decides what's next.
+model ScreeningRecord {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  screeningId String
+  doneOn      DateTime @db.Date
+  createdAt   DateTime @default(now())
+
+  @@index([userId, screeningId])
 }
 
 // One row = this habit was logged on this day, on the person's own calendar day.
