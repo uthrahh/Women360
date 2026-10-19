@@ -50,3 +50,7 @@ export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "Enter your current password").max(1024),
   newPassword: z.string().min(1, "Password is required").max(1024),
 });
+
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, "Enter your password").max(1024),
+});

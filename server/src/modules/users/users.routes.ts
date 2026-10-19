@@ -14,6 +14,11 @@ import { z } from "zod";
 export const usersRouter = Router();
 usersRouter.use(requireAuth);
 
+usersRouter.get(
+  "/me/export",
+  asyncHandler(async (req, res) => ok(res, await usersService.exportData(req.user!.id)))
+);
+
 usersRouter.patch(
   "/me",
   validate({ body: updateProfileSchema }),
