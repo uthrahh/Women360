@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import DitherVeil from "@/components/reactbits/DitherVeil";
 import AnimatedContent from "@/components/reactbits/AnimatedContent";
 import GooeyNav from "@/components/reactbits/GooeyNav";
+import { PersonaTabs } from "./PersonaTabs";
 import { portraitDataUri } from "./portrait";
 import { useBrandColors } from "@/hooks/useBrandColors";
 import { Moon, Activity, Apple, CalendarHeart, Smile, ShieldCheck, ArrowRight } from "lucide-react";
@@ -17,13 +18,6 @@ const capabilities = [
   { icon: Moon, title: "Sleep", desc: "Duration, quality and consistency, tracked over time." },
   { icon: Smile, title: "Wellbeing", desc: "Mood, stress and energy — a calm place to check in." },
   { icon: ShieldCheck, title: "Preventive health", desc: "Screenings and checkups, reminded at the right time." },
-];
-
-const lifeStages = [
-  { stage: "18–30", note: "Cycle awareness, fitness foundations, reproductive health" },
-  { stage: "30–45", note: "Fertility, nutrition, stress and sleep under real-life load" },
-  { stage: "45–60", note: "Perimenopause, bone health, strength, hormonal shifts" },
-  { stage: "60+", note: "Preventive screenings, mobility, simplicity — Senior Mode" },
 ];
 
 const NAV_ITEMS = [
@@ -170,14 +164,11 @@ export default function LandingPage() {
       <section className="px-6 sm:px-10 py-20 border-t border-[var(--w360-border)] bg-[var(--w360-bg-warm)]">
         <div className="max-w-content mx-auto">
           <h2 className="font-display text-3xl font-semibold max-w-md">Built for the whole of a woman's life — 18 to 100.</h2>
-          <AnimatedContent className="grid sm:grid-cols-4 gap-6 mt-12" {...REVEAL} stagger={0.09}>
-            {lifeStages.map((l) => (
-              <div key={l.stage} className="border-t-2 border-maroon-700 dark:border-maroon-300 pt-4">
-                <p className="font-display text-2xl font-semibold">{l.stage}</p>
-                <p className="text-sm text-[var(--w360-text-muted)] mt-1.5">{l.note}</p>
-              </div>
-            ))}
-          </AnimatedContent>
+          <div className="mt-10">
+            <AnimatedContent {...REVEAL}>
+              <PersonaTabs />
+            </AnimatedContent>
+          </div>
         </div>
       </section>
 

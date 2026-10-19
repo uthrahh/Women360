@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { SecurityTab } from "./SecurityTab";
 import { FeedbackTab } from "./FeedbackTab";
 import { YourDataTab } from "./YourDataTab";
+import { ProfileCard } from "./ProfileCard";
 
 export default function SettingsPage() {
   const { auth, theme, senior } = useApp();
@@ -84,6 +85,8 @@ export default function SettingsPage() {
         <h1 className="font-display text-3xl font-semibold">Settings</h1>
         <p className="text-[var(--w360-text-muted)] mt-1">Your profile, accessibility and privacy preferences.</p>
       </div>
+
+      <ProfileCard />
 
       <Tabs
         defaultTab={["essentials", "emergency", "security", "data", "feedback"].includes(params.get("tab") ?? "") ? params.get("tab")! : "profile"}
