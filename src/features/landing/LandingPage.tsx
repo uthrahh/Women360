@@ -165,7 +165,10 @@ export default function LandingPage() {
 
       <footer className="px-6 sm:px-10 py-8 border-t border-[var(--w360-border)] text-sm text-[var(--w360-text-muted)] flex items-center justify-between max-w-content mx-auto">
         <span>Women360</span>
-        <span>© 2026 · A wellness & tracking product, not a diagnostic service</span>
+        <span className="flex items-center gap-4">
+          <Link to="/privacy" className="hover:text-[var(--w360-text)] underline underline-offset-2">Privacy</Link>
+          <span>© 2026 · A wellness & tracking product, not a diagnostic service</span>
+        </span>
       </footer>
     </div>
   );

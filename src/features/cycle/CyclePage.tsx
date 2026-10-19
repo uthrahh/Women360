@@ -17,6 +17,7 @@ import { useApp } from "@/context/AppContext";
 import { ChevronLeft, ChevronRight, Copy, Download, Settings, Trash2, X } from "lucide-react";
 import { CONTEXT_TAG_OPTIONS } from "@/lib/cycleContext";
 import { buildCycleCsv } from "@/lib/cycleCsv";
+import { saveFile } from "@/lib/saveFile";
 import { ExplainThisCard } from "@/components/ExplainThisCard";
 import { insightsService } from "@/services/insightsService";
 
@@ -830,18 +831,7 @@ function ExportCard() {
       const csv = await loadCsv();
       if (!csv) return;
       const filename = `women360-cycle-${localDateISO()}.csv`;
-      const file = new File([csv], filename, { type: "text/csv" });
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "My cycle data" });
-      } else {
-        const url = URL.createObjectURL(file);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.show("Export started");
-      }
+      if ((await saveFile(filename, csv, "text/csv", "My cycle data")) === "downloaded") toast.show("Export started");
     } catch (err) {
       // Dismissing the share sheet isn't an error.
       if (err instanceof DOMException && err.name === "AbortError") return;

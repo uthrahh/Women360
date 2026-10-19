@@ -276,10 +276,33 @@ an unentered value must stay unentered, so an optional macro isn't logged as 0;
 (4) streaks (`GoalCheckIn`) are derived from check-in rows on the person's own
 calendar day (client sends the date) and have no "lost streak" state by design.
 
+**Privacy, public pages and the log popover (latest pass):** a signed-in
+person can download everything held about them (`GET /users/me/export`, built
+from an explicit list of their own tables so credentials can't leak into it) and
+permanently erase their account (`POST /auth/delete-account`: password required,
+same lockout as sign-in, admins refused, one cascading delete, audit event with
+no id/email). Both live in Settings → Your data; the phone's device-only account
+can export but not delete (no password to confirm; it would be re-created).
+`/privacy` is a plain-language summary where every statement is backed by code
+or hosting — keep it that way: if behaviour changes, change the page, and the
+"Still to be confirmed" list is real open work (operator identity/contact,
+provider backup retention, terms). `public/` holds the favicon and
+`robots.txt`; `vercel.json` sends `X-Robots-Tag: noindex` for the app and
+account routes. No sitemap yet: it needs the production domain. New-entry forms
+(goal, sleep, meal, activity, measurement, medicine, appointment) open in
+`LogPopover` (a MorphingPopover that grows from its button); editing an existing
+entry stays in `Modal`, and both render the same form element. Traps: (1) the
+popover's panel is portalled to `<body>` for the same containing-block reason as
+`MobileMenu`; (2) its focus effect must not depend on an unstable `close`
+function or focus snaps back to the first field on every keystroke; (3) only one
+`LogPopover` per page may be open-bound to a given state, so empty-state buttons
+stay plain `Button`s that set that state; (4) motion animations stall in a
+hidden browser pane, so verify open/close with the pane shown.
+
 Known concrete defects to fix as part of any related work:
-- No `robots.txt`/`sitemap.xml`, no favicon files, no legal pages
-  (privacy/terms/cookies), no SEO metadata per route (single static
-  `<title>` in `index.html`).
+- No `sitemap.xml` (needs the production domain), no terms of use page, no
+  Open Graph image or canonical URLs (same reason). Per-route titles exist for
+  the signed-in app and `/privacy`; the landing page uses the static title.
 - The PDF report's typography is Helvetica, not Fraunces/Inter — jsPDF's
   built-in fonts don't include custom web fonts without shipping and
   embedding font files, which was judged not worth the added complexity

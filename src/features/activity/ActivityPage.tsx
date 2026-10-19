@@ -6,6 +6,7 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { LogPopover } from "@/components/ui/LogPopover";
 import { Input } from "@/components/ui/Input";
 import { ItemList } from "@/components/ui/ItemList";
 import { NumberField } from "@/components/ui/NumberField";
@@ -87,6 +88,27 @@ export default function ActivityPage() {
     }
   }
 
+  const activityForm = (
+        <form key={formKey} className="flex flex-col gap-4" onSubmit={handleAdd}>
+          <Input label="Activity type" name="type" defaultValue={prefill?.type ?? ""} placeholder="e.g. Brisk walk" required />
+          <DurationField initial={prefill ? String(prefill.duration) : ""} />
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="intensity" className="text-sm font-medium">Intensity</label>
+            <select
+              id="intensity"
+              name="intensity"
+              defaultValue={prefill?.intensity ?? "moderate"}
+              className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg senior:py-3.5"
+            >
+              <option value="low">Low</option>
+              <option value="moderate">Moderate</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <Button type="submit">Save activity</Button>
+        </form>
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -94,7 +116,15 @@ export default function ActivityPage() {
           <h1 className="font-display text-3xl font-semibold">Activity</h1>
           <p className="text-[var(--w360-text-muted)] mt-1">Steps, workouts and movement, all in one place.</p>
         </div>
-        <Button onClick={() => openAdd()}><Plus size={16} /> Add activity</Button>
+        <LogPopover
+          open={addOpen}
+          onOpenChange={(o) => (o ? openAdd() : setAddOpen(false))}
+          triggerLabel="Add activity"
+          triggerIcon={<Plus size={16} />}
+          title="Add activity"
+        >
+          {activityForm}
+        </LogPopover>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -192,27 +222,6 @@ export default function ActivityPage() {
           </>
         )}
       </section>
-
-      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add activity" size="sm">
-        <form key={formKey} className="flex flex-col gap-4" onSubmit={handleAdd}>
-          <Input label="Activity type" name="type" defaultValue={prefill?.type ?? ""} placeholder="e.g. Brisk walk" required />
-          <DurationField initial={prefill ? String(prefill.duration) : ""} />
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="intensity" className="text-sm font-medium">Intensity</label>
-            <select
-              id="intensity"
-              name="intensity"
-              defaultValue={prefill?.intensity ?? "moderate"}
-              className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg senior:py-3.5"
-            >
-              <option value="low">Low</option>
-              <option value="moderate">Moderate</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-          <Button type="submit">Save activity</Button>
-        </form>
-      </Modal>
 
       <Modal open={detail !== null} onClose={() => setDetail(null)} title={detail?.type ?? "Activity"} size="sm">
         {detail && (

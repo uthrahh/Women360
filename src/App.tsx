@@ -15,6 +15,7 @@ import OnboardingPage from "@/features/onboarding/OnboardingPage";
 
 // Lazy: the landing page carries the WebGL hero, which the signed-in app (and the
 // phone app, which never shows the landing page) shouldn't download.
+const PrivacyPage = lazy(() => import("@/features/legal/PrivacyPage"));
 const LandingPage = lazy(() => import("@/features/landing/LandingPage"));
 const DashboardPage = lazy(() => import("@/features/dashboard/DashboardPage"));
 const HealthPage = lazy(() => import("@/features/health/HealthPage"));
@@ -64,6 +65,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<RootRoute />} />
+            <Route path="/privacy" element={<Suspense fallback={<LoadingState label="Loading" />}><PrivacyPage /></Suspense>} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
