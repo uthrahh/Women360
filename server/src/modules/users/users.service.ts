@@ -136,7 +136,7 @@ export const usersService = {
 
   async upsertHealthProfile(
     userId: string,
-    input: { allergies?: string[]; conditions?: string[]; familyHistory?: string; notes?: string }
+    input: { allergies?: string[]; currentMedications?: string[]; conditions?: string[]; familyHistory?: string; notes?: string }
   ) {
     return prisma.healthProfile.upsert({
       where: { userId },

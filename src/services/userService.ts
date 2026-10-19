@@ -8,7 +8,15 @@ export interface EmergencyContact {
   relationship?: string;
 }
 
+export interface HealthProfileInput {
+  allergies?: string[];
+  currentMedications?: string[];
+}
+
 export const userService = {
+  /** Saves only the lists that are sent; an empty list means "answered: none". */
+  updateHealthProfile: (input: HealthProfileInput) =>
+    request("/users/me/health-profile", { method: "PUT", body: JSON.stringify(input) }),
   /** Everything held about this account, as the JSON the server returns. */
   exportData: () => request<Record<string, unknown>>("/users/me/export"),
   async updateProfile(patch: { name?: string; dateOfBirth?: string }): Promise<User> {

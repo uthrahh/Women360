@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { HeroButton } from "@/components/ui/HeroButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import DitherVeil from "@/components/reactbits/DitherVeil";
 import AnimatedContent from "@/components/reactbits/AnimatedContent";
+import GooeyNav from "@/components/reactbits/GooeyNav";
 import { portraitDataUri } from "./portrait";
 import { useBrandColors } from "@/hooks/useBrandColors";
 import { Moon, Activity, Apple, CalendarHeart, Smile, ShieldCheck, ArrowRight } from "lucide-react";
@@ -25,21 +26,67 @@ const lifeStages = [
   { stage: "60+", note: "Preventive screenings, mobility, simplicity — Senior Mode" },
 ];
 
+const NAV_ITEMS = [
+  { label: "Capabilities", href: "#capabilities" },
+  { label: "Senior Mode", href: "#senior-mode" },
+  { label: "Privacy", href: "#privacy" },
+];
+
 const REVEAL = { distance: 24, duration: 0.7, ease: "power2.out", threshold: 0.12 } as const;
 
 export default function LandingPage() {
   const brand = useBrandColors();
   const portrait = useMemo(() => portraitDataUri(brand.dark), [brand.dark]);
 
+  // The nav's pill follows the section being read: the last one whose top has
+  // passed 40% of the way down the screen. Above the first one (the hero) it
+  // rests on the first item, since one is always selected.
+  const [section, setSection] = useState(0);
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const line = window.innerHeight * 0.4;
+      let active = 0;
+      NAV_ITEMS.forEach((item, index) => {
+        const el = document.getElementById(item.href.slice(1));
+        if (el && el.getBoundingClientRect().top <= line) active = index;
+      });
+      setSection(active);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen">
       <header className="flex items-center justify-between px-6 sm:px-10 h-20 border-b border-[var(--w360-border)] max-w-content mx-auto">
         <span className="font-display text-xl font-semibold">Women360</span>
-        <nav className="hidden sm:flex items-center gap-8 text-sm text-[var(--w360-text-muted)]">
-          <a href="#capabilities" className="hover:text-[var(--w360-text)]">Capabilities</a>
-          <a href="#senior-mode" className="hover:text-[var(--w360-text)]">Senior Mode</a>
-          <a href="#privacy" className="hover:text-[var(--w360-text)]">Privacy</a>
-        </nav>
+        <div className="hidden sm:block">
+          <GooeyNav
+            items={NAV_ITEMS}
+            activeIndex={section}
+            onChange={setSection}
+            size="sm"
+            frame={false}
+            theme={brand.dark ? "dark" : "light"}
+            color={brand.accent}
+            activeTextColor={brand.inkOnAccent}
+            particleCount={10}
+            spread={30}
+            animationTime={500}
+            style={{ ["--gn-ink" as string]: "var(--w360-text)", ["--gn-muted" as string]: "var(--w360-text-muted)" }}
+          />
+        </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
           <Link to="/login" className="text-sm font-medium hidden sm:inline">Log in</Link>
