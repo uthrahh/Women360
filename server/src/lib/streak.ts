@@ -39,3 +39,38 @@ export function computeStreak(checkInDays: string[], today: string): StreakResul
   }
   return { streak, checkedInToday };
 }
+
+/** Monday-based week number for a day number (1 Jan 1970 was a Thursday). */
+export function weekIndex(day: number): number {
+  return Math.floor((day + 3) / 7);
+}
+
+export interface WeekStreakResult {
+  /** Consecutive weeks (Mon-Sun) that reached `perWeek` days, ending this week or, if this one isn't met yet, last week. */
+  streak: number;
+  /** Days done so far in the week that contains `today`. */
+  thisWeek: number;
+}
+
+/**
+ * The same idea for "N days a week" habits: the streak counts whole weeks that
+ * met their quota. The current week is still in progress, so it only counts once
+ * met, and an unfinished current week never breaks a streak from the weeks before.
+ */
+export function computeWeekStreak(doneDays: string[], today: string, perWeek: number): WeekStreakResult {
+  const perWeekCount = new Map<number, number>();
+  for (const day of new Set(doneDays.map(dayNumber))) {
+    const week = weekIndex(day);
+    perWeekCount.set(week, (perWeekCount.get(week) ?? 0) + 1);
+  }
+  const current = weekIndex(dayNumber(today));
+  const thisWeek = perWeekCount.get(current) ?? 0;
+  const met = (week: number) => (perWeekCount.get(week) ?? 0) >= perWeek;
+  let cursor = met(current) ? current : current - 1;
+  let streak = 0;
+  while (met(cursor)) {
+    streak += 1;
+    cursor -= 1;
+  }
+  return { streak, thisWeek };
+}
