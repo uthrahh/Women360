@@ -75,7 +75,8 @@ usersRouter.get(
 );
 
 const healthProfileSchema = z.object({
-  allergies: z.array(z.string().trim().min(1)).max(50).optional(),
+  allergies: z.array(z.string().trim().min(1).max(80)).max(50).optional(),
+  currentMedications: z.array(z.string().trim().min(1).max(80)).max(50).optional(),
   conditions: z.array(z.string().trim().min(1)).max(50).optional(),
   familyHistory: z.string().trim().max(2000).optional(),
   notes: z.string().trim().max(2000).optional(),

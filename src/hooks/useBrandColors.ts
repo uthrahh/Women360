@@ -15,6 +15,8 @@ export function useBrandColors() {
     muted: dark ? "#B8AA9C" : "#665A4E",
     paper: dark ? "#15100E" : "#FBF8F4",
     raised: dark ? "#1E1815" : "#FFFFFF",
+    tint: dark ? "#2B1B21" : "#F7EAED",
+    tintText: dark ? "#F1D3DB" : "#521626",
     border: dark ? "#372E28" : "#E2D9CF",
   } as const;
 }

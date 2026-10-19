@@ -22,6 +22,14 @@ as a serious digital-health product: trustworthy, mature, clear, private.
 It must never read as a student project, an AI-generated template, or a
 generic SaaS landing page.
 
+**The primary goal is preventive care**: Women360 exists to help a woman track
+and work on her health so that she prevents possible ailments — acting early,
+not just logging. When weighing features, prefer ones that turn her own data
+into early, actionable, non-diagnostic prevention (check-up and screening
+reminders, risk-factor awareness, habit goals). Screening schedules and risk
+statements are medical claims: they need a named guideline source, a target
+region and clinical review, so ask before writing them.
+
 **Senior Mode is a core, load-bearing USP**, not an accessibility toggle. It
 restructures navigation and information architecture (large plain-language
 tiles the user chooses in Settings → Customize essentials), it is not a
@@ -258,15 +266,18 @@ the person out of their own data. Not built: field-level coach data sharing
 upload scanning (there are no uploads), and the `react-router` v7 upgrade the
 audit flags (a deliberate separate project).
 
-**React Bits components (latest pass):** the landing hero (`CrystalizedBall`,
-`SpecularButton`), the signed-in menu (`BranchedMenu`), daily-goal check-in
+**React Bits components (latest pass):** the landing hero (`DitherVeil` with a
+portrait drawn in code, `portrait.ts`; `SpecularButton`; `AnimatedContent` scroll
+reveals; `GooeyNav` for the landing header), the signed-in menu (`BranchedMenu`)
+and mobile bottom bar (`GooeyNav`), multi-step flows (`Stepper` via `FlowStepper`,
+used by onboarding), daily-goal check-in
 (`PulseHeart` with the fire glyph), reminders (`BellToggle`), Settings feedback
 (`PeekRating`), number entry (`ScrubField`), the dashboard's "To do today"
 (`SpringCheck`) and every list (`AnimatedList`) are vendored, unmodified apart
 from commented "Women360 change" edits, in `src/components/reactbits/` as
 `.jsx` + hand-written `.d.ts` (the repo doesn't `allowJs`). App code uses
 them through typed wrappers in `src/components/ui/` (`NumberField`, `ItemList`,
-`HeroButton`) rather than directly where there's a wrapper. Traps: (1) canvas
+`HeroButton`, `FlowStepper`) rather than directly where there's a wrapper. Traps: (1) canvas
 components that call `loseContext()` in an effect cleanup break under React
 StrictMode, which re-runs effects on the same canvas — `SpecularButton` had this
 and no longer does it; (2) a `position: fixed` panel rendered inside an element
@@ -321,13 +332,13 @@ Known concrete defects to fix as part of any related work:
   one was out of scope for a "fix what's broken" pass. A real fix needs
   a product decision on what "sharing with coach" actually controls,
   then a new backend endpoint.
-- Onboarding's multi-step form (`OnboardingPage.tsx`) is still purely
-  cosmetic — none of the collected name/DOB/allergies/lifestyle/goals
-  data is captured into state or submitted anywhere; `completeOnboarding
-  ()` only flips the `onboarded` flag server-side. The backend has a
-  real `PUT /users/me/health-profile` that could receive some of this,
-  but wiring up all 7 steps is a standalone forms project, not a small
-  fix.
+- Onboarding (`OnboardingPage.tsx`, a `FlowStepper`) saves only the Health
+  step: allergies and current medicines go to `PUT /users/me/health-profile`
+  (an empty list means "answered: none"; an untouched question is not sent, so
+  the profile never claims "no allergies" for someone who skipped it). The other
+  steps (name, date of birth, lifestyle, cycle, goals, preferences) are still
+  cosmetic: nothing they collect is stored, and `completeOnboarding()` otherwise
+  only flips the `onboarded` flag. Wiring them is a standalone forms project.
 - Messages has no real two-way reply — `MessagesPage.tsx`'s reply box
   only appends to local component state and is lost on refresh. The
   `Message` Prisma model itself has no sender-as-current-user concept

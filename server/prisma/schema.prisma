@@ -151,6 +151,9 @@ model HealthProfile {
   userId        String   @unique
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   allergies     String[] @default([])
+  // Medicine categories or names the person listed at sign-up. Not a medication
+  // schedule: doses and reminders live in Medication.
+  currentMedications String[] @default([])
   conditions    String[] @default([])
   familyHistory String?
   notes         String?
