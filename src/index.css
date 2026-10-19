@@ -131,7 +131,7 @@ body {
 .w360-select { animation: w360-select 7s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
 .w360-panel-in { animation: w360-panel-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 
-/* ---- Softly landing preview ------------------------------------------------
+/* ---- Landing page ------------------------------------------------
    Slow background drift and a gentle pulse; reduced-motion users get neither
    (the rule near the top collapses them, and the markup uses motion-safe). */
 @keyframes w360-float { from { transform: translateY(-10px); } to { transform: translateY(10px); } }

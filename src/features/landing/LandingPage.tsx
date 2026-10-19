@@ -1,169 +1,338 @@
-import { useEffect, useMemo, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/Button";
-import { HeroButton } from "@/components/ui/HeroButton";
-import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import DitherVeil from "@/components/reactbits/DitherVeil";
+import { Activity, Apple, CalendarHeart, Moon, Plus, ShieldCheck, Smile } from "lucide-react";
 import AnimatedContent from "@/components/reactbits/AnimatedContent";
-import GooeyNav from "@/components/reactbits/GooeyNav";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { buttonClasses } from "@/components/ui/Button";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { PersonaTabs } from "./PersonaTabs";
-import { portraitDataUri } from "./portrait";
-import { useBrandColors } from "@/hooks/useBrandColors";
-import { Moon, Activity, Apple, CalendarHeart, Smile, ShieldCheck, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const capabilities = [
-  { icon: CalendarHeart, title: "Menstrual health", desc: "Cycle tracking, symptoms and elegant, honest trend reading — never a diagnosis." },
+// The public landing page: a floating pill nav, drifting soft blobs, a paper-like
+// grain, everyday moments, the capabilities, the life stages, an app preview,
+// Senior Mode, example entries, privacy and an FAQ. Nothing here is real user
+// data: the phones are illustrations and the notes are labelled as examples.
+
+const REVEAL = { distance: 30, duration: 0.8, ease: "power2.out", threshold: 0.12 } as const;
+const SOFT_SHADOW = "shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]";
+const SIGNATURE_ITALIC = "font-display italic font-normal";
+
+const GRAIN =
+  "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+
+const CAPABILITIES = [
+  { icon: CalendarHeart, title: "Menstrual health", desc: "Cycle tracking, symptoms and elegant, honest trend reading, never a diagnosis." },
   { icon: Apple, title: "Nutrition", desc: "Meals, hydration and the nutrients that matter, logged in seconds." },
   { icon: Activity, title: "Activity", desc: "Steps, workouts, strength and mobility, in context." },
   { icon: Moon, title: "Sleep", desc: "Duration, quality and consistency, tracked over time." },
-  { icon: Smile, title: "Wellbeing", desc: "Mood, stress and energy — a calm place to check in." },
-  { icon: ShieldCheck, title: "Preventive health", desc: "Screenings and checkups, reminded at the right time." },
+  { icon: Smile, title: "Wellbeing", desc: "Mood, stress and energy, in a calm place to check in." },
+  { icon: ShieldCheck, title: "Preventive health", desc: "Screenings and check-ups, reminded at the right time." },
 ];
 
-const NAV_ITEMS = [
-  { label: "Capabilities", href: "#capabilities" },
-  { label: "Senior Mode", href: "#senior-mode" },
-  { label: "Privacy", href: "#privacy" },
+const MOMENTS = [
+  { when: "Morning", text: "Tick off today's medicine in one tap." },
+  { when: "After lunch", text: "Log a meal you've had before without retyping it." },
+  { when: "Evening", text: "Say how you feel, then try two minutes of slow breathing." },
+  { when: "When you wake", text: "Note how you slept, with a rating that's yours." },
+  { when: "Any day", text: "See your next period as a range, not a false-precision date." },
+  { when: "Once a year", text: "See which check-ups are due, and record the ones you've had." },
 ];
 
-const REVEAL = { distance: 24, duration: 0.7, ease: "power2.out", threshold: 0.12 } as const;
+const NOTES = [
+  {
+    tag: "Example entry",
+    text: "Slept about seven hours and woke once. Mood okay, a little tired. Walked after lunch. Took the vitamin.",
+    sign: "Sleep, mood, movement",
+    tilt: "md:-rotate-1",
+  },
+  {
+    tag: "Example entry",
+    text: "Period due in about four days, give or take. Headache this morning. Drank more water than yesterday.",
+    sign: "Cycle, symptoms, water",
+    tilt: "md:rotate-1",
+  },
+];
+
+const FAQ = [
+  {
+    q: "Is Women360 medical advice?",
+    a: "No. It's a wellness and tracking tool. It can show patterns in what you log and remind you about check-ups, but it doesn't diagnose anything and it isn't a substitute for a doctor.",
+  },
+  {
+    q: "What do the check-up reminders follow?",
+    a: "India's national screening programme and WHO guidance. They are currently marked as not yet reviewed by a clinician, so treat them as a starting point and confirm them with your doctor.",
+  },
+  {
+    q: "Can I take my data with me, or delete it?",
+    a: "Yes. In Settings, under Your data, you can download everything held about your account, or erase your account completely.",
+  },
+  {
+    q: "Is it only for younger women?",
+    a: "No. It's built for adults of every age. Senior Mode turns the app into a few large, clearly labelled essentials that you choose yourself.",
+  },
+  {
+    q: "Do I need a watch or another device?",
+    a: "No. You log things yourself, in a few taps. Nothing has to be connected.",
+  },
+  {
+    q: "What happens if I miss a day?",
+    a: "Nothing. There's no scolding and no lost-streak message. The count simply starts again when you do.",
+  },
+];
+
+/** The paper texture. Fixed over the page, never catches a tap or a click. */
+function Grain() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-50 opacity-[0.35] dark:opacity-20 mix-blend-overlay"
+      style={{ backgroundImage: GRAIN }}
+    />
+  );
+}
+
+function Blob({ className, color, delay = "0s" }: { className: string; color: string; delay?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={cn("absolute rounded-full blur-3xl opacity-60 motion-safe:animate-[w360-float_6s_ease-in-out_infinite_alternate]", className)}
+      style={{ background: color, animationDelay: delay }}
+    />
+  );
+}
+
+function Nav() {
+  return (
+    <header className="sticky top-4 z-40 px-4">
+      <nav
+        aria-label="Main"
+        className={cn(
+          "mx-auto max-w-4xl flex items-center justify-between gap-3 rounded-full border border-[var(--w360-border)] bg-[var(--w360-nav-surface)] backdrop-blur-[20px] pl-4 pr-2 py-2",
+          SOFT_SHADOW
+        )}
+      >
+        <Link to="/" className="flex items-center gap-2.5 rounded-full">
+          <span aria-hidden className="grid place-items-center w-7 h-7 rounded-full bg-[var(--w360-accent)]">
+            <span className="w-2 h-2 rounded-full bg-[var(--w360-bg-raised)]" />
+          </span>
+          <span className="font-display text-lg font-semibold">Women360</span>
+        </Link>
+        <div className="hidden sm:flex items-center gap-6 text-sm font-medium text-[var(--w360-text-muted)]">
+          <a href="#features" className="hover:text-[var(--w360-text)]">Features</a>
+          <a href="#life-stages" className="hover:text-[var(--w360-text)]">Life stages</a>
+          <a href="#senior-mode" className="hover:text-[var(--w360-text)]">Senior Mode</a>
+          <a href="#questions" className="hover:text-[var(--w360-text)]">Questions</a>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle />
+          <Link to="/login" className="hidden sm:inline text-sm font-medium px-3 py-2 rounded-full hover:bg-[var(--w360-bg-warm)]">Log in</Link>
+          <Link
+            to="/register"
+            className="rounded-full bg-[var(--w360-text)] text-[var(--w360-bg)] text-sm font-medium px-4 py-2 transition-transform hover:scale-[1.03]"
+          >
+            Get started
+          </Link>
+        </div>
+      </nav>
+    </header>
+  );
+}
+
+function Phone({ className, children, label }: { className?: string; children: ReactNode; label: string }) {
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "shrink-0 rounded-[2.75rem] border-[6px] border-[var(--w360-text)] bg-[var(--w360-bg-raised)] overflow-hidden",
+        "shadow-[0_24px_60px_-20px_rgba(0,0,0,0.25)]",
+        className
+      )}
+    >
+      <div className="px-5 pt-9 pb-6 h-full flex flex-col gap-3">
+        <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--w360-text-muted)]">{label}</p>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const ROW = "flex items-center justify-between gap-3 rounded-2xl bg-[var(--w360-bg-raised)] px-4 py-3 text-sm";
+
+function Preview() {
+  return (
+    <section id="preview" className="px-4 py-24 overflow-hidden">
+      <AnimatedContent {...REVEAL} className="max-w-3xl mx-auto text-center">
+        <h2 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight">One quiet place for your day.</h2>
+        <p className="text-[var(--w360-text-muted)] mt-4 max-w-md mx-auto">Open it, tap what you've done, and get on with your day.</p>
+      </AnimatedContent>
+
+      <AnimatedContent {...REVEAL} className="mt-16 flex items-start justify-center">
+        <Phone
+          label="Habits"
+          className="hidden lg:block w-[280px] h-[580px] opacity-80 translate-y-12 -mr-10 bg-[var(--w360-bg-warm)]"
+        >
+          {["Walk 10,000 steps", "Take my vitamin", "Stretch for five minutes"].map((h, i) => (
+            <div key={h} className={ROW}>
+              <span>{h}</span>
+              <span
+                className={cn(
+                  "w-5 h-5 rounded-full border-2 border-[var(--w360-accent)]",
+                  i === 1 && "bg-[var(--w360-accent)]"
+                )}
+              />
+            </div>
+          ))}
+        </Phone>
+
+        <Phone label="Today" className="relative z-10 w-[300px] h-[620px] bg-[var(--w360-tint)]">
+          <p className="font-display text-3xl font-semibold leading-tight mt-2 text-[var(--w360-tint-text)]">How are you feeling?</p>
+          <p className="text-sm text-[var(--w360-tint-text)] opacity-80">Two minutes is enough.</p>
+          <div className="flex-1 grid place-items-center">
+            <span className="grid place-items-center w-36 h-36 rounded-full bg-[var(--w360-accent)] text-[var(--w360-bg-raised)] font-medium motion-safe:animate-[w360-pulse_4s_ease-in-out_infinite]">
+              Breathe
+            </span>
+          </div>
+        </Phone>
+
+        <Phone
+          label="Check-ups"
+          className="hidden lg:block w-[280px] h-[580px] opacity-80 translate-y-24 -ml-10 bg-[var(--w360-bg-warm)]"
+        >
+          {["Blood pressure", "Blood sugar", "Cervical screening"].map((c) => (
+            <div key={c} className={ROW}>
+              <span>{c}</span>
+              <span className="text-xs rounded-full bg-[var(--w360-tint)] text-[var(--w360-tint-text)] px-2 py-0.5">Not recorded yet</span>
+            </div>
+          ))}
+        </Phone>
+      </AnimatedContent>
+      <p className="text-center text-xs text-[var(--w360-text-muted)] mt-10 lg:mt-28">
+        Illustration of the app. No real data is shown.
+      </p>
+    </section>
+  );
+}
+
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <div className="rounded-2xl border border-[var(--w360-border)] bg-[var(--w360-bg-raised)]">
+      <h3>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => setOpen((o) => !o)}
+          className="w-full flex items-center justify-between gap-4 p-6 text-left font-medium rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--w360-focus)]"
+        >
+          {q}
+          <Plus size={20} aria-hidden className={cn("shrink-0 transition-transform duration-500 ease-in-out", open && "rotate-45")} />
+        </button>
+      </h3>
+      {/* Animating grid rows takes the panel from 0 to its natural height. */}
+      <div
+        id={id}
+        role="region"
+        aria-label={q}
+        aria-hidden={!open}
+        className={cn("grid transition-[grid-template-rows] duration-500 ease-in-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}
+      >
+        <div className="overflow-hidden">
+          <p className="px-6 pb-6 text-[var(--w360-text-muted)] leading-relaxed">{a}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function LandingPage() {
-  const brand = useBrandColors();
-  const portrait = useMemo(() => portraitDataUri(brand.dark), [brand.dark]);
-
-  // The nav's pill follows the section being read: the last one whose top has
-  // passed 40% of the way down the screen. Above the first one (the hero) it
-  // rests on the first item, since one is always selected.
-  const [section, setSection] = useState(0);
-  useEffect(() => {
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const line = window.innerHeight * 0.4;
-      let active = 0;
-      NAV_ITEMS.forEach((item, index) => {
-        const el = document.getElementById(item.href.slice(1));
-        if (el && el.getBoundingClientRect().top <= line) active = index;
-      });
-      setSection(active);
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
-
+  usePageTitle();
   return (
-    <div className="min-h-screen">
-      <header className="flex items-center justify-between px-6 sm:px-10 h-20 border-b border-[var(--w360-border)] max-w-content mx-auto">
-        <span className="font-display text-xl font-semibold">Women360</span>
-        <div className="hidden sm:block">
-          <GooeyNav
-            items={NAV_ITEMS}
-            activeIndex={section}
-            onChange={setSection}
-            size="sm"
-            frame={false}
-            theme={brand.dark ? "dark" : "light"}
-            color={brand.accent}
-            activeTextColor={brand.inkOnAccent}
-            particleCount={10}
-            spread={30}
-            animationTime={500}
-            style={{ ["--gn-ink" as string]: "var(--w360-text)", ["--gn-muted" as string]: "var(--w360-text-muted)" }}
-          />
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <ThemeToggle />
-          <Link to="/login" className="text-sm font-medium hidden sm:inline">Log in</Link>
-          <Link to="/register"><Button size="sm">Get started</Button></Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[var(--w360-bg)] text-[var(--w360-text)] overflow-x-clip">
+      <Grain />
+      <Nav />
 
       {/* Hero */}
-      <section className="px-6 sm:px-10 py-14 sm:py-20 max-w-content mx-auto grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-10 lg:gap-6 items-center">
-        <AnimatedContent className="max-w-2xl" {...REVEAL} trigger="mount" stagger={0.09}>
-          <p className="text-xs font-semibold tracking-[0.14em] uppercase text-maroon-700 dark:text-maroon-300 mb-5">
-            A personal health operating system
-          </p>
-          <h1 className="font-display text-4xl sm:text-5xl font-semibold leading-[1.1] tracking-tight">
-            How am I doing, what should I pay attention to, and what can I do next?
+      <section className="relative px-4 pt-20 pb-24 sm:pt-28 text-center overflow-hidden">
+        <Blob className="w-[360px] h-[360px] -top-10 -left-24" color="var(--w360-tint)" />
+        <Blob
+          className="w-[320px] h-[320px] top-24 -right-20"
+          color="color-mix(in srgb, var(--w360-accent) 22%, var(--w360-bg))"
+          delay="-3s"
+        />
+        <AnimatedContent {...REVEAL} trigger="mount" stagger={0.1} className="relative max-w-3xl mx-auto">
+          <p className="text-sm font-medium text-[var(--w360-text-muted)] mb-6">A personal health operating system</p>
+          <h1 className="font-display text-5xl sm:text-7xl md:text-[5.5rem] font-semibold tracking-tight leading-[1.02]">
+            A calmer way to look after <span className={cn(SIGNATURE_ITALIC, "text-[var(--w360-accent)]")}>your</span> health.
           </h1>
-          <p className="text-lg text-[var(--w360-text-muted)] mt-6 max-w-xl">
-            Women360 brings your cycle, nutrition, activity, sleep and wellbeing into one calm, honest view — built for every stage of your life, from your twenties to your nineties.
+          <p className="text-lg text-[var(--w360-text-muted)] mt-8 max-w-[500px] mx-auto">
+            Women360 brings your cycle, nutrition, activity, sleep and wellbeing into one calm, honest view, built for every stage of your life, from your twenties to your nineties.
           </p>
-          <div className="flex flex-wrap items-center gap-3 mt-8">
-            <HeroButton to="/register">Create your account <ArrowRight size={16} /></HeroButton>
-            <HeroButton to="/login" variant="secondary">Log in</HeroButton>
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-10">
+            <Link to="/register" className={cn(buttonClasses({ size: "lg" }), SOFT_SHADOW)}>Create your account</Link>
+            <Link to="/login" className={buttonClasses({ size: "lg", variant: "secondary" })}>Log in</Link>
           </div>
-        </AnimatedContent>
-        {/* Decorative: nothing on the page depends on it. Stippled in ink and paper
-            until the cursor (or, on touch, a slow drift) lifts the colour. */}
-        <div aria-hidden className="relative aspect-[4/5] w-full max-w-[440px] lg:max-w-none mx-auto rounded-[28px] overflow-hidden border border-[var(--w360-border)]">
-          <DitherVeil
-            src={portrait}
-            fit="cover"
-            pattern="floyd"
-            pixelSize={3}
-            inkColor={brand.dark ? "#15100E" : "#521626"}
-            paperColor={brand.dark ? "#E6BFC9" : "#FBF8F4"}
-            rimColor={brand.dark ? "#D0899A" : "#B85468"}
-            rim={0.16}
-            contrast={1.1}
-            revealRadius={170}
-            softness={0.7}
-            linger={1.4}
-            wander
-          />
-        </div>
-      </section>
-
-      {/* Product preview */}
-      <section className="px-6 sm:px-10 pb-24 max-w-content mx-auto">
-        <AnimatedContent {...REVEAL}>
-        <div className="rounded-lg border border-[var(--w360-border)] bg-[var(--w360-bg-warm)] p-2 sm:p-3">
-          <div className="rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] p-6 sm:p-10">
-            <div className="grid sm:grid-cols-3 gap-4">
-              {["Sleep · 6.6h", "Steps · 6,240", "Cycle · Day 21"].map((s) => (
-                <div key={s} className="border border-[var(--w360-border)] rounded-md p-4">
-                  <p className="text-xs text-[var(--w360-text-muted)] mb-2">Snapshot</p>
-                  <p className="font-display text-lg font-semibold">{s}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
         </AnimatedContent>
       </section>
 
-      {/* Capabilities */}
-      <section id="capabilities" className="px-6 sm:px-10 py-20 border-t border-[var(--w360-border)]">
-        <div className="max-w-content mx-auto">
-          <h2 className="font-display text-3xl font-semibold max-w-md">Everything that makes up your health, in one place.</h2>
-          <AnimatedContent className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12" {...REVEAL} stagger={0.07}>
-            {capabilities.map((c) => (
+      {/* Moments */}
+      <section id="moments" className="py-16">
+        <AnimatedContent {...REVEAL} className="px-4 max-w-3xl mx-auto mb-8">
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight">Small moments, small taps.</h2>
+        </AnimatedContent>
+        <div
+          role="region"
+          aria-label="Everyday moments. Scroll sideways to see more."
+          tabIndex={0}
+          className="flex gap-4 overflow-x-auto snap-x snap-mandatory px-4 pb-6 w360-hide-scrollbar focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--w360-focus)] rounded-3xl"
+        >
+          {MOMENTS.map((m) => (
+            <article
+              key={m.when}
+              className={cn(
+                "group snap-start shrink-0 w-72 h-40 rounded-3xl bg-[var(--w360-bg-raised)] border border-[var(--w360-border)] p-5 flex flex-col justify-between",
+                SOFT_SHADOW
+              )}
+            >
+              <p className="text-sm text-[var(--w360-text-muted)]">{m.when}</p>
+              <p className="text-xl leading-snug transition-colors duration-300 group-hover:text-[var(--w360-accent)]">{m.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* Features */}
+      <section id="features" className="px-4 py-20">
+        <div className="max-w-4xl mx-auto">
+          <AnimatedContent {...REVEAL}>
+            <p className="text-sm font-medium text-[var(--w360-text-muted)] mb-3">
+              How am I doing, what should I pay attention to, and what can I do next?
+            </p>
+            <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight max-w-lg">
+              Everything that makes up your health, in one place.
+            </h2>
+          </AnimatedContent>
+          <AnimatedContent className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-10 mt-14" {...REVEAL} stagger={0.07}>
+            {CAPABILITIES.map((c) => (
               <div key={c.title}>
-                <c.icon size={22} strokeWidth={1.6} className="text-maroon-700 dark:text-maroon-300 mb-3" />
-                <h3 className="font-medium">{c.title}</h3>
-                <p className="text-sm text-[var(--w360-text-muted)] mt-1.5">{c.desc}</p>
+                <c.icon size={24} strokeWidth={1.6} className="text-[var(--w360-accent)] mb-3" aria-hidden />
+                <h3 className="font-medium text-lg">{c.title}</h3>
+                <p className="text-[var(--w360-text-muted)] mt-1.5">{c.desc}</p>
               </div>
             ))}
           </AnimatedContent>
         </div>
       </section>
 
-      {/* Life course */}
-      <section className="px-6 sm:px-10 py-20 border-t border-[var(--w360-border)] bg-[var(--w360-bg-warm)]">
-        <div className="max-w-content mx-auto">
-          <h2 className="font-display text-3xl font-semibold max-w-md">Built for the whole of a woman's life — 18 to 100.</h2>
+      {/* Life stages */}
+      <section id="life-stages" className="px-4 py-20">
+        <div className="max-w-5xl mx-auto rounded-[2.5rem] bg-[var(--w360-bg-warm)] border border-[var(--w360-border)] px-6 sm:px-12 py-14">
+          <AnimatedContent {...REVEAL}>
+            <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight max-w-lg">
+              Built for the whole of a woman's life, 18 to 100.
+            </h2>
+          </AnimatedContent>
           <div className="mt-10">
             <AnimatedContent {...REVEAL}>
               <PersonaTabs />
@@ -172,54 +341,101 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Senior Mode USP */}
-      <section id="senior-mode" className="px-6 sm:px-10 py-20 border-t border-[var(--w360-border)]">
-        <AnimatedContent className="max-w-content mx-auto grid lg:grid-cols-2 gap-12 items-center" {...REVEAL} stagger={0.15}>
+      <Preview />
+
+      {/* Senior Mode */}
+      <section id="senior-mode" className="px-4 py-20">
+        <AnimatedContent className="max-w-4xl mx-auto grid lg:grid-cols-2 gap-12 items-center" {...REVEAL} stagger={0.15}>
           <div>
-            <p className="text-xs font-semibold tracking-[0.14em] uppercase text-maroon-700 dark:text-maroon-300 mb-4">Senior Mode</p>
-            <h2 className="font-display text-3xl font-semibold">Not a bigger font. A different way of using the app.</h2>
+            <p className="text-sm font-medium text-[var(--w360-text-muted)] mb-3">Senior Mode</p>
+            <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight">
+              Not a bigger font. A different way of using the app.
+            </h2>
             <p className="text-[var(--w360-text-muted)] mt-4 max-w-md">
-              Turn it on and Women360 becomes a handful of large, clearly-labelled essentials — chosen by you — instead of a full dashboard. Fewer taps, no clutter, nothing essential hidden.
+              Turn it on and Women360 becomes a handful of large, clearly-labelled essentials, chosen by you, instead of a full dashboard. Fewer taps, no clutter, nothing essential hidden.
             </p>
-            <Link to="/register" className="inline-block mt-6">
-              <Button variant="secondary">See it in your account</Button>
-            </Link>
+            <Link to="/register" className={cn(buttonClasses({ variant: "secondary" }), "mt-6")}>See it in your account</Link>
           </div>
-          <div className="border-2 border-[var(--w360-border)] rounded-[16px] p-6 bg-[var(--w360-bg-raised)]">
+          <div aria-hidden className={cn("rounded-[2rem] border-2 border-[var(--w360-border)] bg-[var(--w360-bg-raised)] p-6", SOFT_SHADOW)}>
             <p className="font-display text-xl font-semibold mb-4">MY HEALTH</p>
             <div className="flex flex-col gap-2.5">
-              {["How I'm Doing", "My Medicines", "My Appointments", "My Activity"].map((s) => (
-                <div key={s} className="px-5 py-4 rounded-[12px] border-2 border-[var(--w360-border)] font-medium">{s}</div>
+              {["How I'm Doing", "My Medicines", "My Appointments", "My Activity"].map((t) => (
+                <div key={t} className="px-5 py-4 rounded-2xl border-2 border-[var(--w360-border)] font-medium">{t}</div>
               ))}
             </div>
           </div>
         </AnimatedContent>
       </section>
 
+      {/* Example entries */}
+      <section className="px-4 py-20">
+        <AnimatedContent {...REVEAL} className="max-w-3xl mx-auto">
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight">What a day's notes can look like.</h2>
+          <p className="text-[var(--w360-text-muted)] mt-3 max-w-md">Written as examples, not by real people.</p>
+        </AnimatedContent>
+        <AnimatedContent {...REVEAL} stagger={0.12} className="max-w-3xl mx-auto mt-10 grid md:grid-cols-2 gap-6">
+          {NOTES.map((n) => (
+            <figure
+              key={n.text}
+              className={cn("rounded-[2rem] bg-[var(--w360-bg-raised)] border border-[var(--w360-border)] p-8", SOFT_SHADOW, n.tilt)}
+            >
+              <figcaption className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--w360-text-muted)]">{n.tag}</figcaption>
+              <blockquote className="text-xl leading-relaxed mt-4">{n.text}</blockquote>
+              <p className="flex items-center gap-3 mt-6 text-[var(--w360-text-muted)]">
+                <span aria-hidden className="w-8 h-px bg-current" />
+                <span className={cn(SIGNATURE_ITALIC, "text-xl")}>{n.sign}</span>
+              </p>
+            </figure>
+          ))}
+        </AnimatedContent>
+      </section>
+
       {/* Privacy */}
-      <section id="privacy" className="px-6 sm:px-10 py-20 border-t border-[var(--w360-border)] bg-[var(--w360-bg-warm)]">
-        <AnimatedContent className="max-w-content mx-auto max-w-2xl" {...REVEAL}>
-          <h2 className="font-display text-2xl font-semibold">Your health information stays yours.</h2>
-          <p className="text-[var(--w360-text-muted)] mt-3">
-            Coaches only see what you choose to share. Women360 is a wellness and tracking tool, not a diagnostic system — it points you toward professional care rather than replacing it.
+      <section id="privacy" className="px-4 py-20">
+        <AnimatedContent {...REVEAL} className="max-w-2xl mx-auto text-center">
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight">Your health information stays yours.</h2>
+          <p className="text-[var(--w360-text-muted)] mt-4">
+            A wellness coach sees only a limited summary, and only if you give them access. Your health profile and medicines are never part of it. Women360 is a wellness and tracking tool, not a diagnostic system: it points you toward professional care rather than replacing it.
           </p>
+          <Link to="/privacy" className="inline-block mt-5 underline underline-offset-2 text-sm">Read how your data is handled</Link>
         </AnimatedContent>
       </section>
 
-      {/* CTA */}
-      <section className="px-6 sm:px-10 py-24 text-center">
-        <AnimatedContent {...REVEAL}>
-        <h2 className="font-display text-3xl sm:text-4xl font-semibold max-w-lg mx-auto">Start with today's snapshot.</h2>
-        <Link to="/register" className="inline-block mt-8"><Button size="lg">Create your account</Button></Link>
+      {/* Questions */}
+      <section id="questions" className="px-4 py-20">
+        <AnimatedContent {...REVEAL} className="max-w-2xl mx-auto">
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight text-center">Questions, answered plainly.</h2>
+          <div className="flex flex-col gap-3 mt-10">
+            {FAQ.map((f) => (
+              <FaqItem key={f.q} {...f} />
+            ))}
+          </div>
         </AnimatedContent>
       </section>
 
-      <footer className="px-6 sm:px-10 py-8 border-t border-[var(--w360-border)] text-sm text-[var(--w360-text-muted)] flex items-center justify-between max-w-content mx-auto">
-        <span>Women360</span>
-        <span className="flex items-center gap-4">
-          <Link to="/privacy" className="hover:text-[var(--w360-text)] underline underline-offset-2">Privacy</Link>
-          <span>© 2026 · A wellness & tracking product, not a diagnostic service</span>
-        </span>
+      {/* Get started */}
+      <section className="relative px-4 py-28 text-center overflow-hidden">
+        <Blob className="w-[380px] h-[380px] -bottom-24 -left-20" color="var(--w360-tint)" />
+        <Blob className="w-[320px] h-[320px] -bottom-10 -right-16" color="color-mix(in srgb, var(--w360-accent) 22%, var(--w360-bg))" delay="-3s" />
+        <AnimatedContent {...REVEAL} className="relative max-w-xl mx-auto">
+          <span aria-hidden className="relative mx-auto grid place-items-center w-14 h-14 rounded-2xl bg-[var(--w360-text)]">
+            <span className="w-3 h-3 rounded-full bg-[var(--w360-accent)]" />
+          </span>
+          <h2 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight mt-8">Start with today.</h2>
+          <p className="text-[var(--w360-text-muted)] mt-4">Your data stays yours: download it or delete it whenever you like.</p>
+          <Link
+            to="/register"
+            className="inline-block mt-8 rounded-full bg-[var(--w360-text)] text-[var(--w360-bg)] font-medium px-8 py-4 transition-transform duration-300 hover:scale-105"
+          >
+            Create your account
+          </Link>
+        </AnimatedContent>
+      </section>
+
+      <footer className="px-4 py-8 text-sm text-[var(--w360-text-muted)] text-center">
+        <Link to="/privacy" className="underline underline-offset-2 hover:text-[var(--w360-text)]">Privacy</Link>
+        <span className="mx-2">·</span>
+        <span>© 2026 · A wellness and tracking product, not a diagnostic service</span>
       </footer>
     </div>
   );
