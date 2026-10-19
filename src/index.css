@@ -20,6 +20,12 @@
   --w360-radius-card: 22px;
   /* Streak flame: the one warm accent, used only for the daily check-in. */
   --w360-flame: #D9480F;
+  /* Status colours for inline banners: a soft wash, a border and a text colour
+     that clears 4.5:1 on that wash. */
+  --w360-success-bg: #EEF5EC; --w360-success-border: #B9D3B2; --w360-success-text: #1F4A22;
+  --w360-warning-bg: #FBF2E1; --w360-warning-border: #E4C98F; --w360-warning-text: #5C3D06;
+  --w360-info-bg: #EAF1F6; --w360-info-border: #B7CCDA; --w360-info-text: #1E3F57;
+  --w360-danger-bg: #FBECEA; --w360-danger-border: #E5B1AA; --w360-danger-text: #7A1F17;
 }
 
 .dark {
@@ -36,6 +42,10 @@
   --w360-tint-text: #F1D3DB;
   --w360-nav-surface: rgba(37, 30, 25, 0.92);
   --w360-flame: #FF8A4C;
+  --w360-success-bg: #18261A; --w360-success-border: #345A38; --w360-success-text: #BFE0BA;
+  --w360-warning-bg: #2B2210; --w360-warning-border: #6B5420; --w360-warning-text: #F0D9A0;
+  --w360-info-bg: #16222B; --w360-info-border: #35566C; --w360-info-text: #BCD7E8;
+  --w360-danger-bg: #2E1816; --w360-danger-border: #7A3A33; --w360-danger-text: #F2BDB6;
 }
 
 * { border-color: var(--w360-border); }
