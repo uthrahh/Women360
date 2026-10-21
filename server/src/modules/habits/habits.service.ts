@@ -109,7 +109,8 @@ export const habitsService = {
    * amount given, a habit that has a target is logged AT the target (one tap =
    * done); one without a target stores no amount.
    */
-  async log(userId: string, id: string, day: string, amount: number | undefined) {
+  // `today` is the person's own current day: the habit is shown as of today even when the day being logged is an earlier one.
+  async log(userId: string, id: string, day: string, amount: number | undefined, today: string = day) {
     const habit = await assertOwner(userId, id);
     assertPlausibleDay(day);
     const stored = habit.target == null ? null : (amount ?? habit.target);
@@ -119,14 +120,14 @@ export const habitsService = {
       create: { habitId: id, date, amount: stored },
       update: { amount: stored },
     });
-    return this.getOne(userId, id, day);
+    return this.getOne(userId, id, today);
   },
 
-  async unlog(userId: string, id: string, day: string) {
+  async unlog(userId: string, id: string, day: string, today: string = day) {
     await assertOwner(userId, id);
     assertPlausibleDay(day);
     await prisma.habitLog.deleteMany({ where: { habitId: id, date: asDate(day) } });
-    return this.getOne(userId, id, day);
+    return this.getOne(userId, id, today);
   },
 
   async getOne(userId: string, id: string, today: string) {

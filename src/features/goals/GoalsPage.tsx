@@ -15,6 +15,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { DEFAULT_REMINDER, REMINDER_TIME_OPTIONS, STRICT_12H_TIME } from "@/lib/reminderTimes";
+import { quickStep } from "@/lib/quickStep";
 import { CheckCircle2, Circle, Plus, Pencil, Trash2, Check, X } from "lucide-react";
 import clsx from "clsx";
 
@@ -116,7 +117,27 @@ export default function GoalsPage() {
     setEditingGoal(goal);
   }
 
-  function applyIdea(idea: GoalIdea) {
+  // An idea that already has everything a goal needs is created in one tap; one
+  // that needs a number from her (like a weight) fills the form instead.
+  async function applyIdea(idea: GoalIdea) {
+    const complete = idea.kind === "oneOff" || (idea.kind === "total" && idea.target !== undefined);
+    if (complete) {
+      try {
+        const created = await goalService.create({
+          title: idea.title,
+          kind: idea.kind,
+          category: idea.category,
+          unit: idea.unit,
+          ...(idea.kind === "total" ? { targetValue: idea.target } : {}),
+        });
+        setGoals((g) => (g ? [created, ...g] : [created]));
+        setEditingGoal(null);
+        toast.show(`Added "${created.title}"`);
+      } catch (err) {
+        toast.show(err instanceof Error ? err.message : "Couldn't add that goal. Please try again.", { tone: "error" });
+      }
+      return;
+    }
     set({
       kind: idea.kind,
       title: idea.title,
@@ -220,7 +241,10 @@ export default function GoalsPage() {
     }
   }
 
-  const active = goals.filter((g) => !g.completed);
+  // Soonest deadline first; goals with no date keep their order after those that have one.
+  const active = goals
+    .filter((g) => !g.completed)
+    .sort((a, b) => (a.dueDate && b.dueDate ? a.dueDate.localeCompare(b.dueDate) : a.dueDate ? -1 : b.dueDate ? 1 : 0));
   const completed = goals.filter((g) => g.completed);
 
   function renderGoal(g: Goal) {
@@ -311,12 +335,12 @@ export default function GoalsPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     {g.kind === "total" && (
                       <button
-                        onClick={() => patch(g, { currentValue: g.currentValue + 1 })}
-                        aria-label={`Add 1${unit} to "${g.title}"`}
-                        title={`+1${unit}`}
+                        onClick={() => patch(g, { currentValue: g.currentValue + quickStep(g.targetValue) })}
+                        aria-label={`Add ${num(quickStep(g.targetValue))}${unit} to "${g.title}"`}
+                        title={`+${num(quickStep(g.targetValue))}${unit}`}
                         className="inline-flex items-center gap-0.5 text-xs font-medium px-2 py-1 rounded border border-[var(--w360-border)] hover:border-maroon-400 hover:text-maroon-700 dark:hover:text-maroon-200"
                       >
-                        <Plus size={12} /> 1
+                        <Plus size={12} /> {num(quickStep(g.targetValue))}
                       </button>
                     )}
                     <button
@@ -343,7 +367,7 @@ export default function GoalsPage() {
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       {isNew && (
         <div>
-          <p className="text-xs text-[var(--w360-text-muted)] mb-2">Start from one, or fill it in yourself</p>
+          <p className="text-xs text-[var(--w360-text-muted)] mb-2">Tap one to add it now (or to start filling it in), or make your own</p>
           <div className="flex flex-wrap gap-2">
             {IDEAS.map((idea) => (
               <button

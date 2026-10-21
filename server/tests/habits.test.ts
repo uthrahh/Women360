@@ -168,3 +168,34 @@ describe("habits: access control", () => {
     expect(res.body.data.habits[0].logs).toHaveLength(1);
   });
 });
+
+describe("habits: fixing an earlier day", () => {
+  it("returns the habit as of today, not as of the day that was logged", async () => {
+    const token = await signUp("h-backfill");
+    const id = (await make(token, { title: "Stretch" })).body.data.id;
+    const res = await request(app).put(`/api/v1/habits/${id}/logs/${day(3)}?today=${day(0)}`).set(auth(token)).send({});
+    expect(res.status).toBe(200);
+    expect(res.body.data.doneToday).toBe(false);
+    // last7 runs oldest first and ends today, so three days ago is index 3.
+    expect(res.body.data.last7[3]).toBe(true);
+    expect(res.body.data.last7[6]).toBe(false);
+  });
+
+  it("clearing an earlier day also returns it as of today", async () => {
+    const token = await signUp("h-unbackfill");
+    const id = (await make(token, { title: "Stretch" })).body.data.id;
+    await logDay(token, id, day(0));
+    await request(app).put(`/api/v1/habits/${id}/logs/${day(2)}?today=${day(0)}`).set(auth(token)).send({});
+    const res = await request(app).delete(`/api/v1/habits/${id}/logs/${day(2)}?today=${day(0)}`).set(auth(token));
+    expect(res.body.data.doneToday).toBe(true);
+    expect(res.body.data.last7[4]).toBe(false);
+    expect(res.body.data.last7[6]).toBe(true);
+  });
+
+  it("logs an amount habit's earlier day as met", async () => {
+    const token = await signUp("h-backfill-amount");
+    const id = (await make(token, { title: "Walk", target: 10000, unit: "steps" })).body.data.id;
+    const res = await request(app).put(`/api/v1/habits/${id}/logs/${day(1)}?today=${day(0)}`).set(auth(token)).send({});
+    expect(res.body.data.last7[5]).toBe(true);
+  });
+});

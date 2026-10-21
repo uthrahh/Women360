@@ -2,7 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Plus, Check, X } from "lucide-react";
 import clsx from "clsx";
 import { habitService, type HabitInput } from "@/services/habitService";
-import { to12Hour, to24Hour } from "@/services/mappers";
+import { localDateISO, to12Hour, to24Hour } from "@/services/mappers";
+import { quickStep } from "@/lib/quickStep";
 import type { Habit } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -150,6 +151,26 @@ export default function HabitsPage() {
       replace(await (done ? habitService.log(h.id) : habitService.unlog(h.id)));
     } catch (err) {
       setHeartEpoch((n) => n + 1);
+      fail(err, "Couldn't save that. Please try again.");
+    }
+  }
+
+  // One tap adds a sensible chunk toward today's target (the exact amount can still be typed).
+  async function addAmount(h: Habit, step: number) {
+    try {
+      replace(await habitService.log(h.id, (h.amountToday ?? 0) + step));
+    } catch (err) {
+      fail(err, "Couldn't save that. Please try again.");
+    }
+  }
+
+  // Forgot to tick yesterday? Tap its dot. Today's is the heart.
+  async function toggleDay(h: Habit, daysAgo: number, done: boolean) {
+    const d = new Date();
+    d.setDate(d.getDate() - daysAgo);
+    try {
+      replace(await habitService.logOn(h.id, localDateISO(d), !done));
+    } catch (err) {
       fail(err, "Couldn't save that. Please try again.");
     }
   }
@@ -360,7 +381,7 @@ export default function HabitsPage() {
         </Card>
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
-          {habits.map((h) => {
+          {[...habits.filter((h) => !h.doneToday), ...habits.filter((h) => h.doneToday)].map((h) => {
             const amountPct = h.target ? Math.min(100, Math.round(((h.amountToday ?? 0) / h.target) * 100)) : 0;
             const unit = h.unit ? ` ${h.unit}` : "";
             const editingAmount = quickId === h.id;
@@ -405,15 +426,26 @@ export default function HabitsPage() {
                             </button>
                           </div>
                         ) : (
-                          <button
-                            onClick={() => {
-                              setQuickId(h.id);
-                              setQuickValue(String(h.amountToday ?? 0));
-                            }}
-                            className="text-xs font-medium text-maroon-700 dark:text-maroon-200 shrink-0"
-                          >
-                            Log an amount
-                          </button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {!h.doneToday && (
+                              <button
+                                onClick={() => addAmount(h, quickStep(h.target!))}
+                                aria-label={`Add ${num(quickStep(h.target!))}${unit} to "${h.title}"`}
+                                className="inline-flex items-center gap-0.5 text-xs font-medium px-2 py-1 rounded border border-[var(--w360-border)] hover:border-maroon-400 hover:text-maroon-700 dark:hover:text-maroon-200"
+                              >
+                                <Plus size={12} /> {num(quickStep(h.target!))}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                setQuickId(h.id);
+                                setQuickValue(String(h.amountToday ?? 0));
+                              }}
+                              className="text-xs font-medium text-maroon-700 dark:text-maroon-200"
+                            >
+                              Log an amount
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -421,13 +453,35 @@ export default function HabitsPage() {
 
                   <div className="flex items-center justify-between gap-3 mt-4 pt-3 border-t border-[var(--w360-border)]">
                     <div className="min-w-0">
-                      <div className="flex gap-1" role="img" aria-label={`Done on ${h.last7.filter(Boolean).length} of the last 7 days`}>
-                        {h.last7.map((done, i) => (
-                          <span
-                            key={i}
-                            className={clsx("w-2.5 h-2.5 rounded-full", done ? "bg-maroon-700 dark:bg-maroon-300" : "bg-warmgrey-200 dark:bg-white/15")}
-                          />
-                        ))}
+                      <div className="flex items-center -ml-1.5" role="group" aria-label="The last 7 days. Tap an earlier day to fix it.">
+                        {h.last7.map((done, i) => {
+                          const daysAgo = 6 - i;
+                          const dot = (
+                            <span className={clsx("block w-2.5 h-2.5 rounded-full", done ? "bg-maroon-700 dark:bg-maroon-300" : "bg-warmgrey-200 dark:bg-white/15")} />
+                          );
+                          if (daysAgo === 0) {
+                            return (
+                              <span key={i} role="img" aria-label={`Today: ${done ? "done" : "not done yet"}`} className="p-1.5">
+                                {dot}
+                              </span>
+                            );
+                          }
+                          const day = new Date();
+                          day.setDate(day.getDate() - daysAgo);
+                          const name = day.toLocaleDateString(undefined, { weekday: "long" });
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => toggleDay(h, daysAgo, done)}
+                              aria-label={`${name}: ${done ? "done" : "not done"}. Tap to change.`}
+                              title={`${name}: ${done ? "done" : "not done"}`}
+                              className="p-1.5 rounded-full hover:bg-black/[0.06] dark:hover:bg-white/[0.1]"
+                            >
+                              {dot}
+                            </button>
+                          );
+                        })}
                       </div>
                       <p className="text-xs text-[var(--w360-text-muted)] mt-1.5">
                         {h.doneToday ? "Done for today" : "Tap when you've done it"}

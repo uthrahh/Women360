@@ -38,4 +38,10 @@ export const habitService = {
   async unlog(id: string): Promise<Habit> {
     return toFrontendHabit(await request<ApiHabit>(`/habits/${id}/logs/${localDateISO()}`, { method: "DELETE" }));
   },
+  /** Fix a day she missed: log (or clear) a specific recent day. */
+  async logOn(id: string, day: string, done: boolean): Promise<Habit> {
+    return toFrontendHabit(
+      await request<ApiHabit>(`/habits/${id}/logs/${day}?${today()}`, done ? { method: "PUT", body: JSON.stringify({}) } : { method: "DELETE" })
+    );
+  },
 };
