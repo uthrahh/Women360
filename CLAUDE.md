@@ -274,8 +274,8 @@ upload scanning (there are no uploads), and the `react-router` v7 upgrade the
 audit flags (a deliberate separate project).
 
 **React Bits components (latest pass):** the landing page (`AnimatedContent` scroll
-reveals; its floating pill nav, grain and soft blobs are plain CSS; `DitherVeil`,
-`SpecularButton` and `HeroButton` are vendored but no longer used by it), the signed-in menu (`BranchedMenu`)
+reveals; its floating pill nav, grain and soft blobs are plain CSS; `SpecularButton` is
+vendored but no longer used by it), the signed-in menu (`BranchedMenu`)
 and mobile bottom bar (`GooeyNav`), multi-step flows (`Stepper` via `FlowStepper`,
 used by onboarding), daily-goal check-in
 (`PulseHeart` with the fire glyph), reminders (`BellToggle`), Settings feedback
@@ -284,7 +284,7 @@ used by onboarding), daily-goal check-in
 from commented "Women360 change" edits, in `src/components/reactbits/` as
 `.jsx` + hand-written `.d.ts` (the repo doesn't `allowJs`). App code uses
 them through typed wrappers in `src/components/ui/` (`NumberField`, `ItemList`,
-`HeroButton`, `FlowStepper`) rather than directly where there's a wrapper. Traps: (1) canvas
+`FlowStepper`) rather than directly where there's a wrapper. Traps: (1) canvas
 components that call `loseContext()` in an effect cleanup break under React
 StrictMode, which re-runs effects on the same canvas — `SpecularButton` had this
 and no longer does it; (2) a `position: fixed` panel rendered inside an element
