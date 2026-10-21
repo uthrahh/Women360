@@ -19,3 +19,12 @@ export const activityGoalSchema = z.object({
 });
 
 export const idParamSchema = z.object({ id: z.string().min(1) });
+
+export const activityEntryUpdateSchema = activityEntrySchema.partial().refine((v) => Object.keys(v).length > 0, "Nothing to update.");
+
+export const quickLogSchema = z.object({
+  label: z.string().trim().min(1).max(60),
+  type: z.string().trim().min(1).max(80),
+  durationMinutes: z.number().int().min(1).max(1440),
+  intensity: z.enum(["LOW", "MODERATE", "HIGH"]),
+});

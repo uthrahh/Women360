@@ -137,6 +137,17 @@ export interface ActivityEntry {
   intensity: "low" | "moderate" | "high";
   notes?: string;
   date: string;
+  /** YYYY-MM-DD, for editing; `date` is the friendly "Today" / "Yesterday" label. */
+  day: string;
+}
+
+/** One of her one-tap activity shortcuts. */
+export interface QuickLogItem {
+  id: string;
+  label: string;
+  type: string;
+  duration: number;
+  intensity: "low" | "moderate" | "high";
 }
 
 export interface ActivitySummary {
