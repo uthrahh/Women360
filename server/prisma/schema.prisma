@@ -73,6 +73,8 @@ model User {
   fruitVegLogs      FruitVegLog[]
   activityEntries   ActivityEntry[]
   stepsLogs         StepsLog[]
+  activityQuickLogs ActivityQuickLog[]
+  activityQuickLogSeeded Boolean @default(false)
   sleepEntries      SleepEntry[]
   wellbeingEntries  WellbeingEntry[]
   goals             Goal[]
@@ -328,6 +330,22 @@ model ActivityEntry {
   createdAt       DateTime  @default(now())
 
   @@index([userId, date])
+}
+
+// One of her one-tap activity shortcuts ("15-min walk"). She adds and removes
+// these herself; the defaults are copied in once, the first time she opens them
+// (User.activityQuickLogSeeded), so removing every one stays removed.
+model ActivityQuickLog {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label           String
+  type            String
+  durationMinutes Int
+  intensity       Intensity
+  createdAt       DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model StepsLog {

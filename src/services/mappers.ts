@@ -347,10 +347,11 @@ export function toFrontendActivityEntry(entry: ApiActivityEntry): ActivityEntry 
     intensity: lower<ActivityEntry["intensity"]>(entry.intensity),
     notes: entry.notes ?? undefined,
     date: toRelativeDay(entry.date),
+    day: entry.date.slice(0, 10),
   };
 }
 
-export function toBackendActivityEntry(entry: Omit<ActivityEntry, "id" | "date">, date: string) {
+export function toBackendActivityEntry(entry: Omit<ActivityEntry, "id" | "date" | "day">, date: string) {
   return {
     date,
     type: entry.type,

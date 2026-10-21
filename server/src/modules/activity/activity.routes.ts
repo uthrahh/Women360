@@ -4,7 +4,14 @@ import { validate } from "@/middleware/validate";
 import { requireAuth } from "@/middleware/auth";
 import { created, noContent, ok } from "@/lib/response";
 import { activityService } from "./activity.service";
-import { activityEntrySchema, activityGoalSchema, idParamSchema, stepsLogSchema } from "./activity.validation";
+import {
+  activityEntrySchema,
+  activityEntryUpdateSchema,
+  activityGoalSchema,
+  idParamSchema,
+  quickLogSchema,
+  stepsLogSchema,
+} from "./activity.validation";
 
 export const activityRouter = Router();
 activityRouter.use(requireAuth);
@@ -18,6 +25,32 @@ activityRouter.post(
   "/entries",
   validate({ body: activityEntrySchema }),
   asyncHandler(async (req, res) => created(res, await activityService.addEntry(req.user!.id, req.body)))
+);
+
+activityRouter.patch(
+  "/entries/:id",
+  validate({ params: idParamSchema, body: activityEntryUpdateSchema }),
+  asyncHandler(async (req, res) => ok(res, await activityService.updateEntry(req.user!.id, req.params.id, req.body)))
+);
+
+activityRouter.get(
+  "/quick-log",
+  asyncHandler(async (req, res) => ok(res, await activityService.listQuickLog(req.user!.id)))
+);
+
+activityRouter.post(
+  "/quick-log",
+  validate({ body: quickLogSchema }),
+  asyncHandler(async (req, res) => created(res, await activityService.addQuickLog(req.user!.id, req.body)))
+);
+
+activityRouter.delete(
+  "/quick-log/:id",
+  validate({ params: idParamSchema }),
+  asyncHandler(async (req, res) => {
+    await activityService.removeQuickLog(req.user!.id, req.params.id);
+    return noContent(res);
+  })
 );
 
 activityRouter.delete(
