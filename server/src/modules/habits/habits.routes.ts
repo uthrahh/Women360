@@ -48,12 +48,14 @@ habitsRouter.delete(
 
 habitsRouter.put(
   "/:id/logs/:date",
-  validate({ params: habitDaySchema, body: logBodySchema }),
-  asyncHandler(async (req, res) => ok(res, await habitsService.log(req.user!.id, req.params.id, req.params.date, req.body.amount)))
+  validate({ params: habitDaySchema, body: logBodySchema, query: habitQuerySchema }),
+  asyncHandler(async (req, res) =>
+    ok(res, await habitsService.log(req.user!.id, req.params.id, req.params.date, req.body.amount, todayOf(req)))
+  )
 );
 
 habitsRouter.delete(
   "/:id/logs/:date",
-  validate({ params: habitDaySchema }),
-  asyncHandler(async (req, res) => ok(res, await habitsService.unlog(req.user!.id, req.params.id, req.params.date)))
+  validate({ params: habitDaySchema, query: habitQuerySchema }),
+  asyncHandler(async (req, res) => ok(res, await habitsService.unlog(req.user!.id, req.params.id, req.params.date, todayOf(req))))
 );
