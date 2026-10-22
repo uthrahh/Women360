@@ -1,16 +1,18 @@
 {
   "projectTitle": "Women360: a cloud-native women's health and wellness SaaS platform",
   "member1": "Pavithra Uthrah R K, 23BCE1818",
-  "member2": "Asmi Singh, [REG. NO. - TO FILL]",
+  "member2": "Asmi Singh, 23BCE1645",
   "faculty": "[FACULTY / SLOT - TO FILL]",
   "liveUrl": "https://women-360.vercel.app",
   "apiUrl": "https://women360-api.onrender.com",
   "githubUrl": "https://github.com/uthrahh/Women360",
-  "testUser": "[TEST USER EMAIL - TO FILL]",
-  "testUserPassword": "[TEST USER PASSWORD - TO FILL]",
-  "adminUser": "[ADMIN EMAIL - TO FILL, or write: not available in the web UI]",
-  "adminPassword": "[ADMIN PASSWORD - TO FILL]",
+  "testUser": "demo.woman@women360.demo",
+  "testUserPassword": "Demo-Woman-2026!",
+  "coachUser": "demo.coach@women360.demo",
+  "coachPassword": "Demo-Coach-2026!",
+  "adminUser": "demo.admin@women360.demo",
+  "adminPassword": "Demo-Admin-2026!",
   "testRunDate": "22 October 2026",
-  "serverTests": "273 tests in 28 files",
-  "frontendTests": "32 tests in 4 files"
+  "serverTests": "288 tests in 29 files",
+  "frontendTests": "34 tests in 5 files"
 }

@@ -66,7 +66,7 @@
 <h2>1. Abstract</h2>
 <p>Women's health tools are usually single-purpose: one app for periods, another for food, another for sleep or exercise. None of them looks across the data a person already records, most assume one fixed cycle length, and almost all are designed for a young, confident phone user. Women360 is a cloud-native SaaS platform that brings menstrual health, nutrition, activity, sleep, mental wellbeing, physical health measurements, medicines, goals and habits into one responsive web application for women from 18 to 100 and beyond.</p>
 <p>Its primary goal is <b>preventive care</b>: it turns what a woman logs into early, non-diagnostic prompts, including a screening schedule based on India's national programme and WHO guidance, and observations drawn from her own baseline rather than from population averages. Its second requirement is <b>ease of use</b>: one-tap logging, templates and sensible defaults, and a Senior Mode that replaces the dashboard with a handful of large, plain-language tiles.</p>
-<p>The system has three roles (Woman, Wellness Coach, Admin) enforced on the server. It is a React 18 + TypeScript single-page application hosted on Vercel, talking over HTTPS to a Node.js/Express REST API (about 110 endpoints) hosted on Render, which stores data in a managed PostgreSQL database on Supabase through the Prisma ORM. Source control, automated checks and deployment are driven from GitHub. The application is live at the URL above.</p>
+<p>The system has three roles (Woman, Wellness Coach, Admin), each with its own web area and enforced on the server. It is a React 18 + TypeScript single-page application hosted on Vercel, talking over HTTPS to a Node.js/Express REST API (about 110 endpoints) hosted on Render, which stores data in a managed PostgreSQL database on Supabase through the Prisma ORM. Source control, automated checks and deployment are driven from GitHub. The application is live at the URL above.</p>
 
 <h2>2. Introduction</h2>
 <p>Women360 started as the BCSE408L Cloud Computing project and has been built as a real product rather than a coursework demonstration. The Software Requirements Specification (SRS) fixes the scope: secure registration and login, role-based access, profile management, health and wellness tracking with full CRUD, dashboards and reports, notifications, a cloud database, REST APIs, and public deployment on a cloud platform. The project must demonstrate cloud concepts, and is not considered complete if it runs only on localhost.</p>
@@ -117,18 +117,18 @@
 <p>The SRS defines 24 functional requirements (FR-01 to FR-24), 10 non-functional requirements (NFR-01 to NFR-10), 10 UI requirements (UI-01 to UI-10), 6 business rules and 10 acceptance criteria. Sections 7 and 8 report, requirement by requirement, what has been implemented and what has not.</p>
 
 <h2 class="pb">7. Functional Requirements</h2>
-<p>Status key: <span class="pass">Implemented</span> · <span class="part">Partial</span> · <span class="gap">Not in the web UI</span>.</p>
+<p>Status key: <span class="pass">Implemented</span> · <span class="part">Partial</span>.</p>
 <table>
   <tr><th style="width:8%">ID</th><th style="width:20%">Requirement</th><th style="width:12%">Status</th><th>What exists</th></tr>
   <tr><td>FR-01</td><td>Registration</td><td class="pass">Implemented</td><td>Name, email, date of birth and password; password policy (12+ characters, not common, no sequences, not derived from name or email) checked on client and server.</td></tr>
   <tr><td>FR-02</td><td>Login</td><td class="pass">Implemented</td><td>JWT access and refresh tokens, silent refresh on expiry, database-backed lockout, "sign out everywhere", optional TOTP two-factor.</td></tr>
-  <tr><td>FR-03</td><td>Role-based access</td><td class="part">Partial</td><td>Woman, Coach and Admin enforced by server middleware and covered by tests. The web UI exposes the Woman role only.</td></tr>
+  <tr><td>FR-03</td><td>Role-based access</td><td class="pass">Implemented</td><td>Woman, Coach and Admin enforced by server middleware and covered by tests. Signing in sends each role to its own area (<code>/app</code>, <code>/coach</code>, <code>/admin</code>), and a role cannot open another role's screens.</td></tr>
   <tr><td>FR-04</td><td>Profile management</td><td class="pass">Implemented</td><td>Settings: profile, date of birth, life stage, emergency contact, accessibility and Senior Mode essentials.</td></tr>
   <tr><td>FR-05</td><td>Health history</td><td class="part">Partial</td><td>Allergies and current medicines captured at onboarding and stored; conditions and family history exist in the data model and API.</td></tr>
   <tr><td>FR-06</td><td>Menstrual tracking</td><td class="pass">Implemented</td><td>Period/flow, symptoms, pain, energy, mood, context tags; calendar, trends and range prediction with confidence.</td></tr>
-  <tr><td>FR-07</td><td>Reproductive health</td><td class="part">Partial</td><td>Life stage (reproductive, perimenopause, menopause, postmenopause) shapes predictions and prompts. Contraception and pregnancy records are not implemented.</td></tr>
+  <tr><td>FR-07</td><td>Reproductive health</td><td class="pass">Implemented</td><td>Life stage shapes predictions and prompts. Health, Reproductive health records contraception and pregnancy status (with a due date while pregnant); it is for her own records and is never used to predict or advise.</td></tr>
   <tr><td>FR-08</td><td>Nutrition tracking</td><td class="pass">Implemented</td><td>Meals with macros (one decimal), hydration, fruit and vegetables, goals, "log again" chips.</td></tr>
-  <tr><td>FR-09</td><td>Physical activity</td><td class="pass">Implemented</td><td>Entries with type, duration and intensity; editable one-tap quick log; weekly chart. Step counts are stored; automatic sync from a watch is not built.</td></tr>
+  <tr><td>FR-09</td><td>Physical activity</td><td class="pass">Implemented</td><td>Entries with type, duration and intensity; editable one-tap quick log; weekly chart. Steps are entered by hand; automatic sync from a watch is not built.</td></tr>
   <tr><td>FR-10</td><td>Sleep tracking</td><td class="pass">Implemented</td><td>Duration, bedtime, wake time, 1–5 self-rating, bedtime consistency.</td></tr>
   <tr><td>FR-11</td><td>Mental wellbeing</td><td class="pass">Implemented</td><td>Mood, stress and energy; guided breathing exercise. Social-connection indicators are not captured.</td></tr>
   <tr><td>FR-12</td><td>Physical health</td><td class="pass">Implemented</td><td>Weight, blood pressure, resting heart rate; medicines with dose times and adherence; appointments.</td></tr>
@@ -139,8 +139,8 @@
   <tr><td>FR-17</td><td>Search and filtering</td><td class="part">Partial</td><td>Date-range filters, report periods, Learn library browsing. There is no global search.</td></tr>
   <tr><td>FR-18</td><td>Notifications</td><td class="part">Partial</td><td>In-app notification centre and in-app reminders. No push or email delivery.</td></tr>
   <tr><td>FR-19</td><td>Reports</td><td class="pass">Implemented</td><td>7/30/90-day health report generated from stored data and exported as a PDF.</td></tr>
-  <tr><td>FR-20</td><td>Coach module</td><td class="gap">API only</td><td>Assignment, sharing consent, limited summary and coach notes are implemented and tested on the server. There is no coach screen in the web UI.</td></tr>
-  <tr><td>FR-21</td><td>Administration</td><td class="gap">API only</td><td>User list, role change, deletion, audit log, feedback review and educational-content management exist as protected endpoints, with optional IP allow-list and required two-factor. No admin screen. Admin accounts are created only by a command-line script.</td></tr>
+  <tr><td>FR-20</td><td>Coach module</td><td class="pass">Implemented</td><td>A woman shares with a coach by email under Settings, Privacy &amp; sharing and can stop at any time. The coach sees only the people who shared, a limited summary (goals, mood, sleep, activity, coaching appointments) and can write notes, each marked visible to her or private.</td></tr>
+  <tr><td>FR-21</td><td>Administration</td><td class="pass">Implemented</td><td>An administrator area with an overview, users (search, role change, deactivation), audit log, feedback and Learn content (create, edit, publish, delete). Protected by an optional IP allow-list and required two-factor in production. Administrator accounts are created only by a command-line script.</td></tr>
   <tr><td>FR-22</td><td>CRUD</td><td class="pass">Implemented</td><td>Create, read, update and delete across the tracking modules, each with confirmation on delete.</td></tr>
   <tr><td>FR-23</td><td>Cloud database</td><td class="pass">Implemented</td><td>Supabase-hosted PostgreSQL.</td></tr>
   <tr><td>FR-24</td><td>REST APIs</td><td class="pass">Implemented</td><td>About 110 endpoints under <code>/api/v1</code> across 19 modules, used by the application.</td></tr>
@@ -149,7 +149,7 @@
 <h2>8. Non-Functional Requirements</h2>
 <table>
   <tr><th style="width:18%">Requirement</th><th>How it is addressed</th></tr>
-  <tr><td>Security (NFR-01)</td><td>Passwords hashed with Argon2id. Short-lived access tokens (15 minutes) and refresh tokens (30 days). Helmet security headers, CORS allow-list, rate limiting (20 requests per 15 minutes on the authentication endpoints, 120 per minute on the API). Every request body validated with zod. Sign-in lockout (5 per account, 40 per IP, 15 minutes) stored in the database so it survives restarts. Optional TOTP two-factor with AES-256-GCM-encrypted secrets and backup codes. Admin accounts cannot be created through the API. Security-relevant events are written to an audit log without emails or secrets. The web app sends a Content-Security-Policy and related headers. CI runs a dependency audit.</td></tr>
+  <tr><td>Security (NFR-01)</td><td>Passwords hashed with Argon2id. Short-lived access tokens (15 minutes) and refresh tokens (30 days). Helmet security headers, CORS allow-list, rate limiting (20 requests per 15 minutes on the authentication endpoints, 120 per minute on the API). Every request body validated with zod. Sign-in lockout (5 per account, 40 per IP, 15 minutes) stored in the database so it survives restarts. Optional TOTP two-factor with AES-256-GCM-encrypted secrets and backup codes. Admin accounts cannot be created through the API. The shared demonstration logins published for evaluators are low-power by design: the demonstration administrator is read-only and sees only demonstration accounts, and none of them can change a password, delete the account, use two-factor or sign out everywhere. Security-relevant events are written to an audit log without emails or secrets. The web app sends a Content-Security-Policy and related headers. CI runs a dependency audit.</td></tr>
   <tr><td>Privacy (NFR-02)</td><td>Each record carries its owner; every service checks ownership before reading or changing it (tested for cross-user access). A person can download everything held about her account and permanently erase it. Coaches see a limited summary and never the health profile or medicines.</td></tr>
   <tr><td>Scalability (NFR-03)</td><td>Stateless API instances behind a platform load balancer; managed PostgreSQL with indexes on the per-user query paths; static front end served from a CDN. Moving to a paid tier or more instances needs no code change.</td></tr>
   <tr><td>Availability (NFR-04)</td><td>Managed platforms with a health-check endpoint. On the free tier the API sleeps when idle; the first request after a pause took about 22 seconds in a test on 22 October 2026, and later requests were fast.</td></tr>
@@ -157,7 +157,7 @@
   <tr><td>Reliability (NFR-06)</td><td>Schema changes ship as committed migrations applied on deploy; CI fails if the schema and the migrations disagree. Errors return a uniform envelope and failed saves show an error rather than silently dropping data.</td></tr>
   <tr><td>Usability (NFR-07)</td><td>One-tap logging, templates, progressive disclosure, plain language, no streak guilt, honest empty states, and Senior Mode.</td></tr>
   <tr><td>Responsiveness (NFR-08)</td><td>Layouts checked at phone and desktop widths with no horizontal scrolling; a bottom navigation bar on phones.</td></tr>
-  <tr><td>Maintainability (NFR-09)</td><td>Strict TypeScript on both sides, ESLint, one folder per domain on the server and a service layer on the client, 305 automated tests, and a written engineering standard in the repository.</td></tr>
+  <tr><td>Maintainability (NFR-09)</td><td>Strict TypeScript on both sides, ESLint, one folder per domain on the server and a service layer on the client, 322 automated tests, and a written engineering standard in the repository.</td></tr>
   <tr><td>Portability (NFR-10)</td><td>All configuration through environment variables; a Render blueprint (<code>render.yaml</code>) and a step-by-step <code>DEPLOYMENT.md</code> reproduce the deployment from the repository.</td></tr>
 </table>
 
@@ -191,7 +191,7 @@
   <text x="392" y="458" fill="#665A4E">Prisma, TLS connection</text>
   <rect x="190" y="476" width="380" height="68" rx="10" fill="#EEF4EA" stroke="#3B7A3A"/>
   <text x="380" y="500" text-anchor="middle" font-weight="600" fill="#24501F">Persistence tier: PostgreSQL (Supabase)</text>
-  <text x="380" y="520" text-anchor="middle" font-size="10.5">37 models · 10 enums · 12 committed migrations</text>
+  <text x="380" y="520" text-anchor="middle" font-size="10.5">38 models · 12 enums · 13 committed migrations</text>
 </svg>
 <figcaption>Figure 1. System architecture: three tiers with a single, narrow responsibility per layer.</figcaption>
 </figure>
@@ -254,11 +254,11 @@
 </table>
 
 <h2>11. Database Design</h2>
-<p>The data model is a relational PostgreSQL schema of 37 models and 10 enums defined in <code>server/prisma/schema.prisma</code> and delivered as 12 committed migrations. Every personal record has a <code>userId</code> foreign key with cascade delete, which is what makes "erase my account" a single operation.</p>
+<p>The data model is a relational PostgreSQL schema of 38 models and 12 enums defined in <code>server/prisma/schema.prisma</code> and delivered as 13 committed migrations. Every personal record has a <code>userId</code> foreign key with cascade delete, which is what makes "erase my account" a single operation.</p>
 <table>
   <tr><th style="width:20%">Group</th><th style="width:34%">Models</th><th>Purpose and key relations</th></tr>
-  <tr><td>Identity and security</td><td>User, RefreshToken, PasswordResetToken, TwoFactorBackupCode, AuthThrottle, AuditLog</td><td>Account, role (WOMAN, COACH, ADMIN), life stage, session tokens, sign-in lockout counters and an audit trail.</td></tr>
-  <tr><td>Profile and health</td><td>HealthProfile, EmergencyContact, SeniorEssentialPreference, VitalMeasurement, Medication, MedicationLog, Appointment</td><td>One-to-one profile data; measurements; medicines with dose times; per-dose taken or skipped log; appointments.</td></tr>
+  <tr><td>Identity and security</td><td>User, RefreshToken, PasswordResetToken, TwoFactorBackupCode, AuthThrottle, AuditLog</td><td>Account, role (WOMAN, COACH, ADMIN), life stage, an <code>isDemo</code> flag for the shared demonstration logins, session tokens, sign-in lockout counters and an audit trail.</td></tr>
+  <tr><td>Profile and health</td><td>HealthProfile, ReproductiveHealth, EmergencyContact, SeniorEssentialPreference, VitalMeasurement, Medication, MedicationLog, Appointment</td><td>One-to-one profile data; measurements; medicines with dose times; per-dose taken or skipped log; appointments.</td></tr>
   <tr><td>Cycle</td><td>CycleProfile, CycleEntry</td><td>Her averages and one entry per logged day (period, flow, symptoms, context tags).</td></tr>
   <tr><td>Nutrition</td><td>NutritionGoal, MealEntry, HydrationLog, FruitVegLog</td><td>Daily goals and logged meals, water and servings.</td></tr>
   <tr><td>Activity</td><td>ActivityGoal, ActivityEntry, ActivityQuickLog, StepsLog</td><td>Goals, logged activity, her own one-tap shortcuts, daily steps.</td></tr>
@@ -276,38 +276,40 @@
   <tr><td>Authentication and users</td><td>Register, login, refresh, logout, sign out everywhere, password reset, two-factor, profile, emergency contact, data export and account deletion.</td></tr>
   <tr><td>Cycle</td><td>Daily entries, calendar of phases, statistics over her own cycles, range prediction with a confidence level, context tags that exclude unusual cycles.</td></tr>
   <tr><td>Nutrition</td><td>Meals, daily totals computed from the rows, hydration, fruit and vegetables, recent-meal shortcuts.</td></tr>
-  <tr><td>Activity</td><td>Entries, weekly summary, steps, goals, editable quick log.</td></tr>
+  <tr><td>Activity</td><td>Entries, weekly summary, steps (entered by hand), goals, editable quick log.</td></tr>
   <tr><td>Sleep and wellbeing</td><td>Daily entries, consistency and trend charts, breathing exercise for low mood.</td></tr>
-  <tr><td>Health</td><td>Vitals, medicines with adherence over 7 or 30 days, appointments.</td></tr>
+  <tr><td>Health</td><td>Vitals, medicines with adherence over 7 or 30 days, appointments, and reproductive-health records.</td></tr>
   <tr><td>Goals and habits</td><td>Goal kinds with computed progress; habits with day or week streaks, amounts and fixable past days.</td></tr>
   <tr><td>Screening</td><td>Guideline registry (rules, intervals, sources), per-user status and next-due dates, one-tap records.</td></tr>
   <tr><td>Insights</td><td>Cross-metric correlations and the "explain this" engine for late periods and low mood.</td></tr>
   <tr><td>Reports</td><td>Snapshots of a chosen period (nutrition, sleep, cycle, activity, wellbeing, goals) and a client-side PDF.</td></tr>
   <tr><td>Notifications, messages, learn</td><td>In-app notification centre, messages, educational articles (create, update and delete restricted to Admin).</td></tr>
-  <tr><td>Coach</td><td>Women grant and revoke access; coaches read a limited summary and add notes; every view is audited.</td></tr>
-  <tr><td>Admin</td><td>List and manage users and roles, audit log, feedback review, with IP allow-list and two-factor guards.</td></tr>
+  <tr><td>Coach</td><td>Women grant and revoke access; coaches see the people who shared, read a limited summary and write notes; every view is audited. Screens: <code>/coach</code> for coaches, Settings, Privacy &amp; sharing for women.</td></tr>
+  <tr><td>Admin</td><td>Overview counts, user list with search and role filter, role changes and deactivation, audit log, feedback review and Learn content management, with IP allow-list and two-factor guards. Screen: <code>/admin</code>.</td></tr>
 </table>
 
 <h2 class="pb">13. User Interface Design</h2>
-<p>The interface uses a deep maroon palette on warm neutrals with a serif display face (Fraunces) and Inter for text, defined once as design tokens with a real dark mode. UI primitives (buttons, cards, modals, tabs, toasts, empty, loading and error states) are shared across every page. Figures 3 to 17 are screenshots of the running application; the demonstration data is synthetic.</p>
+<p>The interface uses a deep maroon palette on warm neutrals with a serif display face (Fraunces) and Inter for text, defined once as design tokens with a real dark mode. UI primitives (buttons, cards, modals, tabs, toasts, empty, loading and error states) are shared across every page. Figures 3 to 24 are screenshots of the running application; the data shown is synthetic.</p>
 <div class="grid2">
   <figure><img src="img/landing-hero.jpg"><figcaption>Figure 3. Public landing page (live site).</figcaption></figure>
   <figure><img src="img/landing-life-stages.jpg"><figcaption>Figure 4. Life-stage tabs, 18 to 100.</figcaption></figure>
   <figure><img src="img/dashboard.jpg"><figcaption>Figure 5. Dashboard.</figcaption></figure>
   <figure><img src="img/cycle.jpg"><figcaption>Figure 6. Cycle: a range with a confidence note.</figcaption></figure>
-  <figure><img src="img/nutrition.jpg"><figcaption>Figure 7. Nutrition with "log again" chips.</figcaption></figure>
-  <figure><img src="img/activity.jpg"><figcaption>Figure 8. Activity with the one-tap quick log.</figcaption></figure>
+  <figure><img src="img/nutrition.jpg"><figcaption>Figure 7. Nutrition with &quot;log again&quot; chips.</figcaption></figure>
+  <figure><img src="img/activity.jpg"><figcaption>Figure 8. Activity: one-tap quick log, steps entered by hand.</figcaption></figure>
   <figure><img src="img/sleep.jpg"><figcaption>Figure 9. Sleep.</figcaption></figure>
   <figure><img src="img/habits.jpg"><figcaption>Figure 10. Habits: one-tap ticks and streaks.</figcaption></figure>
   <figure><img src="img/goals.jpg"><figcaption>Figure 11. Goals by kind.</figcaption></figure>
   <figure><img src="img/preventive.jpg"><figcaption>Figure 12. Preventive care schedule.</figcaption></figure>
-  <figure><img src="img/insights.jpg"><figcaption>Figure 13. Insights.</figcaption></figure>
-  <figure><img src="img/reports.jpg"><figcaption>Figure 14. Reports.</figcaption></figure>
-  <figure><img src="img/settings.jpg"><figcaption>Figure 15. Settings and profile.</figcaption></figure>
-  <figure><img src="img/senior-mode.jpg"><figcaption>Figure 16. Senior Mode: large essentials instead of the full dashboard.</figcaption></figure>
+  <figure><img src="img/reproductive.jpg"><figcaption>Figure 13. Reproductive health records.</figcaption></figure>
+  <figure><img src="img/insights.jpg"><figcaption>Figure 14. Insights.</figcaption></figure>
+  <figure><img src="img/reports.jpg"><figcaption>Figure 15. Reports.</figcaption></figure>
+  <figure><img src="img/settings.jpg"><figcaption>Figure 16. Settings and profile.</figcaption></figure>
+  <figure><img src="img/coach-access.jpg"><figcaption>Figure 17. A woman shares with a coach, and sees the coach's notes.</figcaption></figure>
+  <figure><img src="img/senior-mode.jpg"><figcaption>Figure 18. Senior Mode: large essentials instead of the full dashboard.</figcaption></figure>
 </div>
 <div class="grid2">
-  <figure class="phone"><img src="img/mobile-dashboard.jpg"><figcaption>Figure 17. Phone layout (390 px wide) with the bottom navigation bar.</figcaption></figure>
+  <figure class="phone"><img src="img/mobile-dashboard.jpg"><figcaption>Figure 19. Phone layout (390 px wide) with the bottom navigation bar.</figcaption></figure>
   <div>
     <h3>Responsive and accessible by design</h3>
     <ul>
@@ -318,6 +320,15 @@
       <li>Light and dark themes follow the device unless the person chooses one.</li>
     </ul>
   </div>
+</div>
+<h3>Administrator and coach areas</h3>
+<p>Administrators and coaches do not use the woman's sidebar or Senior Mode. Each gets a plain header and one working page, reached automatically when signing in. The screenshots below show the shared demonstration accounts: the demonstration administrator is read-only and sees only demonstration accounts.</p>
+<div class="grid2">
+  <figure><img src="img/admin-overview.jpg"><figcaption>Figure 20. Administrator: overview.</figcaption></figure>
+  <figure><img src="img/admin-users.jpg"><figcaption>Figure 21. Administrator: users and roles.</figcaption></figure>
+  <figure><img src="img/admin-content.jpg"><figcaption>Figure 22. Administrator: Learn content.</figcaption></figure>
+  <figure><img src="img/coach-clients.jpg"><figcaption>Figure 23. Coach: a client's shared summary.</figcaption></figure>
+  <figure><img src="img/coach-notes.jpg"><figcaption>Figure 24. Coach: notes, visible to her or private.</figcaption></figure>
 </div>
 
 <h2>14. Implementation</h2>
@@ -334,19 +345,21 @@
 <table>
   <tr><th style="width:20%">Module</th><th>Representative endpoints</th></tr>
   <tr><td>Auth</td><td><code>POST /auth/register</code>, <code>/auth/login</code>, <code>/auth/refresh</code>, <code>/auth/logout</code>, <code>/auth/delete-account</code></td></tr>
-  <tr><td>Users</td><td><code>GET/PATCH /users/me</code>, <code>/users/me/export</code>, <code>/users/me/health-profile</code>, <code>/users/me/emergency-contact</code></td></tr>
+  <tr><td>Users</td><td><code>GET/PATCH /users/me</code>, <code>/users/me/export</code>, <code>/users/me/health-profile</code>, <code>/users/me/reproductive-health</code>, <code>/users/me/emergency-contact</code></td></tr>
   <tr><td>Cycle</td><td><code>GET /cycle/summary</code>, <code>PUT/DELETE /cycle/entries/:date</code>, <code>PUT /cycle/profile</code></td></tr>
   <tr><td>Nutrition</td><td><code>GET/POST /nutrition/meals</code>, <code>POST /nutrition/hydration</code>, <code>GET /nutrition/recent-meals</code></td></tr>
   <tr><td>Activity</td><td><code>GET /activity/summary</code>, <code>POST/PATCH/DELETE /activity/entries</code>, <code>GET/POST/DELETE /activity/quick-log</code></td></tr>
   <tr><td>Goals and habits</td><td><code>GET/POST/PATCH/DELETE /goals</code>, <code>/habits</code>, <code>PUT/DELETE /habits/:id/logs/:date</code></td></tr>
   <tr><td>Screening</td><td><code>GET /screening</code>, <code>POST /screening/:id/records</code>, <code>DELETE /screening/:id/records/:recordId</code></td></tr>
   <tr><td>Insights and reports</td><td><code>GET /insights</code>, <code>/insights/cycle-delay</code>, <code>/insights/low-mood</code>, <code>POST /reports</code></td></tr>
-  <tr><td>Coach and admin</td><td><code>GET /coach/assigned-women</code>, <code>/coach/women/:id/summary</code>, <code>GET /admin/users</code>, <code>PATCH /admin/users/:id/role</code>, <code>GET /admin/audit-log</code></td></tr>
+  <tr><td>Coach and admin</td><td><code>GET /coach/assigned-women</code>, <code>/coach/women/:id/summary</code>, <code>POST/DELETE /coach/sharing</code>, <code>GET /admin/overview</code>, <code>/admin/users</code>, <code>PATCH /admin/users/:id/role</code>, <code>GET /admin/audit-log</code></td></tr>
 </table>
 <h3>Cloud-related components</h3>
 <ul>
   <li><b>Configuration:</b> database URL, JWT secrets, CORS origins and the optional two-factor key are environment variables on Render; the front end gets only the public API base URL from Vercel. No secret is in the repository.</li>
   <li><b>Migrations on deploy:</b> the Render build runs <code>prisma migrate deploy</code>, so a push that changes the schema also updates the cloud database.</li>
+  <li><b>Demonstration accounts:</b> the Render build runs <code>npm run seed:demo</code>, which (only when <code>SEED_DEMO_ACCOUNTS=true</code>) creates the three shared logins and refreshes the demonstration woman's synthetic data. A failure there never blocks a deploy.</li>
+  <li><b>Waking the free-tier API:</b> the landing and sign-in pages call the health endpoint as they load, so the server wakes while the person reads instead of at sign-in.</li>
   <li><b>Health check:</b> <code>GET /health</code> is used by Render and by the deployment test.</li>
   <li><b>Database-backed lockout:</b> sign-in attempt counters live in PostgreSQL because the free-tier API sleeps and an in-memory counter would reset.</li>
   <li><b>Security headers:</b> the Content-Security-Policy restricts scripts to the site itself and connections to the site and the API.</li>
@@ -357,12 +370,12 @@
 <table>
   <tr><th style="width:28%">Area</th><th style="width:12%">Tests</th><th>What is covered</th></tr>
   <tr><td>Authentication and security</td><td>73</td><td>Lockout and rate limits, password policy, token issue and expiry, sign out everywhere, two-factor (TOTP, backup codes), admin guards.</td></tr>
-  <tr><td>Roles and privacy</td><td>15</td><td>Coach assignment and consent, cross-user access refused (403), data export contains no credentials, account deletion requires the password.</td></tr>
+  <tr><td>Roles, demonstration accounts and privacy</td><td>30</td><td>Coach assignment, sharing and revoking, a coach seeing only women who shared, private versus visible notes, administrator overview, the read-only demonstration administrator, demonstration accounts unable to lock others out, cross-user access refused (403), data export contains no credentials, account deletion requires the password.</td></tr>
   <tr><td>Cycle and insights</td><td>56</td><td>Regular, irregular and perimenopausal cycles; thin-data handling; baseline-deviation detection; pregnancy prompt suppressed after menopause; correlations.</td></tr>
-  <tr><td>Tracking modules</td><td>88</td><td>Nutrition totals and decimals, sleep, activity and quick log, medicines and adherence, goals by kind, habits and streaks, backfilled days.</td></tr>
+  <tr><td>Tracking modules</td><td>88</td><td>Nutrition totals and decimals, sleep, activity and quick log, medicines and adherence, goals by kind, habits and streaks, backfilled days, reproductive-health records.</td></tr>
   <tr><td>Preventive care</td><td>18</td><td>Age ranges, due and up-to-date logic, month-end dates, "not recorded" never reported as overdue, ownership.</td></tr>
   <tr><td>Validation and misc.</td><td>23</td><td>Rejected malformed input, response envelope, app and database-URL guards.</td></tr>
-  <tr><td>Front end units</td><td>32</td><td>Sleep duration across midnight, 12/24-hour conversion, decimal checks, goal progress, quick-step sizing.</td></tr>
+  <tr><td>Front end units</td><td>32</td><td>Sleep duration across midnight, 12/24-hour conversion, decimal checks, goal progress, quick-step sizing, where each role lands after sign-in.</td></tr>
 </table>
 <h3>Selected test cases</h3>
 <table>
@@ -377,6 +390,9 @@
   <tr><td>T8</td><td>Export my data</td><td>Own data only, never credentials or another person's data</td><td class="pass">Pass</td></tr>
   <tr><td>T9</td><td>Delete account with the wrong password</td><td>Refused; account intact</td><td class="pass">Pass</td></tr>
   <tr><td>T10</td><td>Fix a missed habit day</td><td>That day marked done; today unchanged</td><td class="pass">Pass</td></tr>
+  <tr><td>T11</td><td>Demonstration administrator changes a role, deletes a user or edits an article</td><td>403; nothing changes; reads still work</td><td class="pass">Pass</td></tr>
+  <tr><td>T12</td><td>Demonstration account changes its password or deletes itself</td><td>403; the shared login keeps working</td><td class="pass">Pass</td></tr>
+  <tr><td>T13</td><td>A woman revokes a coach's access</td><td>The coach's next request for her summary is refused (403)</td><td class="pass">Pass</td></tr>
 </table>
 <h3>Responsive, deployment and manual testing</h3>
 <ul>
@@ -388,7 +404,7 @@
 <h2>16. Deployment</h2>
 <ol>
   <li><b>Database.</b> Create a Supabase project and copy its PostgreSQL connection string.</li>
-  <li><b>API on Render.</b> Create a Blueprint from the repository. Render reads <code>render.yaml</code> (root directory <code>server</code>, Singapore region, free plan, health check <code>/health</code>). Set <code>DATABASE_URL</code>, <code>JWT_ACCESS_SECRET</code>, <code>JWT_REFRESH_SECRET</code> and <code>CORS_ORIGINS</code>. The build installs dependencies, generates the Prisma client, compiles TypeScript and runs <code>prisma migrate deploy</code>.</li>
+  <li><b>API on Render.</b> Create a Blueprint from the repository. Render reads <code>render.yaml</code> (root directory <code>server</code>, Singapore region, free plan, health check <code>/health</code>). Set <code>DATABASE_URL</code>, <code>JWT_ACCESS_SECRET</code>, <code>JWT_REFRESH_SECRET</code> and <code>CORS_ORIGINS</code> (the blueprint also sets <code>SEED_DEMO_ACCOUNTS</code>). The build installs dependencies, generates the Prisma client, compiles TypeScript, runs <code>prisma migrate deploy</code> and then creates the demonstration logins.</li>
   <li><b>Front end on Vercel.</b> Import the repository and set <code>VITE_API_BASE_URL</code> to the API's <code>/api/v1</code> URL. <code>vercel.json</code> adds the SPA rewrite and security headers.</li>
   <li><b>Connect.</b> Add the Vercel URL to <code>CORS_ORIGINS</code> on Render so the browser may call the API.</li>
   <li><b>Verify.</b> Open <code>/health</code>, register an account on the live site, and log a record.</li>
@@ -400,13 +416,13 @@
 <table>
   <tr><th style="width:9%">ID</th><th>Acceptance criterion</th><th style="width:13%">Status</th><th>Evidence</th></tr>
   <tr><td>AC-01</td><td>A user can register and log in</td><td class="pass">Met</td><td>Live site; automated tests.</td></tr>
-  <tr><td>AC-02</td><td>Role-based access demonstrable for Woman, Coach and Admin</td><td class="part">Partly</td><td>Enforced and tested on the API for all three roles; the web UI covers the Woman role only.</td></tr>
+  <tr><td>AC-02</td><td>Role-based access demonstrable for Woman, Coach and Admin</td><td class="pass">Met</td><td>Three demonstration logins (Section 21), each landing in its own area; enforced and tested on the API (Figures 20 to 24).</td></tr>
   <tr><td>AC-03</td><td>Core records support CRUD</td><td class="pass">Met</td><td>Tracking modules, with tests.</td></tr>
-  <tr><td>AC-04</td><td>Dashboard with meaningful data and trends</td><td class="pass">Met</td><td>Figures 5 and 13.</td></tr>
-  <tr><td>AC-05</td><td>Reports from recorded data</td><td class="pass">Met</td><td>PDF export (Figure 14).</td></tr>
+  <tr><td>AC-04</td><td>Dashboard with meaningful data and trends</td><td class="pass">Met</td><td>Figures 5 and 14.</td></tr>
+  <tr><td>AC-05</td><td>Reports from recorded data</td><td class="pass">Met</td><td>PDF export (Figure 15).</td></tr>
   <tr><td>AC-06</td><td>REST APIs implemented and used</td><td class="pass">Met</td><td>About 110 endpoints used by the front end.</td></tr>
   <tr><td>AC-07</td><td>Cloud database stores the data</td><td class="pass">Met</td><td>Supabase PostgreSQL.</td></tr>
-  <tr><td>AC-08</td><td>Responsive application</td><td class="pass">Met</td><td>Figures 5 and 17.</td></tr>
+  <tr><td>AC-08</td><td>Responsive application</td><td class="pass">Met</td><td>Figures 5 and 19.</td></tr>
   <tr><td>AC-09</td><td>Deployed to a public cloud URL</td><td class="pass">Met</td><td>{{liveUrl}}</td></tr>
   <tr><td>AC-10</td><td>Source in a GitHub repository</td><td class="pass">Met</td><td>{{githubUrl}}</td></tr>
 </table>
@@ -415,13 +431,21 @@
   <li>The layered design let the front end be built against the real API from the start and let new modules (habits, screening, quick log) be added as additive migrations without touching existing data.</li>
   <li>Writing the guidance for screening as one reviewed file with named sources, and showing its status on screen, keeps medical claims out of the interface code.</li>
   <li>The free tier's cold start (about 22 s) is the main user-visible limit. It is a hosting-plan trade-off, not a design limit.</li>
-  <li>The administrator and coach roles exist as protected APIs with tests but have no web screens; this is the main gap against SRS requirements FR-20, FR-21, UI-09 and UI-10.</li>
+  <li>Publishing logins in a report is a real risk, so the shared demonstration accounts are deliberately limited: the demonstration administrator is read-only and sees only demonstration accounts, and no demonstration account can change a password, delete itself or use two-factor.</li>
+</ul>
+<h3>Known limitations</h3>
+<ul>
+  <li><b>Steps</b> are entered by hand. Automatic sync from a watch needs a native integration (Android Health Connect, Apple HealthKit) and a real device to test, and is not built.</li>
+  <li><b>Reminders</b> appear in the app when it is opened; there is no push or email delivery.</li>
+  <li><b>The screening schedule</b> follows named India and WHO sources but has not been reviewed by a clinician, and says so on screen.</li>
+  <li><b>Not yet built:</b> social-connection indicators (FR-11), a global search (FR-17), and a browser end-to-end test suite.</li>
+  <li><b>Hosting:</b> the free API tier sleeps when idle; the landing and sign-in pages wake it in the background, but a first request after a long pause can still take 20 to 30 seconds.</li>
 </ul>
 
 <h2>18. Future Enhancements</h2>
 <ul>
   <li>Step counts from a smartwatch: read steps from Android Health Connect (which Wear OS, Samsung and Fitbit watches sync into) through the Android app, and from Apple Health in an iOS app.</li>
-  <li>Coach and admin web dashboards on top of the existing APIs, including the screen where a woman grants and revokes coach access.</li>
+  <li>Richer coach and administrator tools: coach messaging, per-field sharing choices, and bulk administration.</li>
   <li>Clinical review of the screening schedule and educational content, then localisation by country (SRS §16).</li>
   <li>Push and email reminders; two-way coach messaging; contraception and pregnancy records.</li>
   <li>Wiring all onboarding steps to stored data; a browser end-to-end test suite; automated accessibility audits.</li>
@@ -444,20 +468,29 @@
 <h3>A. Run locally</h3>
 <p><code>npm install</code> and <code>npm run dev</code> in the repository root for the front end; in <code>server/</code>: <code>npm install</code>, copy <code>.env.example</code> to <code>.env</code>, <code>npx prisma migrate deploy</code>, <code>npm run dev</code>. Tests: <code>npm test</code> in each folder. The demo seed refuses to run against a non-local database.</p>
 <h3>B. Environment variables (names only)</h3>
-<p>Server: <code>NODE_ENV</code>, <code>DATABASE_URL</code>, <code>JWT_ACCESS_SECRET</code>, <code>JWT_REFRESH_SECRET</code>, <code>JWT_ACCESS_TTL</code>, <code>JWT_REFRESH_TTL</code>, <code>CORS_ORIGINS</code>, <code>SUPPORT_EMAIL</code>, optional <code>TWO_FACTOR_ENCRYPTION_KEY</code>, <code>ADMIN_IP_ALLOWLIST</code>. Front end: <code>VITE_API_BASE_URL</code>.</p>
+<p>Server: <code>NODE_ENV</code>, <code>DATABASE_URL</code>, <code>JWT_ACCESS_SECRET</code>, <code>JWT_REFRESH_SECRET</code>, <code>JWT_ACCESS_TTL</code>, <code>JWT_REFRESH_TTL</code>, <code>CORS_ORIGINS</code>, <code>SEED_DEMO_ACCOUNTS</code>, <code>SUPPORT_EMAIL</code>, optional <code>TWO_FACTOR_ENCRYPTION_KEY</code>, <code>ADMIN_IP_ALLOWLIST</code>. Front end: <code>VITE_API_BASE_URL</code>.</p>
 <h3>C. Migrations</h3>
-<p>init · meal/sleep notes and goal progress · sleep quality scale and nutrition decimals · medication adherence · cycle context tags · auth hardening · two-factor · goal check-ins and feedback · health profile medicines · habits and goal kinds · screening records · activity quick log.</p>
+<p>init · meal/sleep notes and goal progress · sleep quality scale and nutrition decimals · medication adherence · cycle context tags · auth hardening · two-factor · goal check-ins and feedback · health profile medicines · habits and goal kinds · screening records · activity quick log · demo flag and reproductive health.</p>
 
 <h2 class="pb">21. Project Access Details</h2>
-<div class="note"><b>Mandatory:</b> the application is accessible through the Internet. The credentials below are dedicated test accounts, not personal accounts. The first request after the service has been idle can take about 20 to 30 seconds while the free-tier API wakes up; please wait for the page to respond.</div>
+<div class="note"><b>Mandatory:</b> the application is accessible through the Internet. The credentials below are shared demonstration accounts created for evaluation, not personal accounts. The first request after the service has been idle can take about 20 to 30 seconds while the free-tier API wakes up; please wait for the page to respond.</div>
 <table>
   <tr><th style="width:34%">Live Application URL</th><td><a href="{{liveUrl}}">{{liveUrl}}</a></td></tr>
-  <tr><th>Test User Username / Login</th><td>{{testUser}}</td></tr>
+  <tr><th>Test User (woman) Username / Login</th><td>{{testUser}}</td></tr>
   <tr><th>Test User Password</th><td>{{testUserPassword}}</td></tr>
+  <tr><th>Wellness Coach Username / Login</th><td>{{coachUser}}</td></tr>
+  <tr><th>Wellness Coach Password</th><td>{{coachPassword}}</td></tr>
   <tr><th>Admin Username / Login</th><td>{{adminUser}}</td></tr>
   <tr><th>Admin Password</th><td>{{adminPassword}}</td></tr>
 </table>
-<p class="small">The administrator role is available through the protected <code>/api/v1/admin</code> endpoints; the web application does not include an administrator screen (see Section 17).</p>
+<h3>What each login shows</h3>
+<table>
+  <tr><th style="width:22%">Login</th><th>After signing in</th></tr>
+  <tr><td>Test user</td><td>The woman's application at <code>/app</code> with a month of synthetic data (cycle, nutrition, activity, sleep, wellbeing, goals, habits, medicines, check-ups). Records can be added, edited and deleted freely. Settings, Privacy &amp; sharing shows the demonstration coach already has access.</td></tr>
+  <tr><td>Wellness coach</td><td>The coach area at <code>/coach</code>: the demonstration woman's shared summary and notes. Notes can be added.</td></tr>
+  <tr><td>Admin</td><td>The administrator area at <code>/admin</code>: overview, users, audit log, feedback and Learn content. This is a <b>read-only</b> demonstration administrator that sees only the three demonstration accounts, so nothing can be changed or deleted.</td></tr>
+</table>
+<p class="small">For safety the demonstration accounts cannot change their password, delete themselves, turn on two-factor or sign out everywhere, so the logins stay valid for every evaluator. Full administrator accounts exist only for the operator and are created from the command line.</p>
 
 <h2>Final Submission Checklist</h2>
 <p>☐ Final Project Report &nbsp; ☐ Public Live URL &nbsp; ☐ Valid testing login credentials included &nbsp; ☐ GitHub Repository URL with source code &nbsp; ☐ PPT / Project Presentation &nbsp; ☐ Working application demonstration &nbsp; ☐ Both team members prepared to explain the implementation</p>
