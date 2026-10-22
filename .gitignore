@@ -6,3 +6,5 @@ dist
 *.tsbuildinfo
 .claude/*
 !.claude/launch.json
+Documentation/report/report.html
+Documentation/report/details.local.json
