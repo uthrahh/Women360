@@ -121,6 +121,7 @@ interface ApiUser {
   lifeStage: string | null;
   avatarInitials: string | null;
   onboarded: boolean;
+  isDemo?: boolean;
 }
 
 export function toFrontendUser(apiUser: ApiUser): User {
@@ -133,6 +134,7 @@ export function toFrontendUser(apiUser: ApiUser): User {
     avatarInitials: apiUser.avatarInitials ?? initialsFromName(apiUser.name),
     lifeStage: apiUser.lifeStage ? lower<User["lifeStage"] & string>(apiUser.lifeStage) : null,
     onboarded: apiUser.onboarded,
+    isDemo: apiUser.isDemo ?? false,
   };
 }
 

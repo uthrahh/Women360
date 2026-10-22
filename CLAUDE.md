@@ -350,6 +350,25 @@ Today list. Mammography is described only as what WHO says (usually 50-69),
 because India has no national programme for it; the HPV-vaccination rollout was
 reported only by non-official outlets and is deliberately not stated.
 
+**Roles, demo accounts and reproductive records (latest pass):** each role has
+its own web area, chosen at sign-in by `lib/roleHome.ts` and guarded by
+`ProtectedRoute role=...`: women use `/app`, coaches `/coach` (the people who shared
+with them: summary charts and notes), administrators `/admin` (overview, users and
+roles, audit log, feedback, Learn content) inside `StaffShell`. Women grant and revoke
+coach access under Settings > Privacy & sharing (`CoachAccessTab`). `User.isDemo`
+marks the three shared evaluator logins created by `server/prisma/seedDemo.ts`
+(`npm run seed:demo`; on a hosted database only when `SEED_DEMO_ACCOUNTS=true`,
+which `render.yaml` sets). Their passwords are published in the project report, so
+they are deliberately low-power: the demo administrator is read-only, sees only demo
+accounts and is exempt from the production two-factor rule for that reason; none can
+change a password, delete the account, use two-factor or sign out everywhere
+(`middleware/demoGuard.ts`). Do not give a demo account more power without
+revisiting that. `ReproductiveHealth` (contraception, pregnancy status) is her own
+record and is never used to predict or advise. Steps are entered by hand; syncing from
+a watch needs a native Health Connect (Android) or HealthKit (iOS) integration and is
+not built. The landing and sign-in pages ping the API's health endpoint so the
+free-tier server wakes before sign-in.
+
 Known concrete defects to fix as part of any related work:
 - No `sitemap.xml` (needs the production domain), no terms of use page, no
   Open Graph image or canonical URLs (same reason). Per-route titles exist for
@@ -385,9 +404,9 @@ Known concrete defects to fix as part of any related work:
   (just a `senderLabel` display string and a `recipientId`), so this
   needs a data-model decision (a real conversation/thread model) before
   it can be implemented, not just a service method.
-- No role-selection UI anywhere in registration/onboarding — `Role` (woman
-  /coach/admin) is fully modeled and enforced server-side in `server/`,
-  but the frontend can currently only ever create a "woman" account.
+- Registration only ever creates a woman account. Coach accounts are made by an
+  administrator changing a role; administrator accounts only by an operator
+  (`npm run create-admin`), never through the API or UI.
 
 ## 4. SRS constraints that override generic assumptions
 

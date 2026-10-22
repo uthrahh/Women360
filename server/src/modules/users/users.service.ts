@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { publicUser } from "@/lib/publicUser";
-import type { LifeStage, SeniorEssentialKey } from "@prisma/client";
+import type { ContraceptionMethod, LifeStage, PregnancyStatus, SeniorEssentialKey } from "@prisma/client";
 
 const DEFAULT_ESSENTIALS: { key: SeniorEssentialKey; enabled: boolean }[] = [
   { key: "HEALTH", enabled: true },
@@ -26,6 +26,7 @@ export const usersService = {
       include: {
         healthProfile: true,
         emergencyContact: true,
+        reproductiveHealth: true,
         seniorEssentials: true,
         nutritionGoal: true,
         activityGoal: true,
@@ -58,6 +59,7 @@ export const usersService = {
       account: publicUser(u),
       healthProfile: u.healthProfile,
       emergencyContact: u.emergencyContact,
+      reproductiveHealth: u.reproductiveHealth,
       seniorEssentials: u.seniorEssentials,
       nutritionGoal: u.nutritionGoal,
       activityGoal: u.activityGoal,
@@ -83,6 +85,40 @@ export const usersService = {
       messages: u.receivedMessages,
       feedback: u.feedback,
     };
+  },
+
+  async getReproductiveHealth(userId: string) {
+    return prisma.reproductiveHealth.findUnique({ where: { userId } });
+  },
+
+  // Only the fields that are sent are changed; a null clears one. A due date means
+  // nothing unless she is pregnant, so it is dropped otherwise.
+  async saveReproductiveHealth(
+    userId: string,
+    input: {
+      contraception?: ContraceptionMethod | null;
+      pregnancyStatus?: PregnancyStatus | null;
+      expectedDueDate?: string | null;
+      notes?: string | null;
+    }
+  ) {
+    const existing = await prisma.reproductiveHealth.findUnique({ where: { userId } });
+    const status = input.pregnancyStatus === undefined ? existing?.pregnancyStatus ?? null : input.pregnancyStatus;
+    const due =
+      status !== "PREGNANT"
+        ? null
+        : input.expectedDueDate === undefined
+          ? existing?.expectedDueDate ?? null
+          : input.expectedDueDate
+            ? new Date(input.expectedDueDate)
+            : null;
+    const data = {
+      contraception: input.contraception === undefined ? existing?.contraception ?? null : input.contraception,
+      pregnancyStatus: status,
+      expectedDueDate: due,
+      notes: input.notes === undefined ? existing?.notes ?? null : input.notes,
+    };
+    return prisma.reproductiveHealth.upsert({ where: { userId }, create: { userId, ...data }, update: data });
   },
 
   async updateProfile(

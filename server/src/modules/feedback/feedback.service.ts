@@ -22,15 +22,17 @@ export const feedbackService = {
 
   // Operator view. Deliberately returns the account id, not name/email — an
   // admin who needs to follow up can look the id up in the user list.
-  async list({ page, pageSize }: { page: number; pageSize: number }) {
+  async list({ page, pageSize }: { page: number; pageSize: number }, demoOnly = false) {
+    const where = demoOnly ? { user: { isDemo: true } } : {};
     const [items, total] = await Promise.all([
       prisma.feedback.findMany({
+        where,
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
         select: { id: true, userId: true, rating: true, message: true, createdAt: true },
       }),
-      prisma.feedback.count(),
+      prisma.feedback.count({ where }),
     ]);
     return { items, total };
   },

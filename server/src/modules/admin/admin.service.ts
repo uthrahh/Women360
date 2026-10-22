@@ -4,9 +4,10 @@ import { recordAudit } from "@/lib/audit";
 import type { Role } from "@prisma/client";
 
 export const adminService = {
-  async listUsers(query: { page: number; pageSize: number; role?: Role; search?: string }) {
+  async listUsers(query: { page: number; pageSize: number; role?: Role; search?: string }, demoOnly = false) {
     const where = {
       deletedAt: null,
+      ...(demoOnly ? { isDemo: true } : {}),
       role: query.role,
       ...(query.search
         ? {
@@ -20,7 +21,7 @@ export const adminService = {
     const [items, total] = await Promise.all([
       prisma.user.findMany({
         where,
-        select: { id: true, name: true, email: true, role: true, onboarded: true, createdAt: true },
+        select: { id: true, name: true, email: true, role: true, onboarded: true, isDemo: true, createdAt: true },
         orderBy: { createdAt: "desc" },
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
@@ -97,8 +98,11 @@ export const adminService = {
     });
   },
 
-  async listAuditLog(query: { page: number; pageSize: number; action?: string }) {
-    const where = query.action ? { action: query.action } : {};
+  async listAuditLog(query: { page: number; pageSize: number; action?: string }, demoOnly = false) {
+    const where = {
+      ...(query.action ? { action: query.action } : {}),
+      ...(demoOnly ? { actor: { isDemo: true } } : {}),
+    };
     const [items, total] = await Promise.all([
       prisma.auditLog.findMany({
         where,
@@ -109,5 +113,28 @@ export const adminService = {
       prisma.auditLog.count({ where }),
     ]);
     return { items, total };
+  },
+
+  // The counts on the administrator's home screen. A demo administrator only ever
+  // counts demo accounts.
+  async overview(demoOnly = false) {
+    const scope = { deletedAt: null, ...(demoOnly ? { isDemo: true } : {}) };
+    const weekAgo = new Date(Date.now() - 7 * 86_400_000);
+    const [women, coaches, admins, joinedThisWeek, feedbackCount, articles, auditThisWeek] = await Promise.all([
+      prisma.user.count({ where: { ...scope, role: "WOMAN" } }),
+      prisma.user.count({ where: { ...scope, role: "COACH" } }),
+      prisma.user.count({ where: { ...scope, role: "ADMIN" } }),
+      prisma.user.count({ where: { ...scope, createdAt: { gte: weekAgo } } }),
+      prisma.feedback.count({ where: demoOnly ? { user: { isDemo: true } } : {} }),
+      prisma.learnArticle.count(),
+      prisma.auditLog.count({ where: { createdAt: { gte: weekAgo }, ...(demoOnly ? { actor: { isDemo: true } } : {}) } }),
+    ]);
+    return {
+      users: { women, coaches, admins, total: women + coaches + admins, joinedThisWeek },
+      feedbackCount,
+      articles,
+      auditEventsThisWeek: auditThisWeek,
+      scopedToDemo: demoOnly,
+    };
   },
 };

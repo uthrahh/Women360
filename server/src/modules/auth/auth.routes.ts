@@ -3,6 +3,7 @@ import { asyncHandler } from "@/lib/asyncHandler";
 import { validate } from "@/middleware/validate";
 import { requireAuth } from "@/middleware/auth";
 import { authRateLimiter } from "@/middleware/rateLimit";
+import { forbidDemo } from "@/middleware/demoGuard";
 import { created, noContent, ok } from "@/lib/response";
 import { authService } from "./auth.service";
 import { twoFactorService } from "./twoFactor.service";
@@ -61,6 +62,7 @@ authRouter.get(
 authRouter.post(
   "/2fa/setup",
   requireAuth,
+  forbidDemo,
   authRateLimiter,
   asyncHandler(async (req, res) => ok(res, await twoFactorService.beginSetup(req.user!.id)))
 );
@@ -68,6 +70,7 @@ authRouter.post(
 authRouter.post(
   "/2fa/confirm",
   requireAuth,
+  forbidDemo,
   authRateLimiter,
   validate({ body: twoFactorConfirmSchema }),
   asyncHandler(async (req, res) =>
@@ -78,6 +81,7 @@ authRouter.post(
 authRouter.post(
   "/2fa/disable",
   requireAuth,
+  forbidDemo,
   authRateLimiter,
   validate({ body: twoFactorReauthSchema }),
   asyncHandler(async (req, res) =>
@@ -88,6 +92,7 @@ authRouter.post(
 authRouter.post(
   "/2fa/backup-codes",
   requireAuth,
+  forbidDemo,
   authRateLimiter,
   validate({ body: twoFactorReauthSchema }),
   asyncHandler(async (req, res) =>
@@ -138,6 +143,7 @@ authRouter.post(
 authRouter.post(
   "/change-password",
   requireAuth,
+  forbidDemo,
   authRateLimiter,
   validate({ body: changePasswordSchema }),
   asyncHandler(async (req, res) => {
@@ -149,6 +155,7 @@ authRouter.post(
 authRouter.post(
   "/delete-account",
   requireAuth,
+  forbidDemo,
   authRateLimiter,
   validate({ body: deleteAccountSchema }),
   asyncHandler(async (req, res) => {
@@ -160,6 +167,7 @@ authRouter.post(
 authRouter.post(
   "/logout-all",
   requireAuth,
+  forbidDemo,
   asyncHandler(async (req, res) => {
     await authService.logoutEverywhere(req.user!.id, req.ip);
     return ok(res, { loggedOut: true });

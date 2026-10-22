@@ -9,6 +9,8 @@ export interface User {
   avatarInitials: string;
   lifeStage: "reproductive" | "perimenopause" | "menopause" | "postmenopause" | null;
   onboarded: boolean;
+  /** A shared demonstration account: it can look around but not change shared settings. */
+  isDemo?: boolean;
 }
 
 export interface SeniorEssential {
@@ -423,4 +425,98 @@ export interface ScreeningPlan {
   disclaimer: string;
   hasDateOfBirth: boolean;
   items: ScreeningItem[];
+}
+
+// --- Administration and coaching ---------------------------------------------
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  onboarded: boolean;
+  isDemo: boolean;
+  createdAt: string;
+}
+
+export interface AdminOverview {
+  users: { women: number; coaches: number; admins: number; total: number; joinedThisWeek: number };
+  feedbackCount: number;
+  articles: number;
+  auditEventsThisWeek: number;
+  scopedToDemo: boolean;
+}
+
+export interface AuditEvent {
+  id: string;
+  actorId: string | null;
+  actorRole: string | null;
+  action: string;
+  targetType: string | null;
+  targetId: string | null;
+  createdAt: string;
+}
+
+export interface FeedbackEntry {
+  id: string;
+  userId: string;
+  rating: number;
+  message: string | null;
+  createdAt: string;
+}
+
+export interface AdminArticle {
+  id: string;
+  title: string;
+  category: string;
+  readMins: number;
+  dek: string;
+  body: string | null;
+  publishedAt: string | null;
+}
+
+export interface CoachedWoman {
+  id: string;
+  name: string;
+  avatarInitials: string | null;
+  lifeStage: string | null;
+}
+
+export interface CoachNote {
+  id: string;
+  note: string;
+  visibleToWoman: boolean;
+  createdAt: string;
+}
+
+/** What a coach may see about one woman who has shared with them (never her health profile or medicines). */
+export interface CoachSummary {
+  goals: { id: string; title: string; kind: string; currentValue: number; targetValue: number; startValue: number | null; unit: string; completed: boolean }[];
+  wellbeing: { date: string; mood: number; stress: number; energy: number }[];
+  sleep: { date: string; durationHours: number; quality: number }[];
+  activity: { id: string; date: string; type: string; durationMinutes: number; intensity: string }[];
+  appointments: { id: string; title: string; date: string; time: string; location: string }[];
+}
+
+export interface SharedCoach {
+  id: string;
+  coach: { id: string; name: string; email: string };
+}
+
+export interface NoteFromCoach {
+  id: string;
+  note: string;
+  createdAt: string;
+  coach: { name: string };
+}
+
+export type ContraceptionMethod =
+  | "NONE" | "PILL" | "IUD_COPPER" | "IUD_HORMONAL" | "IMPLANT" | "INJECTION" | "CONDOM" | "NATURAL_METHODS" | "STERILISATION" | "OTHER";
+export type PregnancyStatus = "NOT_PREGNANT" | "TRYING_TO_CONCEIVE" | "PREGNANT" | "POSTPARTUM";
+
+export interface ReproductiveHealth {
+  contraception: ContraceptionMethod | null;
+  pregnancyStatus: PregnancyStatus | null;
+  expectedDueDate: string | null;
+  notes: string | null;
 }

@@ -34,9 +34,16 @@ export function clearTokens(): void {
   localStorage.removeItem(TOKENS_KEY);
 }
 
+export interface PageMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
 interface Envelope<T> {
   ok: boolean;
   data?: T;
+  meta?: PageMeta;
   error?: { code: string; message: string; details?: unknown };
 }
 
@@ -80,7 +87,17 @@ function getSharedRefresh(): Promise<string> {
   return refreshPromise;
 }
 
-export async function request<T>(path: string, init: RequestInit = {}, isRetry = false): Promise<T> {
+export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  return (await requestEnvelope<T>(path, init)).data as T;
+}
+
+/** For list endpoints that return pagination metadata beside the items. */
+export async function requestPage<T>(path: string, init: RequestInit = {}): Promise<{ items: T[]; meta: PageMeta }> {
+  const body = await requestEnvelope<T[]>(path, init);
+  return { items: body.data ?? [], meta: body.meta ?? { page: 1, pageSize: body.data?.length ?? 0, total: body.data?.length ?? 0 } };
+}
+
+async function requestEnvelope<T>(path: string, init: RequestInit = {}, isRetry = false): Promise<Envelope<T>> {
   const tokens = getTokens();
   const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
@@ -99,7 +116,7 @@ export async function request<T>(path: string, init: RequestInit = {}, isRetry =
       window.dispatchEvent(new Event("w360:session-expired"));
       throw new ApiError("Your session has expired. Please sign in again.", 401, "UNAUTHORIZED");
     }
-    return request<T>(path, init, true);
+    return requestEnvelope<T>(path, init, true);
   }
 
   if (res.status === 401) {
@@ -108,8 +125,22 @@ export async function request<T>(path: string, init: RequestInit = {}, isRetry =
   }
 
   if (!res.ok) throw await parseError(res);
-  if (res.status === 204) return undefined as T;
+  if (res.status === 204) return { ok: true } as Envelope<T>;
 
-  const body = (await res.json()) as Envelope<T>;
-  return body.data as T;
+  return (await res.json()) as Envelope<T>;
+}
+
+/**
+ * The free-tier API sleeps when idle and takes a while to wake. Calling its
+ * health endpoint as a page loads lets it wake while the visitor reads, so the
+ * first real request (signing in) is not the one that waits. The answer is
+ * ignored, and the request carries nothing.
+ */
+export function warmUpApi(): void {
+  try {
+    const origin = new URL(BASE_URL).origin;
+    void fetch(`${origin}/health`, { mode: "no-cors", cache: "no-store" }).catch(() => undefined);
+  } catch {
+    // an unusable base URL just means there is nothing to warm
+  }
 }
