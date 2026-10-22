@@ -1,5 +1,6 @@
-import { FormEvent } from "react";
+import { FormEvent, useEffect } from "react";
 import { useState } from "react";
+import { warmUpApi } from "@/services/apiClient";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "./AuthLayout";
 import { Input } from "@/components/ui/Input";
@@ -7,6 +8,7 @@ import { PasswordField } from "@/components/ui/PasswordField";
 import { Button } from "@/components/ui/Button";
 import { useApp } from "@/context/AppContext";
 import { isTwoFactorChallenge, type TwoFactorChallenge } from "@/services/authService";
+import { roleHome } from "@/lib/roleHome";
 import type { User } from "@/types";
 
 export default function LoginPage() {
@@ -18,8 +20,9 @@ export default function LoginPage() {
   // Set once the password was right but a code is still needed.
   const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null);
   const [code, setCode] = useState("");
+  useEffect(warmUpApi, []);
 
-  const finish = (user: User) => nav(user.onboarded ? "/app/dashboard" : "/onboarding");
+  const finish = (user: User) => nav(roleHome(user));
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

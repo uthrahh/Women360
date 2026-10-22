@@ -27,6 +27,9 @@ export async function requireAdminIp(req: Request, _res: Response, next: NextFun
 export async function requireAdminTwoFactor(req: Request, _res: Response, next: NextFunction) {
   if (!env.isProduction) return next();
   const user = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { twoFactorEnabled: true } });
+  // The shared demo administrator is read-only and sees only demo accounts, so it
+  // does not need a second factor (and evaluators could not use one).
+  if (req.user!.isDemo) return next();
   if (env.twoFactorAvailable && user?.twoFactorEnabled) return next();
   await recordSecurityEvent({ type: "admin_access_denied", userId: req.user!.id, role: "ADMIN", ip: req.ip, detail: { reason: "two_factor_required" } });
   const err = new ForbiddenError(

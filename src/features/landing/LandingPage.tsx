@@ -1,10 +1,11 @@
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Activity, Apple, CalendarHeart, Moon, Plus, ShieldCheck, Smile } from "lucide-react";
 import AnimatedContent from "@/components/reactbits/AnimatedContent";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { buttonClasses } from "@/components/ui/Button";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { warmUpApi } from "@/services/apiClient";
 import { PersonaTabs } from "./PersonaTabs";
 import { cn } from "@/lib/utils";
 
@@ -248,6 +249,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export default function LandingPage() {
   usePageTitle();
+  useEffect(warmUpApi, []);
   return (
     <div className="min-h-screen bg-[var(--w360-bg)] text-[var(--w360-text)] overflow-x-clip">
       <Grain />

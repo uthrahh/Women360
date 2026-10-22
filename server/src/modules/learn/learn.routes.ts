@@ -3,6 +3,7 @@ import { asyncHandler } from "@/lib/asyncHandler";
 import { validate } from "@/middleware/validate";
 import { requireAuth } from "@/middleware/auth";
 import { requireRole } from "@/middleware/rbac";
+import { blockDemoWrites } from "@/middleware/demoGuard";
 import { created, noContent, ok } from "@/lib/response";
 import { learnService } from "./learn.service";
 import { createArticleSchema, idParamSchema, updateArticleSchema } from "./learn.validation";
@@ -26,6 +27,7 @@ learnRouter.get(
 learnRouter.post(
   "/",
   requireRole("ADMIN"),
+  blockDemoWrites,
   validate({ body: createArticleSchema }),
   asyncHandler(async (req, res) => created(res, await learnService.create(req.body)))
 );
@@ -33,6 +35,7 @@ learnRouter.post(
 learnRouter.patch(
   "/:id",
   requireRole("ADMIN"),
+  blockDemoWrites,
   validate({ params: idParamSchema, body: updateArticleSchema }),
   asyncHandler(async (req, res) => ok(res, await learnService.update(req.params.id, req.body)))
 );
@@ -40,6 +43,7 @@ learnRouter.patch(
 learnRouter.delete(
   "/:id",
   requireRole("ADMIN"),
+  blockDemoWrites,
   validate({ params: idParamSchema }),
   asyncHandler(async (req, res) => {
     await learnService.remove(req.params.id);

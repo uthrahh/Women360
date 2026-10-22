@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 export interface AuthenticatedUser {
   id: string;
   role: Role;
+  isDemo: boolean;
 }
 
 declare global {
@@ -34,7 +35,7 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     const payload = verifyAccessToken(header.slice("Bearer ".length));
     const user = await prisma.user.findFirst({
       where: { id: payload.sub, deletedAt: null },
-      select: { id: true, role: true, sessionsValidAfter: true },
+      select: { id: true, role: true, isDemo: true, sessionsValidAfter: true },
     });
     if (!user) return next(new UnauthorizedError());
     // A password change or "sign out everywhere" sets sessionsValidAfter;
@@ -44,7 +45,7 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     if (user.sessionsValidAfter && issuedAtMs < user.sessionsValidAfter.getTime()) {
       return next(new UnauthorizedError("Your session has ended. Please sign in again."));
     }
-    req.user = { id: user.id, role: user.role };
+    req.user = { id: user.id, role: user.role, isDemo: user.isDemo };
     return next();
   } catch {
     return next(new UnauthorizedError("Your session has expired. Please sign in again."));

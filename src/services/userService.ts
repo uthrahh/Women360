@@ -1,5 +1,5 @@
 import { request } from "./apiClient";
-import type { User } from "@/types";
+import type { ReproductiveHealth, User } from "@/types";
 import { toFrontendUser } from "./mappers";
 
 export interface EmergencyContact {
@@ -17,6 +17,9 @@ export const userService = {
   /** Saves only the lists that are sent; an empty list means "answered: none". */
   updateHealthProfile: (input: HealthProfileInput) =>
     request("/users/me/health-profile", { method: "PUT", body: JSON.stringify(input) }),
+  getReproductiveHealth: () => request<ReproductiveHealth | null>("/users/me/reproductive-health"),
+  saveReproductiveHealth: (input: Partial<ReproductiveHealth>) =>
+    request<ReproductiveHealth>("/users/me/reproductive-health", { method: "PUT", body: JSON.stringify(input) }),
   /** Everything held about this account, as the JSON the server returns. */
   exportData: () => request<Record<string, unknown>>("/users/me/export"),
   async updateProfile(patch: { name?: string; dateOfBirth?: string }): Promise<User> {

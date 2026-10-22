@@ -33,6 +33,26 @@ enum LifeStage {
   POSTMENOPAUSE
 }
 
+enum ContraceptionMethod {
+  NONE
+  PILL
+  IUD_COPPER
+  IUD_HORMONAL
+  IMPLANT
+  INJECTION
+  CONDOM
+  NATURAL_METHODS
+  STERILISATION
+  OTHER
+}
+
+enum PregnancyStatus {
+  NOT_PREGNANT
+  TRYING_TO_CONCEIVE
+  PREGNANT
+  POSTPARTUM
+}
+
 model User {
   id             String    @id @default(cuid())
   email          String    @unique
@@ -56,6 +76,11 @@ model User {
   twoFactorEnabled   Boolean   @default(false)
   twoFactorSecretEnc String?
   twoFactorLastStep  Int?
+  // A shared demonstration account (see prisma/seedDemo.ts) whose credentials are
+  // published for evaluators. It can look around but cannot change shared
+  // settings, delete itself or change its own password, and a demo administrator
+  // only ever sees other demo accounts.
+  isDemo             Boolean   @default(false)
 
   twoFactorBackupCodes TwoFactorBackupCode[]
   refreshTokens        RefreshToken[]
@@ -74,6 +99,7 @@ model User {
   activityEntries   ActivityEntry[]
   stepsLogs         StepsLog[]
   activityQuickLogs ActivityQuickLog[]
+  reproductiveHealth ReproductiveHealth?
   activityQuickLogSeeded Boolean @default(false)
   sleepEntries      SleepEntry[]
   wellbeingEntries  WellbeingEntry[]
@@ -149,6 +175,19 @@ model AuthThrottle {
 // ---------------------------------------------------------------------------
 // Health profile & preferences (Settings)
 // ---------------------------------------------------------------------------
+
+// What she chooses to record about contraception and pregnancy. Informational
+// only: nothing here is used to predict fertility or to advise on either.
+model ReproductiveHealth {
+  id              String                @id @default(cuid())
+  userId          String                @unique
+  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contraception   ContraceptionMethod?
+  pregnancyStatus PregnancyStatus?
+  expectedDueDate DateTime?             @db.Date
+  notes           String?
+  updatedAt       DateTime              @updatedAt
+}
 
 model HealthProfile {
   id            String   @id @default(cuid())

@@ -10,6 +10,7 @@ export function publicUser(user: {
   lifeStage: string | null;
   avatarInitials: string | null;
   onboarded: boolean;
+  isDemo?: boolean;
 }) {
   return {
     id: user.id,
@@ -20,5 +21,6 @@ export function publicUser(user: {
     lifeStage: user.lifeStage,
     avatarInitials: user.avatarInitials,
     onboarded: user.onboarded,
+    isDemo: user.isDemo ?? false,
   };
 }

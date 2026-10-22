@@ -17,6 +17,7 @@ import { useApp } from "@/context/AppContext";
 import type { Appointment, Medication, MedicationAdherence, MedicationDose, VitalMeasurement } from "@/types";
 import { Pill, CalendarClock, Plus, Check, X as XIcon } from "lucide-react";
 import { PreventiveCare } from "./PreventiveCare";
+import { ReproductiveHealthTab } from "./ReproductiveHealthTab";
 
 interface MedFormValues {
   name: string;
@@ -550,6 +551,10 @@ export default function HealthPage() {
           {
             id: "preventive", label: "Preventive care",
             content: <PreventiveCare />,
+          },
+          {
+            id: "reproductive", label: "Reproductive health",
+            content: <ReproductiveHealthTab />,
           },
         ]}
       />

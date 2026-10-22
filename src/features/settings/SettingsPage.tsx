@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useNavigate } from "react-router-dom";
 import { SecurityTab } from "./SecurityTab";
 import { FeedbackTab } from "./FeedbackTab";
+import { CoachAccessTab } from "./CoachAccessTab";
 import { YourDataTab } from "./YourDataTab";
 import { ProfileCard } from "./ProfileCard";
 
@@ -18,7 +19,7 @@ export default function SettingsPage() {
   const [params] = useSearchParams();
   const nav = useNavigate();
   const toast = useToast();
-  const [emailReminders, setEmailReminders] = useState(true);
+  const [emailReminders, setEmailReminders] = useState(false);
 
   const [name, setName] = useState(auth.user?.name ?? "");
   const [dob, setDob] = useState(auth.user?.dateOfBirth ?? "");
@@ -196,27 +197,23 @@ export default function SettingsPage() {
           {
             id: "privacy", label: "Privacy & sharing",
             content: (
-              <Card><CardBody className="pt-5 flex flex-col gap-5">
-                <ToggleRow
-                  title="Share data with wellness coach"
-                  description="Not set up yet — no coach can see your data through this switch. Sharing will be granted per coach once this screen is built."
-                  checked={false}
-                  disabled
-                  onChange={() => {}}
-                />
-                <ToggleRow
-                  title="Email reminders"
-                  description="Preventive care and goal reminders by email."
-                  checked={emailReminders}
-                  onChange={() => {
-                    setEmailReminders((v) => !v);
-                    toast.show(!emailReminders ? "Email reminders enabled" : "Email reminders turned off");
-                  }}
-                />
-                <p className="text-xs text-[var(--w360-text-muted)]">
-                  These two preferences aren't saved to your account yet — they'll reset if you sign in elsewhere.
-                </p>
-              </CardBody></Card>
+              <div className="flex flex-col gap-5">
+                <CoachAccessTab />
+                <Card><CardBody className="pt-5 flex flex-col gap-3">
+                  <ToggleRow
+                    title="Email reminders"
+                    description="Preventive care and goal reminders by email."
+                    checked={emailReminders}
+                    onChange={() => {
+                      setEmailReminders((v) => !v);
+                      toast.show(!emailReminders ? "Email reminders enabled" : "Email reminders turned off");
+                    }}
+                  />
+                  <p className="text-xs text-[var(--w360-text-muted)]">
+                    This preference isn't saved to your account yet, and no emails are sent. Reminders appear in your Today list when you open Women360.
+                  </p>
+                </CardBody></Card>
+              </div>
             ),
           },
         ]}

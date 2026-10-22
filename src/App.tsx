@@ -3,6 +3,7 @@ import { Suspense, lazy } from "react";
 import { AppProvider, useApp } from "@/context/AppContext";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AppShell } from "@/components/layout/AppShell";
+import { StaffShell } from "@/components/layout/StaffShell";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { LoadingState, ErrorState } from "@/components/ui/states";
 import { isNativeApp } from "@/lib/platform";
@@ -31,6 +32,8 @@ const ReportsPage = lazy(() => import("@/features/reports/ReportsPage"));
 const LearnPage = lazy(() => import("@/features/learn/LearnPage"));
 const MessagesPage = lazy(() => import("@/features/messages/MessagesPage"));
 const SettingsPage = lazy(() => import("@/features/settings/SettingsPage"));
+const AdminPage = lazy(() => import("@/features/admin/AdminPage"));
+const CoachPage = lazy(() => import("@/features/coach/CoachPage"));
 import NotFoundPage from "@/pages/NotFoundPage";
 
 // In device-only testing mode there's no login screen — the app should go
@@ -72,6 +75,17 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
+
+            <Route element={<ProtectedRoute role="admin" />}>
+              <Route element={<StaffShell />}>
+                <Route path="/admin" element={<Suspense fallback={<LoadingState label="Loading" />}><AdminPage /></Suspense>} />
+              </Route>
+            </Route>
+            <Route element={<ProtectedRoute role="coach" />}>
+              <Route element={<StaffShell />}>
+                <Route path="/coach" element={<Suspense fallback={<LoadingState label="Loading" />}><CoachPage /></Suspense>} />
+              </Route>
+            </Route>
 
             <Route element={<ProtectedRoute />}>
               <Route path="/app" element={<AppShell />}>

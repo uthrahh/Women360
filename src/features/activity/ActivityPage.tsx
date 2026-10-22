@@ -14,7 +14,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 import { localDateISO } from "@/services/mappers";
 
 /** A small inline form to add one of her own shortcuts: what, how long, how hard. */
@@ -141,6 +141,8 @@ export default function ActivityPage() {
   const [detail, setDetail] = useState<ActivityEntry | null>(null);
   const [editing, setEditing] = useState(false);
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
+  const [stepsEditing, setStepsEditing] = useState(false);
+  const [stepsValue, setStepsValue] = useState("");
   const toast = useToast();
 
   const reload = () => activityService.getSummary().then(setData);
@@ -221,6 +223,22 @@ export default function ActivityPage() {
       setDetail(null);
       setEditing(false);
       toast.show("Activity updated");
+    } catch (err) {
+      fail(err, "Could not save that. Please try again.");
+    }
+  }
+
+  async function saveSteps() {
+    const n = Number(stepsValue);
+    if (stepsValue === "" || !Number.isInteger(n) || n < 0 || n > 200_000) {
+      toast.show("Enter a whole number of steps, up to 200,000.", { tone: "error" });
+      return;
+    }
+    try {
+      await activityService.logSteps(n);
+      await reload();
+      setStepsEditing(false);
+      toast.show("Steps updated");
     } catch (err) {
       fail(err, "Could not save that. Please try again.");
     }
@@ -331,6 +349,28 @@ export default function ActivityPage() {
               <p className="text-sm text-[var(--w360-text-muted)]">Steps today</p>
               <p className="text-2xl font-display font-semibold tabular-nums">{data.steps.toLocaleString()}</p>
               <p className="text-xs text-[var(--w360-text-muted)]">Goal: {data.stepsGoal.toLocaleString()}</p>
+              {stepsEditing ? (
+                <div className="flex items-center gap-1 mt-2">
+                  <div className="w-40">
+                    <NumberField label="Steps today" max={200000} step={100} startAt={data.steps || 5000} value={stepsValue} onChange={setStepsValue} />
+                  </div>
+                  <button onClick={saveSteps} aria-label="Save steps" className="p-1 rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"><Check size={14} /></button>
+                  <button onClick={() => setStepsEditing(false)} aria-label="Cancel" className="p-1 rounded text-[var(--w360-text-muted)] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"><X size={14} /></button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      setStepsValue(String(data.steps || ""));
+                      setStepsEditing(true);
+                    }}
+                    className="text-xs font-medium text-maroon-700 dark:text-maroon-200 mt-1"
+                  >
+                    Update steps
+                  </button>
+                  <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">Entered by hand. Syncing from a watch isn't available yet.</p>
+                </>
+              )}
             </div>
           </CardBody>
         </Card>

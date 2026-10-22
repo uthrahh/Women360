@@ -28,3 +28,13 @@ export const toggleSeniorEssentialSchema = z.object({
   key: seniorEssentialKeySchema,
   enabled: z.boolean(),
 });
+
+export const reproductiveHealthSchema = z.object({
+  contraception: z
+    .enum(["NONE", "PILL", "IUD_COPPER", "IUD_HORMONAL", "IMPLANT", "INJECTION", "CONDOM", "NATURAL_METHODS", "STERILISATION", "OTHER"])
+    .nullable()
+    .optional(),
+  pregnancyStatus: z.enum(["NOT_PREGNANT", "TRYING_TO_CONCEIVE", "PREGNANT", "POSTPARTUM"]).nullable().optional(),
+  expectedDueDate: z.string().date().nullable().optional(),
+  notes: z.string().trim().max(500).nullable().optional(),
+});

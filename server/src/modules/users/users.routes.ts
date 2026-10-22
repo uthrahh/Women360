@@ -7,6 +7,7 @@ import { usersService } from "./users.service";
 import {
   toggleSeniorEssentialSchema,
   updateEmergencyContactSchema,
+  reproductiveHealthSchema,
   updateProfileSchema,
 } from "./users.validation";
 import { z } from "zod";
@@ -43,6 +44,17 @@ usersRouter.put(
     const contact = await usersService.upsertEmergencyContact(req.user!.id, req.body);
     return ok(res, contact);
   })
+);
+
+usersRouter.get(
+  "/me/reproductive-health",
+  asyncHandler(async (req, res) => ok(res, await usersService.getReproductiveHealth(req.user!.id)))
+);
+
+usersRouter.put(
+  "/me/reproductive-health",
+  validate({ body: reproductiveHealthSchema }),
+  asyncHandler(async (req, res) => ok(res, await usersService.saveReproductiveHealth(req.user!.id, req.body)))
 );
 
 usersRouter.get(

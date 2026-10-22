@@ -53,6 +53,10 @@ export const activityService = {
     });
     return toFrontendActivityEntry(apiEntry);
   },
+  /** Sets today's step count (entered by hand until a device is connected). */
+  async logSteps(steps: number): Promise<void> {
+    await request("/activity/steps", { method: "POST", body: JSON.stringify({ date: localDateISO(), steps }) });
+  },
   async deleteEntry(id: string): Promise<void> {
     await request(`/activity/entries/${id}`, { method: "DELETE" });
   },
