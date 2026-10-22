@@ -1,8 +1,10 @@
 {
-  "projectTitle": "Women360: a cloud-native women's health and wellness SaaS platform",
+  "projectTitle": "A cloud-native women's health and wellness SaaS platform",
+  "course": "BCSE408L: Cloud Computing",
+  "slot": "D1",
+  "faculty": "Dr. Dinakaran M",
   "member1": "Pavithra Uthrah R K, 23BCE1818",
   "member2": "Asmi Singh, 23BCE1645",
-  "faculty": "[FACULTY / SLOT - TO FILL]",
   "liveUrl": "https://women-360.vercel.app",
   "apiUrl": "https://women360-api.onrender.com",
   "githubUrl": "https://github.com/uthrahh/Women360",

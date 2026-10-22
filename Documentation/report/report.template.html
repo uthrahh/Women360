@@ -6,6 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+  @page :first { @bottom-center { content: none; } }
   @page {
     size: A4;
     margin: 18mm 16mm 20mm 16mm;
@@ -33,6 +34,7 @@
   .note { border-left: 3pt solid var(--maroon); background: var(--warm); padding: 6pt 10pt; margin: 8pt 0; font-size: 9pt; }
   figure { margin: 8pt 0 12pt; break-inside: avoid; text-align: center; }
   figure img, figure svg { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 4pt; }
+  figure > svg { max-height: 82mm; width: auto; }
   figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 3pt; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; }
   .grid2 figure { margin: 4pt 0 8pt; }
@@ -41,27 +43,57 @@
   .part { color: #5C3D06; font-weight: 600; }
   .gap { color: #7A1F17; font-weight: 600; }
   .pb { break-before: page; }
+  /* Front page */
+  .front { min-height: 255mm; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding-top: 6mm; break-after: page; }
+  .front .logo-band { background: var(--maroon); border-radius: 6pt; padding: 7mm 14mm; margin-bottom: 9mm; }
+  .front .logo { height: 24mm; width: auto; display: block; border: 0; border-radius: 0; }
+  .front .inst { font: 600 14pt Fraunces, Georgia, serif; color: var(--maroon); margin: 0 0 2mm; }
+  .front .course { font-size: 11pt; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 16mm; }
+  .front .ftitle { font-size: 40pt; margin: 0 0 3mm; }
+  .front .fsub { font-size: 12pt; color: var(--muted); max-width: 120mm; margin: 0 0 8mm; }
+  .front .report { font: 600 13pt Fraunces, Georgia, serif; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 3mm 12mm; margin: 0 0 14mm; }
+  .front table { width: 150mm; text-align: left; font-size: 10pt; }
+  .front th { width: 34%; }
+  /* Contents */
+  .toc { break-after: page; }
+  .toc h1 { font-size: 22pt; margin-bottom: 8pt; }
+  .toc ol { list-style: none; margin: 0; padding: 0; }
+  .toc li { margin: 0; border-bottom: 1px dotted var(--line); }
+  .toc a { display: flex; justify-content: space-between; gap: 12pt; padding: 5pt 2pt; color: var(--ink); font-size: 10.5pt; }
+  .toc a:hover { color: var(--maroon); }
+  .toc .num { color: var(--maroon); font-weight: 600; margin-right: 8pt; display: inline-block; min-width: 18pt; }
+  .toc .pg { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .toc .hint { font-size: 8.5pt; color: var(--muted); margin-top: 8pt; }
   .small { font-size: 8.5pt; color: var(--muted); }
 </style>
 </head>
 <body>
 
-<div class="cover">
-  <div class="kicker">BCSE408L · Cloud Computing · Final Project Report · Academic Year 2026–2027 · VIT Chennai</div>
-  <h1>Women360</h1>
-  <p style="margin:0">A cloud-native women's health and wellness SaaS platform</p>
-</div>
+<section class="front">
+  {{LOGO}}
+  <p class="inst">Vellore Institute of Technology, Chennai</p>
+  <p class="course">{{course}}</p>
+  <h1 class="ftitle">Women360</h1>
+  <p class="fsub">{{projectTitle}}</p>
+  <p class="report">Final Project Report</p>
+  <table>
+    <tr><th>Course</th><td>{{course}}</td></tr>
+    <tr><th>Slot</th><td>{{slot}}</td></tr>
+    <tr><th>Faculty</th><td>{{faculty}}</td></tr>
+    <tr><th>Team member 1</th><td>{{member1}}</td></tr>
+    <tr><th>Team member 2</th><td>{{member2}}</td></tr>
+    <tr><th>Live application</th><td><a href="{{liveUrl}}">{{liveUrl}}</a></td></tr>
+    <tr><th>GitHub repository</th><td><a href="{{githubUrl}}">{{githubUrl}}</a></td></tr>
+  </table>
+</section>
 
-<table>
-  <tr><th style="width:34%">Project Title</th><td>{{projectTitle}}</td></tr>
-  <tr><th>Team Member 1: Name &amp; Reg. No.</th><td>{{member1}}</td></tr>
-  <tr><th>Team Member 2: Name &amp; Reg. No.</th><td>{{member2}}</td></tr>
-  <tr><th>Faculty / Slot</th><td>{{faculty}}</td></tr>
-  <tr><th>Public Live URL</th><td><a href="{{liveUrl}}">{{liveUrl}}</a> (API: <a href="{{apiUrl}}/health">{{apiUrl}}</a>)</td></tr>
-  <tr><th>GitHub Repository URL</th><td><a href="{{githubUrl}}">{{githubUrl}}</a></td></tr>
-  <tr><th>Submission Deadline</th><td>28/10/2026</td></tr>
-</table>
-<div class="note"><b>Important:</b> This report is a supporting document for project evaluation. Project marks are based on the reviews and final demonstration completed during the semester, and not on this report submission alone.</div>
+<section class="toc">
+  <h1>Contents</h1>
+  <ol>
+{{TOC}}
+  </ol>
+  <p class="hint">Select a section to go to it.</p>
+</section>
 
 <h2>1. Abstract</h2>
 <p>Women's health tools are usually single-purpose: one app for periods, another for food, another for sleep or exercise. None of them looks across the data a person already records, most assume one fixed cycle length, and almost all are designed for a young, confident phone user. Women360 is a cloud-native SaaS platform that brings menstrual health, nutrition, activity, sleep, mental wellbeing, physical health measurements, medicines, goals and habits into one responsive web application for women from 18 to 100 and beyond.</p>
@@ -116,7 +148,7 @@
 <h3>6.2 Summary</h3>
 <p>The SRS defines 24 functional requirements (FR-01 to FR-24), 10 non-functional requirements (NFR-01 to NFR-10), 10 UI requirements (UI-01 to UI-10), 6 business rules and 10 acceptance criteria. Sections 7 and 8 report, requirement by requirement, what has been implemented and what has not.</p>
 
-<h2 class="pb">7. Functional Requirements</h2>
+<h2>7. Functional Requirements</h2>
 <p>Status key: <span class="pass">Implemented</span> · <span class="part">Partial</span>.</p>
 <table>
   <tr><th style="width:8%">ID</th><th style="width:20%">Requirement</th><th style="width:12%">Status</th><th>What exists</th></tr>
@@ -288,7 +320,7 @@
   <tr><td>Admin</td><td>Overview counts, user list with search and role filter, role changes and deactivation, audit log, feedback review and Learn content management, with IP allow-list and two-factor guards. Screen: <code>/admin</code>.</td></tr>
 </table>
 
-<h2 class="pb">13. User Interface Design</h2>
+<h2>13. User Interface Design</h2>
 <p>The interface uses a deep maroon palette on warm neutrals with a serif display face (Fraunces) and Inter for text, defined once as design tokens with a real dark mode. UI primitives (buttons, cards, modals, tabs, toasts, empty, loading and error states) are shared across every page. Figures 3 to 24 are screenshots of the running application; the data shown is synthetic.</p>
 <div class="grid2">
   <figure><img src="img/landing-hero.jpg"><figcaption>Figure 3. Public landing page (live site).</figcaption></figure>
@@ -365,7 +397,7 @@
   <li><b>Security headers:</b> the Content-Security-Policy restricts scripts to the site itself and connections to the site and the API.</li>
 </ul>
 
-<h2 class="pb">15. Testing</h2>
+<h2>15. Testing</h2>
 <p>The server has {{serverTests}} and the front end {{frontendTests}}, all passing when run on {{testRunDate}}. Server tests are integration tests: Supertest sends real HTTP requests to the application backed by a real PostgreSQL test database (not mocks), so authentication, validation, ownership checks and SQL are exercised together.</p>
 <table>
   <tr><th style="width:28%">Area</th><th style="width:12%">Tests</th><th>What is covered</th></tr>
@@ -472,8 +504,8 @@
 <h3>C. Migrations</h3>
 <p>init · meal/sleep notes and goal progress · sleep quality scale and nutrition decimals · medication adherence · cycle context tags · auth hardening · two-factor · goal check-ins and feedback · health profile medicines · habits and goal kinds · screening records · activity quick log · demo flag and reproductive health.</p>
 
-<h2 class="pb">21. Project Access Details</h2>
-<div class="note"><b>Mandatory:</b> the application is accessible through the Internet. The credentials below are shared demonstration accounts created for evaluation, not personal accounts. The first request after the service has been idle can take about 20 to 30 seconds while the free-tier API wakes up; please wait for the page to respond.</div>
+<h2>21. Project Access Details</h2>
+
 <table>
   <tr><th style="width:34%">Live Application URL</th><td><a href="{{liveUrl}}">{{liveUrl}}</a></td></tr>
   <tr><th>Test User (woman) Username / Login</th><td>{{testUser}}</td></tr>
@@ -492,12 +524,6 @@
 </table>
 <p class="small">For safety the demonstration accounts cannot change their password, delete themselves, turn on two-factor or sign out everywhere, so the logins stay valid for every evaluator. Full administrator accounts exist only for the operator and are created from the command line.</p>
 
-<h2>Final Submission Checklist</h2>
-<p>☐ Final Project Report &nbsp; ☐ Public Live URL &nbsp; ☐ Valid testing login credentials included &nbsp; ☐ GitHub Repository URL with source code &nbsp; ☐ PPT / Project Presentation &nbsp; ☐ Working application demonstration &nbsp; ☐ Both team members prepared to explain the implementation</p>
-
-<h2>Declaration</h2>
-<p>We confirm that the submitted project is our team's work, that the information and links provided are accurate, and that we can explain the implementation during evaluation. We understand the project guidelines regarding academic integrity and responsible use of AI tools.</p>
-<p style="margin-top:26pt">Team Member 1: ______________________ &nbsp;&nbsp;&nbsp;&nbsp; Team Member 2: ______________________</p>
 
 </body>
 </html>
