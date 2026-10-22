@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Women360: Final Project Report (BCSE408L)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm 16mm;
+    @bottom-center { content: "Women360 · BCSE408L Final Project Report · " counter(page); font: 8pt Inter, sans-serif; color: #665A4E; }
+  }
+  :root { --maroon: #6B1D30; --ink: #171310; --muted: #665A4E; --line: #E2D9CF; --wash: #F7EAED; --warm: #F5EFE8; }
+  * { box-sizing: border-box; }
+  body { font: 10pt/1.55 Inter, "Segoe UI", sans-serif; color: var(--ink); margin: 0; }
+  h1, h2, h3 { font-family: Fraunces, Georgia, serif; font-weight: 600; color: var(--maroon); line-height: 1.25; }
+  h1 { font-size: 24pt; margin: 0 0 4pt; }
+  h2 { font-size: 14pt; margin: 22pt 0 6pt; border-bottom: 1px solid var(--line); padding-bottom: 3pt; break-after: avoid; }
+  h3 { font-size: 11pt; margin: 12pt 0 4pt; break-after: avoid; }
+  p { margin: 0 0 7pt; }
+  ul, ol { margin: 0 0 7pt; padding-left: 16pt; }
+  li { margin-bottom: 2pt; }
+  a { color: var(--maroon); text-decoration: none; }
+  code { font: 8.6pt Consolas, "Courier New", monospace; background: var(--warm); padding: 0 2pt; border-radius: 2pt; }
+  mark { background: #FFE88A; color: #3a2d00; padding: 0 2pt; border-radius: 2pt; }
+  table { border-collapse: collapse; width: 100%; margin: 4pt 0 10pt; font-size: 9pt; }
+  th, td { border: 1px solid var(--line); padding: 4pt 6pt; vertical-align: top; text-align: left; }
+  th { background: var(--warm); font-weight: 600; }
+  tr { break-inside: avoid; }
+  .cover { border: 1px solid var(--line); border-radius: 6pt; padding: 14pt 16pt; background: var(--wash); margin-bottom: 10pt; }
+  .cover .kicker { font-size: 8.5pt; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .note { border-left: 3pt solid var(--maroon); background: var(--warm); padding: 6pt 10pt; margin: 8pt 0; font-size: 9pt; }
+  figure { margin: 8pt 0 12pt; break-inside: avoid; text-align: center; }
+  figure img, figure svg { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 4pt; }
+  figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 3pt; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; }
+  .grid2 figure { margin: 4pt 0 8pt; }
+  .phone img { max-height: 105mm; width: auto; }
+  .pass { color: #1F4A22; font-weight: 600; }
+  .part { color: #5C3D06; font-weight: 600; }
+  .gap { color: #7A1F17; font-weight: 600; }
+  .pb { break-before: page; }
+  .small { font-size: 8.5pt; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="kicker">BCSE408L · Cloud Computing · Final Project Report · Academic Year 2026–2027 · VIT Chennai</div>
+  <h1>Women360</h1>
+  <p style="margin:0">A cloud-native women's health and wellness SaaS platform</p>
+</div>
+
+<table>
+  <tr><th style="width:34%">Project Title</th><td>{{projectTitle}}</td></tr>
+  <tr><th>Team Member 1: Name &amp; Reg. No.</th><td>{{member1}}</td></tr>
+  <tr><th>Team Member 2: Name &amp; Reg. No.</th><td>{{member2}}</td></tr>
+  <tr><th>Faculty / Slot</th><td>{{faculty}}</td></tr>
+  <tr><th>Public Live URL</th><td><a href="{{liveUrl}}">{{liveUrl}}</a> (API: <a href="{{apiUrl}}/health">{{apiUrl}}</a>)</td></tr>
+  <tr><th>GitHub Repository URL</th><td><a href="{{githubUrl}}">{{githubUrl}}</a></td></tr>
+  <tr><th>Submission Deadline</th><td>28/10/2026</td></tr>
+</table>
+<div class="note"><b>Important:</b> This report is a supporting document for project evaluation. Project marks are based on the reviews and final demonstration completed during the semester, and not on this report submission alone.</div>
+
+<h2>1. Abstract</h2>
+<p>Women's health tools are usually single-purpose: one app for periods, another for food, another for sleep or exercise. None of them looks across the data a person already records, most assume one fixed cycle length, and almost all are designed for a young, confident phone user. Women360 is a cloud-native SaaS platform that brings menstrual health, nutrition, activity, sleep, mental wellbeing, physical health measurements, medicines, goals and habits into one responsive web application for women from 18 to 100 and beyond.</p>
+<p>Its primary goal is <b>preventive care</b>: it turns what a woman logs into early, non-diagnostic prompts, including a screening schedule based on India's national programme and WHO guidance, and observations drawn from her own baseline rather than from population averages. Its second requirement is <b>ease of use</b>: one-tap logging, templates and sensible defaults, and a Senior Mode that replaces the dashboard with a handful of large, plain-language tiles.</p>
+<p>The system has three roles (Woman, Wellness Coach, Admin) enforced on the server. It is a React 18 + TypeScript single-page application hosted on Vercel, talking over HTTPS to a Node.js/Express REST API (about 110 endpoints) hosted on Render, which stores data in a managed PostgreSQL database on Supabase through the Prisma ORM. Source control, automated checks and deployment are driven from GitHub. The application is live at the URL above.</p>
+
+<h2>2. Introduction</h2>
+<p>Women360 started as the BCSE408L Cloud Computing project and has been built as a real product rather than a coursework demonstration. The Software Requirements Specification (SRS) fixes the scope: secure registration and login, role-based access, profile management, health and wellness tracking with full CRUD, dashboards and reports, notifications, a cloud database, REST APIs, and public deployment on a cloud platform. The project must demonstrate cloud concepts, and is not considered complete if it runs only on localhost.</p>
+<p>The product is deliberately a <i>wellness, tracking and decision-support</i> application. It does not diagnose, prescribe, or present a screening schedule as a clinical instruction (SRS §12).</p>
+
+<h2>3. Problem Statement</h2>
+<ul>
+  <li><b>Fragmentation.</b> A woman's cycle, sleep, food, movement and mood affect one another, but each is tracked in a separate place, so nobody can ask "why is my period late?" or "why has my mood been low?" against her own data.</li>
+  <li><b>False precision.</b> Fixed assumptions (a 28-day cycle, ovulation on day 14) are wrong for many people and unsafe when read as a contraception signal, especially with irregular cycles, thyroid conditions, PCOS or perimenopause.</li>
+  <li><b>Tracking fatigue.</b> Retyping the same meal or activity every day is the most common reason people stop. Shame-based feedback (red numbers, lost streaks) can also encourage unhealthy behaviour.</li>
+  <li><b>Prevention is invisible.</b> Most tools record what has happened; few remind a woman which check-ups are due at her age, or in her country.</li>
+  <li><b>Age and accessibility.</b> Interfaces are designed for the young. A woman in her seventies needs a different structure, not just a bigger font.</li>
+  <li><b>Privacy.</b> Health data is sensitive; users should be able to see, export and erase it, and share it only deliberately.</li>
+</ul>
+
+<h2>4. Existing System</h2>
+<p>Existing consumer apps fall into separate categories: cycle trackers, calorie counters, sleep trackers, fitness apps, meditation apps and medication reminders. Each treats its own metric in isolation and has a recognised weakness:</p>
+<table>
+  <tr><th style="width:26%">Approach</th><th>Limitation addressed by Women360</th></tr>
+  <tr><td>Cycle trackers</td><td>Single-date predictions from a fixed formula; weak for irregular cycles and perimenopause; fertile-window estimates easily misread as contraception.</td></tr>
+  <tr><td>Calorie / nutrition apps</td><td>Every entry needs a full form; red/green feedback and streaks; no link to how the person feels or sleeps.</td></tr>
+  <tr><td>Sleep apps</td><td>A single score can make people anxious about a number and contradict how they actually feel.</td></tr>
+  <tr><td>Medication reminders</td><td>Reminders without any view of adherence over time or its link to wellbeing.</td></tr>
+  <tr><td>Generic health dashboards</td><td>Not designed for older users; no preventive-care schedule; limited control over data export or deletion.</td></tr>
+</table>
+
+<h2>5. Proposed System</h2>
+<p>Women360 is a single cloud-hosted application with a stateless REST API and a managed database. Its main advantages:</p>
+<ul>
+  <li><b>One place for the whole picture,</b> with a cross-domain "explain this" engine that compares recent sleep, food, activity, hydration, stress and weight against <i>that person's own</i> baseline and reports ranked, disclaimed observations. A late period is never simply labelled "maybe pregnant", and low mood is never simply "PMS".</li>
+  <li><b>Honest cycle predictions:</b> median and spread over her own cycles, shown as a range with a confidence level, with a persistent "not a birth control method" notice.</li>
+  <li><b>Preventive screening:</b> a per-age schedule (blood pressure, blood sugar, oral, breast and cervical screening) with named sources, "next due" dates and one-tap recording.</li>
+  <li><b>Low-effort logging:</b> one-tap quick logs, "log again" meal chips, one-tap habit ticks, forms that never pre-fill an unentered value.</li>
+  <li><b>Senior Mode:</b> a structural change to navigation and information architecture, not a zoom.</li>
+  <li><b>Privacy by design:</b> every record belongs to one user, data can be exported and the account erased, and coach access is role-limited.</li>
+  <li><b>Cloud-native delivery:</b> free-tier managed services, git-driven deployment, database migrations applied automatically on deploy, and a CI pipeline.</li>
+</ul>
+
+<h2>6. Requirement Analysis</h2>
+<h3>6.1 Users</h3>
+<table>
+  <tr><th style="width:20%">Role</th><th>Needs (from SRS §2.3 and §7)</th></tr>
+  <tr><td>Woman</td><td>Register and log in; manage her profile; create, view, edit and delete her own records; see dashboards, trends and reports; manage goals; receive reminders; control coach access.</td></tr>
+  <tr><td>Wellness Coach</td><td>Authenticate; see only the information a woman has authorised; add coaching notes.</td></tr>
+  <tr><td>Admin</td><td>Manage users and roles; manage educational content; review audit logs and feedback; configure the system.</td></tr>
+</table>
+<h3>6.2 Summary</h3>
+<p>The SRS defines 24 functional requirements (FR-01 to FR-24), 10 non-functional requirements (NFR-01 to NFR-10), 10 UI requirements (UI-01 to UI-10), 6 business rules and 10 acceptance criteria. Sections 7 and 8 report, requirement by requirement, what has been implemented and what has not.</p>
+
+<h2 class="pb">7. Functional Requirements</h2>
+<p>Status key: <span class="pass">Implemented</span> · <span class="part">Partial</span> · <span class="gap">Not in the web UI</span>.</p>
+<table>
+  <tr><th style="width:8%">ID</th><th style="width:20%">Requirement</th><th style="width:12%">Status</th><th>What exists</th></tr>
+  <tr><td>FR-01</td><td>Registration</td><td class="pass">Implemented</td><td>Name, email, date of birth and password; password policy (12+ characters, not common, no sequences, not derived from name or email) checked on client and server.</td></tr>
+  <tr><td>FR-02</td><td>Login</td><td class="pass">Implemented</td><td>JWT access and refresh tokens, silent refresh on expiry, database-backed lockout, "sign out everywhere", optional TOTP two-factor.</td></tr>
+  <tr><td>FR-03</td><td>Role-based access</td><td class="part">Partial</td><td>Woman, Coach and Admin enforced by server middleware and covered by tests. The web UI exposes the Woman role only.</td></tr>
+  <tr><td>FR-04</td><td>Profile management</td><td class="pass">Implemented</td><td>Settings: profile, date of birth, life stage, emergency contact, accessibility and Senior Mode essentials.</td></tr>
+  <tr><td>FR-05</td><td>Health history</td><td class="part">Partial</td><td>Allergies and current medicines captured at onboarding and stored; conditions and family history exist in the data model and API.</td></tr>
+  <tr><td>FR-06</td><td>Menstrual tracking</td><td class="pass">Implemented</td><td>Period/flow, symptoms, pain, energy, mood, context tags; calendar, trends and range prediction with confidence.</td></tr>
+  <tr><td>FR-07</td><td>Reproductive health</td><td class="part">Partial</td><td>Life stage (reproductive, perimenopause, menopause, postmenopause) shapes predictions and prompts. Contraception and pregnancy records are not implemented.</td></tr>
+  <tr><td>FR-08</td><td>Nutrition tracking</td><td class="pass">Implemented</td><td>Meals with macros (one decimal), hydration, fruit and vegetables, goals, "log again" chips.</td></tr>
+  <tr><td>FR-09</td><td>Physical activity</td><td class="pass">Implemented</td><td>Entries with type, duration and intensity; editable one-tap quick log; weekly chart. Step counts are stored; automatic sync from a watch is not built.</td></tr>
+  <tr><td>FR-10</td><td>Sleep tracking</td><td class="pass">Implemented</td><td>Duration, bedtime, wake time, 1–5 self-rating, bedtime consistency.</td></tr>
+  <tr><td>FR-11</td><td>Mental wellbeing</td><td class="pass">Implemented</td><td>Mood, stress and energy; guided breathing exercise. Social-connection indicators are not captured.</td></tr>
+  <tr><td>FR-12</td><td>Physical health</td><td class="pass">Implemented</td><td>Weight, blood pressure, resting heart rate; medicines with dose times and adherence; appointments.</td></tr>
+  <tr><td>FR-13</td><td>Preventive care</td><td class="pass">Implemented</td><td>Screening schedule from India (NPCDCS) and WHO sources, next-due dates, one-tap records, appointments, in-app reminders. Marked as not yet reviewed by a clinician.</td></tr>
+  <tr><td>FR-14</td><td>Goals</td><td class="pass">Implemented</td><td>Three goal kinds (reach a number, build a total, do one thing) plus separate daily habits with streaks.</td></tr>
+  <tr><td>FR-15</td><td>Dashboard</td><td class="pass">Implemented</td><td>Cycle card, this-week rings, upcoming appointments and a to-do list built from the person's own data.</td></tr>
+  <tr><td>FR-16</td><td>Trend analysis</td><td class="pass">Implemented</td><td>Insights page, cross-metric correlations over 90 days (only strong ones shown), baseline-deviation explainers.</td></tr>
+  <tr><td>FR-17</td><td>Search and filtering</td><td class="part">Partial</td><td>Date-range filters, report periods, Learn library browsing. There is no global search.</td></tr>
+  <tr><td>FR-18</td><td>Notifications</td><td class="part">Partial</td><td>In-app notification centre and in-app reminders. No push or email delivery.</td></tr>
+  <tr><td>FR-19</td><td>Reports</td><td class="pass">Implemented</td><td>7/30/90-day health report generated from stored data and exported as a PDF.</td></tr>
+  <tr><td>FR-20</td><td>Coach module</td><td class="gap">API only</td><td>Assignment, sharing consent, limited summary and coach notes are implemented and tested on the server. There is no coach screen in the web UI.</td></tr>
+  <tr><td>FR-21</td><td>Administration</td><td class="gap">API only</td><td>User list, role change, deletion, audit log, feedback review and educational-content management exist as protected endpoints, with optional IP allow-list and required two-factor. No admin screen. Admin accounts are created only by a command-line script.</td></tr>
+  <tr><td>FR-22</td><td>CRUD</td><td class="pass">Implemented</td><td>Create, read, update and delete across the tracking modules, each with confirmation on delete.</td></tr>
+  <tr><td>FR-23</td><td>Cloud database</td><td class="pass">Implemented</td><td>Supabase-hosted PostgreSQL.</td></tr>
+  <tr><td>FR-24</td><td>REST APIs</td><td class="pass">Implemented</td><td>About 110 endpoints under <code>/api/v1</code> across 19 modules, used by the application.</td></tr>
+</table>
+
+<h2>8. Non-Functional Requirements</h2>
+<table>
+  <tr><th style="width:18%">Requirement</th><th>How it is addressed</th></tr>
+  <tr><td>Security (NFR-01)</td><td>Passwords hashed with Argon2id. Short-lived access tokens (15 minutes) and refresh tokens (30 days). Helmet security headers, CORS allow-list, rate limiting (20 requests per 15 minutes on the authentication endpoints, 120 per minute on the API). Every request body validated with zod. Sign-in lockout (5 per account, 40 per IP, 15 minutes) stored in the database so it survives restarts. Optional TOTP two-factor with AES-256-GCM-encrypted secrets and backup codes. Admin accounts cannot be created through the API. Security-relevant events are written to an audit log without emails or secrets. The web app sends a Content-Security-Policy and related headers. CI runs a dependency audit.</td></tr>
+  <tr><td>Privacy (NFR-02)</td><td>Each record carries its owner; every service checks ownership before reading or changing it (tested for cross-user access). A person can download everything held about her account and permanently erase it. Coaches see a limited summary and never the health profile or medicines.</td></tr>
+  <tr><td>Scalability (NFR-03)</td><td>Stateless API instances behind a platform load balancer; managed PostgreSQL with indexes on the per-user query paths; static front end served from a CDN. Moving to a paid tier or more instances needs no code change.</td></tr>
+  <tr><td>Availability (NFR-04)</td><td>Managed platforms with a health-check endpoint. On the free tier the API sleeps when idle; the first request after a pause took about 22 seconds in a test on 22 October 2026, and later requests were fast.</td></tr>
+  <tr><td>Performance (NFR-05)</td><td>Route-level code splitting (heavy pages such as Reports are loaded only when visited); data fetched per page; the landing page loads no WebGL.</td></tr>
+  <tr><td>Reliability (NFR-06)</td><td>Schema changes ship as committed migrations applied on deploy; CI fails if the schema and the migrations disagree. Errors return a uniform envelope and failed saves show an error rather than silently dropping data.</td></tr>
+  <tr><td>Usability (NFR-07)</td><td>One-tap logging, templates, progressive disclosure, plain language, no streak guilt, honest empty states, and Senior Mode.</td></tr>
+  <tr><td>Responsiveness (NFR-08)</td><td>Layouts checked at phone and desktop widths with no horizontal scrolling; a bottom navigation bar on phones.</td></tr>
+  <tr><td>Maintainability (NFR-09)</td><td>Strict TypeScript on both sides, ESLint, one folder per domain on the server and a service layer on the client, 305 automated tests, and a written engineering standard in the repository.</td></tr>
+  <tr><td>Portability (NFR-10)</td><td>All configuration through environment variables; a Render blueprint (<code>render.yaml</code>) and a step-by-step <code>DEPLOYMENT.md</code> reproduce the deployment from the repository.</td></tr>
+</table>
+
+<h2>9. System Architecture</h2>
+<figure>
+<svg viewBox="0 0 760 560" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Segoe UI, sans-serif" font-size="12">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#171310"/></marker></defs>
+  <rect x="10" y="10" width="740" height="150" rx="10" fill="#F7EAED" stroke="#6B1D30"/>
+  <text x="24" y="32" font-weight="600" fill="#6B1D30">Client tier: React 18 + TypeScript + Vite single-page app (Vercel)</text>
+  <rect x="26" y="46" width="160" height="46" rx="6" fill="#fff" stroke="#171310"/><text x="106" y="66" text-anchor="middle">Pages (features/*)</text><text x="106" y="82" text-anchor="middle" font-size="10" fill="#665A4E">dashboard, cycle, nutrition...</text>
+  <rect x="204" y="46" width="160" height="46" rx="6" fill="#fff" stroke="#171310"/><text x="284" y="66" text-anchor="middle">UI components</text><text x="284" y="82" text-anchor="middle" font-size="10" fill="#665A4E">design system, Senior Mode</text>
+  <rect x="382" y="46" width="160" height="46" rx="6" fill="#fff" stroke="#171310"/><text x="462" y="66" text-anchor="middle">App context</text><text x="462" y="82" text-anchor="middle" font-size="10" fill="#665A4E">auth, theme, Senior Mode</text>
+  <rect x="560" y="46" width="170" height="46" rx="6" fill="#fff" stroke="#171310"/><text x="645" y="66" text-anchor="middle">Services + mappers</text><text x="645" y="82" text-anchor="middle" font-size="10" fill="#665A4E">only layer that calls the API</text>
+  <rect x="26" y="104" width="704" height="40" rx="6" fill="#fff" stroke="#171310"/><text x="378" y="128" text-anchor="middle">apiClient.request(): Bearer token, JSON envelope, shared refresh-and-retry on 401</text>
+
+  <line x1="380" y1="160" x2="380" y2="196" stroke="#171310" marker-end="url(#a)"/>
+  <text x="392" y="182" fill="#665A4E">HTTPS, JSON, Bearer JWT, CORS allow-list</text>
+
+  <rect x="10" y="200" width="740" height="236" rx="10" fill="#EEF5F4" stroke="#2C6E6A"/>
+  <text x="24" y="222" font-weight="600" fill="#1F4F4C">API tier: Node.js + Express + TypeScript (Render)</text>
+  <rect x="26" y="236" width="704" height="44" rx="6" fill="#fff" stroke="#171310"/>
+  <text x="378" y="254" text-anchor="middle">Middleware chain: helmet · CORS · request logger · rate limiter · requireAuth (JWT) · requireRole (RBAC) · zod validate</text>
+  <text x="378" y="270" text-anchor="middle" font-size="10" fill="#665A4E">admin routes add an optional IP allow-list and required two-factor</text>
+  <rect x="26" y="292" width="704" height="76" rx="6" fill="#fff" stroke="#171310"/>
+  <text x="378" y="310" text-anchor="middle" font-weight="600">Domain modules: routes → validation → service (business logic and ownership checks)</text>
+  <text x="378" y="328" text-anchor="middle" font-size="10.5">auth · users · cycle · nutrition · activity · sleep · wellbeing · health · goals · habits</text>
+  <text x="378" y="344" text-anchor="middle" font-size="10.5">screening · insights · reports · notifications · messages · learn · coach · admin · feedback</text>
+  <rect x="26" y="380" width="704" height="44" rx="6" fill="#fff" stroke="#171310"/><text x="378" y="406" text-anchor="middle">Prisma ORM client: the only layer that talks to SQL · lib: JWT, Argon2id, TOTP, audit log</text>
+
+  <line x1="380" y1="436" x2="380" y2="472" stroke="#171310" marker-end="url(#a)"/>
+  <text x="392" y="458" fill="#665A4E">Prisma, TLS connection</text>
+  <rect x="190" y="476" width="380" height="68" rx="10" fill="#EEF4EA" stroke="#3B7A3A"/>
+  <text x="380" y="500" text-anchor="middle" font-weight="600" fill="#24501F">Persistence tier: PostgreSQL (Supabase)</text>
+  <text x="380" y="520" text-anchor="middle" font-size="10.5">37 models · 10 enums · 12 committed migrations</text>
+</svg>
+<figcaption>Figure 1. System architecture: three tiers with a single, narrow responsibility per layer.</figcaption>
+</figure>
+<p><b>Request flow.</b> Logging a meal, for example: a page component calls <code>nutritionService</code>; <code>apiClient.request()</code> adds the Bearer token and sends HTTPS to <code>/api/v1/nutrition/meals</code>; Express runs the middleware chain; the zod schema rejects malformed input; <code>nutrition.service.ts</code> applies the business rules and writes through Prisma; the API answers with <code>{ ok, data }</code> or <code>{ ok: false, error }</code> and the page updates.</p>
+<p><b>Boundaries.</b> No component calls <code>fetch</code> directly. A shared <code>mappers.ts</code> is the single place that translates the server's <code>UPPER_SNAKE_CASE</code> enums and date formats into the client's vocabulary. On the server, routes only wire HTTP to handlers, services hold the logic, and Prisma is the only code that touches SQL.</p>
+
+<h2>10. Cloud Architecture</h2>
+<figure>
+<svg viewBox="0 0 780 360" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Segoe UI, sans-serif" font-size="12">
+  <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#171310"/></marker></defs>
+
+  <rect x="10" y="125" width="140" height="100" rx="8" fill="#F4F1FA" stroke="#5B4B8A"/>
+  <text x="80" y="150" text-anchor="middle" font-weight="600">Users</text>
+  <text x="80" y="172" text-anchor="middle" font-size="10.5">Browser (desktop,</text><text x="80" y="186" text-anchor="middle" font-size="10.5">tablet, phone)</text><text x="80" y="200" text-anchor="middle" font-size="10.5">Android app wrapper</text>
+
+  <rect x="240" y="15" width="230" height="100" rx="8" fill="#FFF4EA" stroke="#B5651D"/>
+  <text x="355" y="39" text-anchor="middle" font-weight="600">Vercel</text>
+  <text x="355" y="59" text-anchor="middle" font-size="10.5">Static hosting + global CDN</text>
+  <text x="355" y="75" text-anchor="middle" font-size="10.5">React SPA build · SPA rewrite</text>
+  <text x="355" y="91" text-anchor="middle" font-size="10.5">CSP and security headers · noindex</text>
+
+  <rect x="240" y="145" width="230" height="115" rx="8" fill="#EEF5F4" stroke="#2C6E6A"/>
+  <text x="355" y="169" text-anchor="middle" font-weight="600">Render (Singapore)</text>
+  <text x="355" y="189" text-anchor="middle" font-size="10.5">Node.js web service · free plan</text>
+  <text x="355" y="205" text-anchor="middle" font-size="10.5">health check /health</text>
+  <text x="355" y="221" text-anchor="middle" font-size="10.5">secrets: DB URL, JWT keys, CORS</text>
+  <text x="355" y="237" text-anchor="middle" font-size="10.5">build runs prisma migrate deploy</text>
+
+  <rect x="590" y="145" width="180" height="115" rx="8" fill="#EEF4EA" stroke="#3B7A3A"/>
+  <text x="680" y="169" text-anchor="middle" font-weight="600">Supabase</text>
+  <text x="680" y="189" text-anchor="middle" font-size="10.5">Managed PostgreSQL</text>
+  <text x="680" y="205" text-anchor="middle" font-size="10.5">TLS from the API</text>
+  <text x="680" y="221" text-anchor="middle" font-size="10.5">no hard expiry on the</text><text x="680" y="235" text-anchor="middle" font-size="10.5">free tier</text>
+
+  <rect x="240" y="295" width="230" height="55" rx="8" fill="#F7EAED" stroke="#6B1D30"/>
+  <text x="355" y="318" text-anchor="middle" font-weight="600">GitHub</text>
+  <text x="355" y="336" text-anchor="middle" font-size="10.5">Repository + Actions CI</text>
+
+  <line x1="150" y1="140" x2="238" y2="80" stroke="#171310" marker-end="url(#b)"/>
+  <text x="14" y="104" font-size="10" fill="#665A4E" stroke="#fff" stroke-width="3" paint-order="stroke">1  HTTPS: load the app</text>
+  <line x1="150" y1="190" x2="238" y2="200" stroke="#171310" marker-end="url(#b)"/>
+  <text x="14" y="252" font-size="10" fill="#665A4E" stroke="#fff" stroke-width="3" paint-order="stroke">2  HTTPS REST /api/v1</text>
+  <line x1="470" y1="200" x2="588" y2="200" stroke="#171310" marker-end="url(#b)"/>
+  <text x="496" y="190" font-size="10" fill="#665A4E" stroke="#fff" stroke-width="3" paint-order="stroke">3  SQL over TLS</text>
+
+  <line x1="355" y1="295" x2="355" y2="262" stroke="#171310" marker-end="url(#b)"/>
+  <text x="364" y="283" font-size="10" fill="#665A4E" stroke="#fff" stroke-width="3" paint-order="stroke">push to main: deploys API</text>
+  <path d="M470 322 H490 V65 H472" fill="none" stroke="#171310" stroke-dasharray="4 3" marker-end="url(#b)"/>
+  <text x="500" y="326" font-size="10" fill="#665A4E" stroke="#fff" stroke-width="3" paint-order="stroke">push to main: deploys front end</text>
+</svg>
+<figcaption>Figure 2. Cloud architecture and deployment topology.</figcaption>
+</figure>
+<table>
+  <tr><th style="width:18%">Layer</th><th style="width:18%">Service</th><th>Role and reason</th></tr>
+  <tr><td>Front end</td><td>Vercel</td><td>Hosts the static React build on a CDN, rewrites every route to the SPA, and sends the Content-Security-Policy and other headers (see <code>vercel.json</code>). Deploys on every push to <code>main</code>.</td></tr>
+  <tr><td>API</td><td>Render</td><td>Runs the Express service as a long-lived Node process (not serverless functions). The blueprint <code>render.yaml</code> sets the build (<code>npm ci --include=dev</code>, Prisma generate, TypeScript build, <code>prisma migrate deploy</code>), the start command, the health check and the environment variables.</td></tr>
+  <tr><td>Database</td><td>Supabase</td><td>Managed PostgreSQL, an option the SRS approves (§8.2). Chosen because its free tier does not expire after 30 days.</td></tr>
+  <tr><td>Source and CI</td><td>GitHub</td><td>Version control and a workflow that runs lint, type-check, tests and build for the server (against a PostgreSQL service container) and lint, type-check, tests and build for the front end.</td></tr>
+  <tr><td>Mobile (optional)</td><td>Capacitor</td><td>An Android wrapper that loads the live site, so a phone app and the website always show the same version.</td></tr>
+</table>
+
+<h2>11. Database Design</h2>
+<p>The data model is a relational PostgreSQL schema of 37 models and 10 enums defined in <code>server/prisma/schema.prisma</code> and delivered as 12 committed migrations. Every personal record has a <code>userId</code> foreign key with cascade delete, which is what makes "erase my account" a single operation.</p>
+<table>
+  <tr><th style="width:20%">Group</th><th style="width:34%">Models</th><th>Purpose and key relations</th></tr>
+  <tr><td>Identity and security</td><td>User, RefreshToken, PasswordResetToken, TwoFactorBackupCode, AuthThrottle, AuditLog</td><td>Account, role (WOMAN, COACH, ADMIN), life stage, session tokens, sign-in lockout counters and an audit trail.</td></tr>
+  <tr><td>Profile and health</td><td>HealthProfile, EmergencyContact, SeniorEssentialPreference, VitalMeasurement, Medication, MedicationLog, Appointment</td><td>One-to-one profile data; measurements; medicines with dose times; per-dose taken or skipped log; appointments.</td></tr>
+  <tr><td>Cycle</td><td>CycleProfile, CycleEntry</td><td>Her averages and one entry per logged day (period, flow, symptoms, context tags).</td></tr>
+  <tr><td>Nutrition</td><td>NutritionGoal, MealEntry, HydrationLog, FruitVegLog</td><td>Daily goals and logged meals, water and servings.</td></tr>
+  <tr><td>Activity</td><td>ActivityGoal, ActivityEntry, ActivityQuickLog, StepsLog</td><td>Goals, logged activity, her own one-tap shortcuts, daily steps.</td></tr>
+  <tr><td>Sleep and mind</td><td>SleepEntry, WellbeingEntry</td><td>One entry per day each (1–5 quality; 0–4 mood, stress, energy).</td></tr>
+  <tr><td>Goals and habits</td><td>Goal, Habit, HabitLog, GoalCheckIn (retired)</td><td>Goals by kind (reach, total, one-off); habits with one log row per day done. Progress and streaks are always computed, never stored.</td></tr>
+  <tr><td>Prevention</td><td>ScreeningRecord</td><td>When she last had each screening; the schedule itself lives in code with its sources.</td></tr>
+  <tr><td>Content and communication</td><td>LearnArticle, Notification, Message, Report, Feedback</td><td>Educational content, in-app notifications and messages, generated report snapshots, product feedback.</td></tr>
+  <tr><td>Coaching</td><td>CoachAssignment, CoachNote</td><td>Consent link between a woman and a coach, and coach notes (optionally visible to her).</td></tr>
+</table>
+<p><b>Integrity.</b> Required fields and ranges are validated by zod before any write; relations use foreign keys with cascade delete; unique constraints stop duplicate daily rows (one sleep entry, one habit log, one steps log per day). A CI step fails if the schema file differs from what the migrations produce.</p>
+
+<h2>12. Module Description</h2>
+<table>
+  <tr><th style="width:20%">Module</th><th>Responsibility</th></tr>
+  <tr><td>Authentication and users</td><td>Register, login, refresh, logout, sign out everywhere, password reset, two-factor, profile, emergency contact, data export and account deletion.</td></tr>
+  <tr><td>Cycle</td><td>Daily entries, calendar of phases, statistics over her own cycles, range prediction with a confidence level, context tags that exclude unusual cycles.</td></tr>
+  <tr><td>Nutrition</td><td>Meals, daily totals computed from the rows, hydration, fruit and vegetables, recent-meal shortcuts.</td></tr>
+  <tr><td>Activity</td><td>Entries, weekly summary, steps, goals, editable quick log.</td></tr>
+  <tr><td>Sleep and wellbeing</td><td>Daily entries, consistency and trend charts, breathing exercise for low mood.</td></tr>
+  <tr><td>Health</td><td>Vitals, medicines with adherence over 7 or 30 days, appointments.</td></tr>
+  <tr><td>Goals and habits</td><td>Goal kinds with computed progress; habits with day or week streaks, amounts and fixable past days.</td></tr>
+  <tr><td>Screening</td><td>Guideline registry (rules, intervals, sources), per-user status and next-due dates, one-tap records.</td></tr>
+  <tr><td>Insights</td><td>Cross-metric correlations and the "explain this" engine for late periods and low mood.</td></tr>
+  <tr><td>Reports</td><td>Snapshots of a chosen period (nutrition, sleep, cycle, activity, wellbeing, goals) and a client-side PDF.</td></tr>
+  <tr><td>Notifications, messages, learn</td><td>In-app notification centre, messages, educational articles (create, update and delete restricted to Admin).</td></tr>
+  <tr><td>Coach</td><td>Women grant and revoke access; coaches read a limited summary and add notes; every view is audited.</td></tr>
+  <tr><td>Admin</td><td>List and manage users and roles, audit log, feedback review, with IP allow-list and two-factor guards.</td></tr>
+</table>
+
+<h2 class="pb">13. User Interface Design</h2>
+<p>The interface uses a deep maroon palette on warm neutrals with a serif display face (Fraunces) and Inter for text, defined once as design tokens with a real dark mode. UI primitives (buttons, cards, modals, tabs, toasts, empty, loading and error states) are shared across every page. Figures 3 to 17 are screenshots of the running application; the demonstration data is synthetic.</p>
+<div class="grid2">
+  <figure><img src="img/landing-hero.jpg"><figcaption>Figure 3. Public landing page (live site).</figcaption></figure>
+  <figure><img src="img/landing-life-stages.jpg"><figcaption>Figure 4. Life-stage tabs, 18 to 100.</figcaption></figure>
+  <figure><img src="img/dashboard.jpg"><figcaption>Figure 5. Dashboard.</figcaption></figure>
+  <figure><img src="img/cycle.jpg"><figcaption>Figure 6. Cycle: a range with a confidence note.</figcaption></figure>
+  <figure><img src="img/nutrition.jpg"><figcaption>Figure 7. Nutrition with "log again" chips.</figcaption></figure>
+  <figure><img src="img/activity.jpg"><figcaption>Figure 8. Activity with the one-tap quick log.</figcaption></figure>
+  <figure><img src="img/sleep.jpg"><figcaption>Figure 9. Sleep.</figcaption></figure>
+  <figure><img src="img/habits.jpg"><figcaption>Figure 10. Habits: one-tap ticks and streaks.</figcaption></figure>
+  <figure><img src="img/goals.jpg"><figcaption>Figure 11. Goals by kind.</figcaption></figure>
+  <figure><img src="img/preventive.jpg"><figcaption>Figure 12. Preventive care schedule.</figcaption></figure>
+  <figure><img src="img/insights.jpg"><figcaption>Figure 13. Insights.</figcaption></figure>
+  <figure><img src="img/reports.jpg"><figcaption>Figure 14. Reports.</figcaption></figure>
+  <figure><img src="img/settings.jpg"><figcaption>Figure 15. Settings and profile.</figcaption></figure>
+  <figure><img src="img/senior-mode.jpg"><figcaption>Figure 16. Senior Mode: large essentials instead of the full dashboard.</figcaption></figure>
+</div>
+<div class="grid2">
+  <figure class="phone"><img src="img/mobile-dashboard.jpg"><figcaption>Figure 17. Phone layout (390 px wide) with the bottom navigation bar.</figcaption></figure>
+  <div>
+    <h3>Responsive and accessible by design</h3>
+    <ul>
+      <li>Desktop shows a sidebar; phones show a bottom bar; Senior Mode swaps the structure completely.</li>
+      <li>No horizontal scrolling at phone (375 to 390 px) and desktop widths (checked while building each page).</li>
+      <li>Semantic HTML, labelled inputs, visible focus, keyboard-operable controls and screen-reader announcements for status messages.</li>
+      <li>Animations respect the reduced-motion setting.</li>
+      <li>Light and dark themes follow the device unless the person chooses one.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>14. Implementation</h2>
+<table>
+  <tr><th style="width:22%">Area</th><th>Technology</th></tr>
+  <tr><td>Front end</td><td>React 18, TypeScript, Vite 5, Tailwind CSS 3, React Router, Recharts, GSAP (scroll reveals), jsPDF (report PDF)</td></tr>
+  <tr><td>Back end</td><td>Node.js 20, Express 4, TypeScript, zod validation, Helmet, CORS, rate limiting, Argon2, JSON Web Tokens</td></tr>
+  <tr><td>Database</td><td>PostgreSQL (Supabase), Prisma 5 ORM and migrations</td></tr>
+  <tr><td>Testing and quality</td><td>Vitest, Supertest, ESLint, strict TypeScript, GitHub Actions</td></tr>
+  <tr><td>Cloud</td><td>Vercel, Render, Supabase, GitHub; Capacitor for the optional Android wrapper</td></tr>
+</table>
+<h3>API conventions</h3>
+<p>All endpoints live under <code>/api/v1</code>. Responses use one envelope: <code>{ "ok": true, "data": ... }</code> or <code>{ "ok": false, "error": { "code", "message" } }</code>. Validation failures return 422, missing or invalid tokens 401, ownership or role violations 403, unknown records 404, and rate-limited requests 429.</p>
+<table>
+  <tr><th style="width:20%">Module</th><th>Representative endpoints</th></tr>
+  <tr><td>Auth</td><td><code>POST /auth/register</code>, <code>/auth/login</code>, <code>/auth/refresh</code>, <code>/auth/logout</code>, <code>/auth/delete-account</code></td></tr>
+  <tr><td>Users</td><td><code>GET/PATCH /users/me</code>, <code>/users/me/export</code>, <code>/users/me/health-profile</code>, <code>/users/me/emergency-contact</code></td></tr>
+  <tr><td>Cycle</td><td><code>GET /cycle/summary</code>, <code>PUT/DELETE /cycle/entries/:date</code>, <code>PUT /cycle/profile</code></td></tr>
+  <tr><td>Nutrition</td><td><code>GET/POST /nutrition/meals</code>, <code>POST /nutrition/hydration</code>, <code>GET /nutrition/recent-meals</code></td></tr>
+  <tr><td>Activity</td><td><code>GET /activity/summary</code>, <code>POST/PATCH/DELETE /activity/entries</code>, <code>GET/POST/DELETE /activity/quick-log</code></td></tr>
+  <tr><td>Goals and habits</td><td><code>GET/POST/PATCH/DELETE /goals</code>, <code>/habits</code>, <code>PUT/DELETE /habits/:id/logs/:date</code></td></tr>
+  <tr><td>Screening</td><td><code>GET /screening</code>, <code>POST /screening/:id/records</code>, <code>DELETE /screening/:id/records/:recordId</code></td></tr>
+  <tr><td>Insights and reports</td><td><code>GET /insights</code>, <code>/insights/cycle-delay</code>, <code>/insights/low-mood</code>, <code>POST /reports</code></td></tr>
+  <tr><td>Coach and admin</td><td><code>GET /coach/assigned-women</code>, <code>/coach/women/:id/summary</code>, <code>GET /admin/users</code>, <code>PATCH /admin/users/:id/role</code>, <code>GET /admin/audit-log</code></td></tr>
+</table>
+<h3>Cloud-related components</h3>
+<ul>
+  <li><b>Configuration:</b> database URL, JWT secrets, CORS origins and the optional two-factor key are environment variables on Render; the front end gets only the public API base URL from Vercel. No secret is in the repository.</li>
+  <li><b>Migrations on deploy:</b> the Render build runs <code>prisma migrate deploy</code>, so a push that changes the schema also updates the cloud database.</li>
+  <li><b>Health check:</b> <code>GET /health</code> is used by Render and by the deployment test.</li>
+  <li><b>Database-backed lockout:</b> sign-in attempt counters live in PostgreSQL because the free-tier API sleeps and an in-memory counter would reset.</li>
+  <li><b>Security headers:</b> the Content-Security-Policy restricts scripts to the site itself and connections to the site and the API.</li>
+</ul>
+
+<h2 class="pb">15. Testing</h2>
+<p>The server has {{serverTests}} and the front end {{frontendTests}}, all passing when run on {{testRunDate}}. Server tests are integration tests: Supertest sends real HTTP requests to the application backed by a real PostgreSQL test database (not mocks), so authentication, validation, ownership checks and SQL are exercised together.</p>
+<table>
+  <tr><th style="width:28%">Area</th><th style="width:12%">Tests</th><th>What is covered</th></tr>
+  <tr><td>Authentication and security</td><td>73</td><td>Lockout and rate limits, password policy, token issue and expiry, sign out everywhere, two-factor (TOTP, backup codes), admin guards.</td></tr>
+  <tr><td>Roles and privacy</td><td>15</td><td>Coach assignment and consent, cross-user access refused (403), data export contains no credentials, account deletion requires the password.</td></tr>
+  <tr><td>Cycle and insights</td><td>56</td><td>Regular, irregular and perimenopausal cycles; thin-data handling; baseline-deviation detection; pregnancy prompt suppressed after menopause; correlations.</td></tr>
+  <tr><td>Tracking modules</td><td>88</td><td>Nutrition totals and decimals, sleep, activity and quick log, medicines and adherence, goals by kind, habits and streaks, backfilled days.</td></tr>
+  <tr><td>Preventive care</td><td>18</td><td>Age ranges, due and up-to-date logic, month-end dates, "not recorded" never reported as overdue, ownership.</td></tr>
+  <tr><td>Validation and misc.</td><td>23</td><td>Rejected malformed input, response envelope, app and database-URL guards.</td></tr>
+  <tr><td>Front end units</td><td>32</td><td>Sleep duration across midnight, 12/24-hour conversion, decimal checks, goal progress, quick-step sizing.</td></tr>
+</table>
+<h3>Selected test cases</h3>
+<table>
+  <tr><th style="width:7%">#</th><th style="width:37%">Scenario</th><th style="width:36%">Expected</th><th>Result</th></tr>
+  <tr><td>T1</td><td>Register with a password that contains the person's name</td><td>Rejected with a validation error</td><td class="pass">Pass</td></tr>
+  <tr><td>T2</td><td>Five wrong sign-ins for one account, then the correct password</td><td>Account locked; the correct password is also refused until the lockout ends</td><td class="pass">Pass</td></tr>
+  <tr><td>T3</td><td>User B reads or deletes user A's cycle entries</td><td>Refused; A's records unchanged</td><td class="pass">Pass</td></tr>
+  <tr><td>T4</td><td>Call a protected route with no token</td><td>401</td><td class="pass">Pass</td></tr>
+  <tr><td>T5</td><td>Admin endpoint with the optional IP allow-list set, request from another address</td><td>Blocked before authentication is even attempted</td><td class="pass">Pass</td></tr>
+  <tr><td>T6</td><td>Highly variable cycle history</td><td>Low confidence and an irregularity note, shown as a range</td><td class="pass">Pass</td></tr>
+  <tr><td>T7</td><td>Log a screening twice for the same day</td><td>One record, no duplicates</td><td class="pass">Pass</td></tr>
+  <tr><td>T8</td><td>Export my data</td><td>Own data only, never credentials or another person's data</td><td class="pass">Pass</td></tr>
+  <tr><td>T9</td><td>Delete account with the wrong password</td><td>Refused; account intact</td><td class="pass">Pass</td></tr>
+  <tr><td>T10</td><td>Fix a missed habit day</td><td>That day marked done; today unchanged</td><td class="pass">Pass</td></tr>
+</table>
+<h3>Responsive, deployment and manual testing</h3>
+<ul>
+  <li><b>Responsive:</b> pages were inspected at phone (375 to 390 px) and desktop widths for horizontal overflow and layout; the phone navigation and Senior Mode were checked separately.</li>
+  <li><b>Deployment (22 October 2026):</b> the live site returned HTTP 200; <code>GET /health</code> returned <code>{"ok":true,"data":{"status":"healthy"}}</code> (about 22 s on a cold start); newly added endpoints answered 401 without a token, which shows they are deployed and protected.</li>
+  <li><b>Not covered:</b> there is no automated browser end-to-end suite, and the front end has unit tests only for its pure functions. Accessibility was reviewed manually, not with an audit tool.</li>
+</ul>
+
+<h2>16. Deployment</h2>
+<ol>
+  <li><b>Database.</b> Create a Supabase project and copy its PostgreSQL connection string.</li>
+  <li><b>API on Render.</b> Create a Blueprint from the repository. Render reads <code>render.yaml</code> (root directory <code>server</code>, Singapore region, free plan, health check <code>/health</code>). Set <code>DATABASE_URL</code>, <code>JWT_ACCESS_SECRET</code>, <code>JWT_REFRESH_SECRET</code> and <code>CORS_ORIGINS</code>. The build installs dependencies, generates the Prisma client, compiles TypeScript and runs <code>prisma migrate deploy</code>.</li>
+  <li><b>Front end on Vercel.</b> Import the repository and set <code>VITE_API_BASE_URL</code> to the API's <code>/api/v1</code> URL. <code>vercel.json</code> adds the SPA rewrite and security headers.</li>
+  <li><b>Connect.</b> Add the Vercel URL to <code>CORS_ORIGINS</code> on Render so the browser may call the API.</li>
+  <li><b>Verify.</b> Open <code>/health</code>, register an account on the live site, and log a record.</li>
+  <li><b>Updates.</b> A push to <code>main</code> deploys both services; schema changes migrate the database on the same deploy.</li>
+</ol>
+<p>The step-by-step guide is <code>DEPLOYMENT.md</code> in the repository.</p>
+
+<h2>17. Results and Discussion</h2>
+<table>
+  <tr><th style="width:9%">ID</th><th>Acceptance criterion</th><th style="width:13%">Status</th><th>Evidence</th></tr>
+  <tr><td>AC-01</td><td>A user can register and log in</td><td class="pass">Met</td><td>Live site; automated tests.</td></tr>
+  <tr><td>AC-02</td><td>Role-based access demonstrable for Woman, Coach and Admin</td><td class="part">Partly</td><td>Enforced and tested on the API for all three roles; the web UI covers the Woman role only.</td></tr>
+  <tr><td>AC-03</td><td>Core records support CRUD</td><td class="pass">Met</td><td>Tracking modules, with tests.</td></tr>
+  <tr><td>AC-04</td><td>Dashboard with meaningful data and trends</td><td class="pass">Met</td><td>Figures 5 and 13.</td></tr>
+  <tr><td>AC-05</td><td>Reports from recorded data</td><td class="pass">Met</td><td>PDF export (Figure 14).</td></tr>
+  <tr><td>AC-06</td><td>REST APIs implemented and used</td><td class="pass">Met</td><td>About 110 endpoints used by the front end.</td></tr>
+  <tr><td>AC-07</td><td>Cloud database stores the data</td><td class="pass">Met</td><td>Supabase PostgreSQL.</td></tr>
+  <tr><td>AC-08</td><td>Responsive application</td><td class="pass">Met</td><td>Figures 5 and 17.</td></tr>
+  <tr><td>AC-09</td><td>Deployed to a public cloud URL</td><td class="pass">Met</td><td>{{liveUrl}}</td></tr>
+  <tr><td>AC-10</td><td>Source in a GitHub repository</td><td class="pass">Met</td><td>{{githubUrl}}</td></tr>
+</table>
+<h3>Observations</h3>
+<ul>
+  <li>The layered design let the front end be built against the real API from the start and let new modules (habits, screening, quick log) be added as additive migrations without touching existing data.</li>
+  <li>Writing the guidance for screening as one reviewed file with named sources, and showing its status on screen, keeps medical claims out of the interface code.</li>
+  <li>The free tier's cold start (about 22 s) is the main user-visible limit. It is a hosting-plan trade-off, not a design limit.</li>
+  <li>The administrator and coach roles exist as protected APIs with tests but have no web screens; this is the main gap against SRS requirements FR-20, FR-21, UI-09 and UI-10.</li>
+</ul>
+
+<h2>18. Future Enhancements</h2>
+<ul>
+  <li>Step counts from a smartwatch: read steps from Android Health Connect (which Wear OS, Samsung and Fitbit watches sync into) through the Android app, and from Apple Health in an iOS app.</li>
+  <li>Coach and admin web dashboards on top of the existing APIs, including the screen where a woman grants and revokes coach access.</li>
+  <li>Clinical review of the screening schedule and educational content, then localisation by country (SRS §16).</li>
+  <li>Push and email reminders; two-way coach messaging; contraception and pregnancy records.</li>
+  <li>Wiring all onboarding steps to stored data; a browser end-to-end test suite; automated accessibility audits.</li>
+  <li>A paid hosting tier (no cold start) and automated backups with a tested restore.</li>
+</ul>
+
+<h2>19. References</h2>
+<ol>
+  <li>Women360 Software Requirements Specification (SRS), BCSE408L project documentation, 2026.</li>
+  <li>WHO. Women's health. <a href="https://www.who.int/health-topics/women-s-health/">who.int/health-topics/women-s-health</a></li>
+  <li>WHO. Menopause fact sheet. <a href="https://www.who.int/news-room/fact-sheets/detail/menopause/">who.int/news-room/fact-sheets/detail/menopause</a></li>
+  <li>WHO. Cervical cancer fact sheet. <a href="https://www.who.int/news-room/fact-sheets/detail/cervical-cancer">who.int/news-room/fact-sheets/detail/cervical-cancer</a></li>
+  <li>WHO. Breast cancer fact sheet. <a href="https://www.who.int/news-room/fact-sheets/detail/breast-cancer">who.int/news-room/fact-sheets/detail/breast-cancer</a></li>
+  <li>WHO. Guidelines on physical activity and sedentary behaviour (2020). <a href="https://www.who.int/publications/i/item/9789240015128">who.int/publications/i/item/9789240015128</a></li>
+  <li>NCDC / Ministry of Health and Family Welfare, India. Training module for medical officers: prevention, control and population-level screening of hypertension, diabetes and common cancers (oral, breast, cervical), NPCDCS, 2017.</li>
+  <li>Documentation: React, Vite, Tailwind CSS, Express, Prisma, zod, Vitest, Supertest, Vercel, Render, Supabase, GitHub Actions.</li>
+</ol>
+
+<h2>20. Appendix</h2>
+<h3>A. Run locally</h3>
+<p><code>npm install</code> and <code>npm run dev</code> in the repository root for the front end; in <code>server/</code>: <code>npm install</code>, copy <code>.env.example</code> to <code>.env</code>, <code>npx prisma migrate deploy</code>, <code>npm run dev</code>. Tests: <code>npm test</code> in each folder. The demo seed refuses to run against a non-local database.</p>
+<h3>B. Environment variables (names only)</h3>
+<p>Server: <code>NODE_ENV</code>, <code>DATABASE_URL</code>, <code>JWT_ACCESS_SECRET</code>, <code>JWT_REFRESH_SECRET</code>, <code>JWT_ACCESS_TTL</code>, <code>JWT_REFRESH_TTL</code>, <code>CORS_ORIGINS</code>, <code>SUPPORT_EMAIL</code>, optional <code>TWO_FACTOR_ENCRYPTION_KEY</code>, <code>ADMIN_IP_ALLOWLIST</code>. Front end: <code>VITE_API_BASE_URL</code>.</p>
+<h3>C. Migrations</h3>
+<p>init · meal/sleep notes and goal progress · sleep quality scale and nutrition decimals · medication adherence · cycle context tags · auth hardening · two-factor · goal check-ins and feedback · health profile medicines · habits and goal kinds · screening records · activity quick log.</p>
+
+<h2 class="pb">21. Project Access Details</h2>
+<div class="note"><b>Mandatory:</b> the application is accessible through the Internet. The credentials below are dedicated test accounts, not personal accounts. The first request after the service has been idle can take about 20 to 30 seconds while the free-tier API wakes up; please wait for the page to respond.</div>
+<table>
+  <tr><th style="width:34%">Live Application URL</th><td><a href="{{liveUrl}}">{{liveUrl}}</a></td></tr>
+  <tr><th>Test User Username / Login</th><td>{{testUser}}</td></tr>
+  <tr><th>Test User Password</th><td>{{testUserPassword}}</td></tr>
+  <tr><th>Admin Username / Login</th><td>{{adminUser}}</td></tr>
+  <tr><th>Admin Password</th><td>{{adminPassword}}</td></tr>
+</table>
+<p class="small">The administrator role is available through the protected <code>/api/v1/admin</code> endpoints; the web application does not include an administrator screen (see Section 17).</p>
+
+<h2>Final Submission Checklist</h2>
+<p>☐ Final Project Report &nbsp; ☐ Public Live URL &nbsp; ☐ Valid testing login credentials included &nbsp; ☐ GitHub Repository URL with source code &nbsp; ☐ PPT / Project Presentation &nbsp; ☐ Working application demonstration &nbsp; ☐ Both team members prepared to explain the implementation</p>
+
+<h2>Declaration</h2>
+<p>We confirm that the submitted project is our team's work, that the information and links provided are accurate, and that we can explain the implementation during evaluation. We understand the project guidelines regarding academic integrity and responsible use of AI tools.</p>
+<p style="margin-top:26pt">Team Member 1: ______________________ &nbsp;&nbsp;&nbsp;&nbsp; Team Member 2: ______________________</p>
+
+</body>
+</html>
