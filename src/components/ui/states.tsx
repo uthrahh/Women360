@@ -25,7 +25,7 @@ export function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center text-center py-14 px-6 gap-3">
       <div className="text-warmgrey-400">{icon ?? <Inbox size={30} />}</div>
-      <h3 className="font-display text-lg senior:text-2xl font-semibold">{title}</h3>
+      <h2 className="font-display text-lg senior:text-2xl font-semibold">{title}</h2>
       {description && <p className="text-sm senior:text-base text-[var(--w360-text-muted)] max-w-sm">{description}</p>}
       {action}
     </div>
@@ -36,7 +36,7 @@ export function ErrorState({ title = "Something didn't load", description, onRet
   return (
     <div className="flex flex-col items-center justify-center text-center py-14 px-6 gap-3">
       <div className="text-red-500"><AlertTriangle size={28} /></div>
-      <h3 className="font-display text-lg font-semibold">{title}</h3>
+      <h2 className="font-display text-lg font-semibold">{title}</h2>
       {description && <p className="text-sm text-[var(--w360-text-muted)] max-w-sm">{description}</p>}
       {onRetry && <Button variant="secondary" size="sm" onClick={onRetry}>Try again</Button>}
     </div>

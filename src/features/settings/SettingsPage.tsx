@@ -19,7 +19,6 @@ export default function SettingsPage() {
   const [params] = useSearchParams();
   const nav = useNavigate();
   const toast = useToast();
-  const [emailReminders, setEmailReminders] = useState(false);
 
   const [name, setName] = useState(auth.user?.name ?? "");
   const [dob, setDob] = useState(auth.user?.dateOfBirth ?? "");
@@ -199,20 +198,6 @@ export default function SettingsPage() {
             content: (
               <div className="flex flex-col gap-5">
                 <CoachAccessTab />
-                <Card><CardBody className="pt-5 flex flex-col gap-3">
-                  <ToggleRow
-                    title="Email reminders"
-                    description="Preventive care and goal reminders by email."
-                    checked={emailReminders}
-                    onChange={() => {
-                      setEmailReminders((v) => !v);
-                      toast.show(!emailReminders ? "Email reminders enabled" : "Email reminders turned off");
-                    }}
-                  />
-                  <p className="text-xs text-[var(--w360-text-muted)]">
-                    This preference isn't saved to your account yet, and no emails are sent. Reminders appear in your Today list when you open Women360.
-                  </p>
-                </CardBody></Card>
               </div>
             ),
           },

@@ -382,6 +382,7 @@ export default function NutritionPage() {
           <>
             <p className="text-xs text-[var(--w360-text-muted)] mb-2">Select a meal to edit or delete it.</p>
             <ItemList
+              ariaLabel="Today's meals"
               items={data.meals.map((m) => ({
                 id: m.id,
                 meal: m,

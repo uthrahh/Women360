@@ -6,4 +6,5 @@ export const messageService = {
     const apiMessages = await request<Parameters<typeof toFrontendMessage>[0][]>("/messages");
     return apiMessages.map(toFrontendMessage);
   },
+  markRead: (id: string) => request(`/messages/${id}/read`, { method: "PATCH" }),
 };

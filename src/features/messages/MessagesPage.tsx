@@ -1,94 +1,93 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
+import { MessageCircle } from "lucide-react";
 import { messageService } from "@/services/messageService";
-import type { Message } from "@/types";
+import { coachService } from "@/services/coachService";
+import { toRelativeDay } from "@/services/mappers";
 import { ItemList } from "@/components/ui/ItemList";
-import { LoadingState, EmptyState } from "@/components/ui/states";
+import { EmptyState, ErrorState, LoadingState } from "@/components/ui/states";
 import { Modal } from "@/components/ui/Modal";
-import { Button } from "@/components/ui/Button";
-import { useToast } from "@/components/ui/Toast";
-import { MessageCircle, Send } from "lucide-react";
 
-interface ThreadReply { from: "me" | "them"; text: string; time: string }
+interface Entry {
+  id: string;
+  from: string;
+  text: string;
+  time: string;
+  unread: boolean;
+  /** A coach note has no read state on the server; a message does. */
+  isMessage: boolean;
+}
 
+/**
+ * What her wellness coach and the care team have sent her: messages, and the
+ * notes a coach chose to share. This is read-only: there is no way to reply in
+ * the app, and the page says so rather than offering a box that goes nowhere.
+ */
 export default function MessagesPage() {
-  const [messages, setMessages] = useState<Message[] | null>(null);
-  const [openThread, setOpenThread] = useState<Message | null>(null);
-  const [replies, setReplies] = useState<ThreadReply[]>([]);
-  const toast = useToast();
+  const [entries, setEntries] = useState<Entry[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [open, setOpen] = useState<Entry | null>(null);
 
-  useEffect(() => {
-    messageService.list().then(setMessages);
-  }, []);
+  const load = () => {
+    setFailed(false);
+    Promise.all([messageService.list(), coachService.notesForMe()])
+      .then(([messages, notes]) => {
+        const fromMessages: Entry[] = messages.map((m) => ({ id: `m-${m.id}`, from: m.from, text: m.preview, time: m.time, unread: m.unread, isMessage: true }));
+        const fromNotes: Entry[] = notes.map((n) => ({ id: `n-${n.id}`, from: n.coach.name, text: n.note, time: toRelativeDay(n.createdAt), unread: false, isMessage: false }));
+        setEntries([...fromNotes, ...fromMessages]);
+      })
+      .catch(() => setFailed(true));
+  };
+  useEffect(load, []);
 
-  if (!messages) return <LoadingState label="Loading messages" />;
-
-  function openMessage(m: Message) {
-    setOpenThread(m);
-    setReplies([{ from: "them", text: m.preview, time: m.time }]);
-    setMessages((list) => (list ? list.map((x) => (x.id === m.id ? { ...x, unread: false } : x)) : list));
+  function show(e: Entry) {
+    setOpen(e);
+    if (!e.unread || !e.isMessage) return;
+    setEntries((list) => (list ? list.map((x) => (x.id === e.id ? { ...x, unread: false } : x)) : list));
+    messageService.markRead(e.id.slice(2)).catch(() => undefined);
   }
 
-  function handleReply(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const text = String(form.get("reply") ?? "").trim();
-    if (!text) return;
-    setReplies((r) => [...r, { from: "me", text, time: "Just now" }]);
-    (e.currentTarget as HTMLFormElement).reset();
-    toast.show("Message sent");
-  }
+  if (failed) return <ErrorState title="Couldn't load your messages" onRetry={load} />;
+  if (!entries) return <LoadingState label="Loading messages" />;
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-display text-3xl font-semibold">Messages</h1>
-        <p className="text-[var(--w360-text-muted)] mt-1">Your conversations with your wellness coach and care team.</p>
+        <p className="text-[var(--w360-text-muted)] mt-1">Messages and notes from your wellness coach and care team.</p>
       </div>
 
-      {messages.length === 0 ? (
-        <EmptyState icon={<MessageCircle size={30} />} title="No messages yet" description="When your coach reaches out, you'll see it here." />
+      {entries.length === 0 ? (
+        <EmptyState
+          icon={<MessageCircle size={30} />}
+          title="Nothing here yet"
+          description="When a coach you have shared with leaves you a note, it appears here. You can share under Settings, Privacy & sharing."
+        />
       ) : (
         <ItemList
+          ariaLabel="Messages and notes"
           maxHeight={520}
-          items={messages.map((m) => ({
+          items={entries.map((m) => ({
             id: m.id,
-            message: m,
+            entry: m,
             icon: <span className="text-sm font-medium">{m.from.split(" ").map((w) => w[0]).slice(0, 2).join("")}</span>,
             title: m.unread ? `${m.from} · unread` : m.from,
-            description: m.preview,
+            description: m.text,
             meta: m.time,
           }))}
-          onItemSelect={(row) => openMessage(row.message)}
+          onItemSelect={(row) => show(row.entry)}
         />
       )}
+      <p className="text-xs text-[var(--w360-text-muted)]">
+        You can't reply inside Women360 yet. To respond, contact your coach directly.
+      </p>
 
-      <Modal open={!!openThread} onClose={() => setOpenThread(null)} title={openThread?.from ?? ""} size="md">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-3 max-h-80 overflow-y-auto w360-scrollbar pr-1">
-            {replies.map((r, i) => (
-              <div key={i} className={`flex ${r.from === "me" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[80%] rounded-lg px-3.5 py-2.5 text-sm ${
-                    r.from === "me"
-                      ? "bg-maroon-700 text-white"
-                      : "bg-[var(--w360-bg-warm)] text-[var(--w360-text)]"
-                  }`}
-                >
-                  <p>{r.text}</p>
-                  <p className={`text-[10px] mt-1 ${r.from === "me" ? "text-white/70" : "text-[var(--w360-text-muted)]"}`}>{r.time}</p>
-                </div>
-              </div>
-            ))}
+      <Modal open={!!open} onClose={() => setOpen(null)} title={open?.from ?? ""} size="md">
+        {open && (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm whitespace-pre-wrap">{open.text}</p>
+            <p className="text-xs text-[var(--w360-text-muted)]">{open.time}</p>
           </div>
-          <form className="flex gap-2" onSubmit={handleReply}>
-            <input
-              name="reply"
-              placeholder="Write a reply…"
-              className="flex-1 px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-sm"
-            />
-            <Button type="submit" size="sm"><Send size={15} /></Button>
-          </form>
-        </div>
+        )}
       </Modal>
     </div>
   );

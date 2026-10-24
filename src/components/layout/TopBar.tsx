@@ -109,6 +109,7 @@ export function TopBar() {
               ) : (
                 <div className="p-1">
                   <ItemList
+                    ariaLabel="Notifications"
                     items={rows}
                     maxHeight={320}
                     gap={6}

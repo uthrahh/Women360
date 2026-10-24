@@ -28,6 +28,9 @@ export function createApp() {
   app.get("/health", (_req, res) => {
     // Unauthenticated liveness/readiness probe for the hosting platform —
     // deliberately reveals nothing about the system beyond "it's up".
+    // Cross-origin on purpose: the web pages call this in the background to wake a sleeping
+    // server, and the same-origin default from helmet would make browsers report it as an error.
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
     res.status(200).json({ ok: true, data: { status: "healthy" } });
   });
 

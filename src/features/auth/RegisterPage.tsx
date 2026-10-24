@@ -63,6 +63,9 @@ export default function RegisterPage() {
           </label>
         </div>
         <Button type="submit" fullWidth disabled={auth.loading}>{auth.loading ? "Creating account…" : "Create account"}</Button>
+        <p className="text-xs text-[var(--w360-text-muted)] text-center">
+          By creating an account you agree to the <Link to="/terms" className="underline underline-offset-2">terms of use</Link> and have read the <Link to="/privacy" className="underline underline-offset-2">privacy summary</Link>.
+        </p>
       </form>
       <p className="text-sm text-[var(--w360-text-muted)] mt-6 text-center">
         Already have an account? <Link to="/login" className="font-medium text-maroon-700 dark:text-maroon-200">Log in</Link>

@@ -9,11 +9,21 @@ import { FlowStepper, Step } from "@/components/ui/FlowStepper";
 import { useApp } from "@/context/AppContext";
 import { useToast } from "@/components/ui/Toast";
 import { userService, type HealthProfileInput } from "@/services/userService";
+import { cycleService } from "@/services/cycleService";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { Check } from "lucide-react";
 import clsx from "clsx";
 
-const STEP_COUNT = 6;
+const STEP_COUNT = 4;
+
+// What she picks for "where are you in your reproductive life?", as the stored life stage.
+type LifeStageValue = "REPRODUCTIVE" | "PERIMENOPAUSE" | "MENOPAUSE" | "POSTMENOPAUSE";
+const LIFE_STAGE: Record<string, LifeStageValue> = {
+  "Regular cycles": "REPRODUCTIVE",
+  "Perimenopause": "PERIMENOPAUSE",
+  "Menopause": "MENOPAUSE",
+  "Postmenopause": "POSTMENOPAUSE",
+};
 
 const ALLERGY_OPTIONS = [
   "Penicillin",
@@ -53,12 +63,18 @@ const MEDICATION_OPTIONS = [
 
 export default function OnboardingPage() {
   usePageTitle("Set up your profile");
-  const { auth } = useApp();
+  const { auth, senior } = useApp();
   const nav = useNavigate();
   const toast = useToast();
   const [step, setStep] = useState(1);
+  const [name, setName] = useState(auth.user?.name ?? "");
+  const [dob, setDob] = useState(auth.user?.dateOfBirth ?? "");
   const [allergies, setAllergies] = useState<string[]>([]);
   const [medications, setMedications] = useState<string[]>([]);
+  const [lifeStage, setLifeStage] = useState<string>("");
+  const [cycleLength, setCycleLength] = useState("");
+  const [periodLength, setPeriodLength] = useState("");
+  const [feel, setFeel] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   async function finish() {
@@ -66,18 +82,35 @@ export default function OnboardingPage() {
       await auth.completeOnboarding();
       nav("/app/dashboard");
     } catch {
-      toast.show("Couldn't save that — please try again.");
+      toast.show("Couldn't save that. Please try again.", { tone: "error" });
     }
   }
 
-  // Only what was answered is saved. "None" is an answer (an empty list); a
-  // question left alone stays unanswered, so the profile never claims "no
-  // allergies" for someone who simply skipped the question.
-  async function saveHealth() {
-    const input: HealthProfileInput = {};
-    if (allergies.length) input.allergies = allergies.filter((v) => v !== NONE);
-    if (medications.length) input.currentMedications = medications.filter((v) => v !== NONE);
-    if (Object.keys(input).length) await userService.updateHealthProfile(input);
+  // Everything asked here is saved. Only what was answered is sent: "None" is an
+  // answer (an empty list); a question left alone stays unanswered, so the
+  // profile never claims "no allergies" for someone who skipped the question.
+  async function saveAll() {
+    const profile: { name?: string; dateOfBirth?: string; lifeStage?: LifeStageValue } = {};
+    if (name.trim() && name.trim() !== auth.user?.name) profile.name = name.trim();
+    if (dob && dob !== auth.user?.dateOfBirth) profile.dateOfBirth = dob;
+    if (lifeStage && LIFE_STAGE[lifeStage]) profile.lifeStage = LIFE_STAGE[lifeStage];
+    if (Object.keys(profile).length) auth.refreshUser(await userService.updateProfile(profile));
+
+    const health: HealthProfileInput = {};
+    if (allergies.length) health.allergies = allergies.filter((v) => v !== NONE);
+    if (medications.length) health.currentMedications = medications.filter((v) => v !== NONE);
+    if (Object.keys(health).length) await userService.updateHealthProfile(health);
+
+    // The cycle profile always holds both numbers, so one that was left blank keeps its current value.
+    if (cycleLength || periodLength) {
+      const current = await cycleService.getProfile();
+      await cycleService.upsertProfile({
+        averageCycleLength: cycleLength ? Number(cycleLength) : current.averageCycleLength,
+        averagePeriodLength: periodLength ? Number(periodLength) : current.averagePeriodLength,
+      });
+    }
+
+    if (feel.startsWith("Senior")) senior.setSeniorMode(true);
   }
 
   return (
@@ -106,10 +139,10 @@ export default function OnboardingPage() {
               event.preventDefault();
               setSaving(true);
               try {
-                await saveHealth();
+                await saveAll();
                 setStep(STEP_COUNT + 1);
               } catch (err) {
-                toast.show(err instanceof Error ? err.message : "Couldn't save your health details. Please try again.", { tone: "error" });
+                toast.show(err instanceof Error ? err.message : "Couldn't save your details. Please try again.", { tone: "error" });
               } finally {
                 setSaving(false);
               }
@@ -122,28 +155,21 @@ export default function OnboardingPage() {
               </div>
               <h2 className="font-display text-2xl font-semibold">You're all set, {auth.user?.name?.split(" ")[0] ?? "there"}.</h2>
               <p className="text-[var(--w360-text-muted)] mt-2 max-w-sm mx-auto">
-                Your dashboard is ready with a snapshot of your health, built around what you just told us.
+                What you told us is saved. You can change any of it later in Settings and Health.
               </p>
               <Button className="mt-6" onClick={finish}>Go to my dashboard</Button>
             </div>
           }
         >
           <Step title="About you">
-            <FormStep title="About you" subtitle="This helps us personalize your experience.">
-              <Input label="Full name" placeholder="Your name" defaultValue={auth.user?.name} />
-              <Input label="Date of birth" type="date" defaultValue={auth.user?.dateOfBirth ?? undefined} />
-            </FormStep>
-          </Step>
-
-          <Step title="Lifestyle">
-            <FormStep title="Lifestyle" subtitle="A quick sense of your day-to-day — all optional.">
-              <ChoiceGroup label="How active are you most weeks?" options={["Mostly sedentary", "Lightly active", "Active", "Very active"]} />
-              <ChoiceGroup label="How would you describe your sleep?" options={["Poor", "Fair", "Good", "Excellent"]} />
+            <FormStep title="About you" subtitle="This helps us show what applies to you, such as which check-ups are due at your age.">
+              <Input label="Full name" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
+              <Input label="Date of birth" type="date" value={dob} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDob(e.target.value)} />
             </FormStep>
           </Step>
 
           <Step title="Health">
-            <FormStep title="Health" subtitle="Baseline health information — you can update this anytime.">
+            <FormStep title="Health" subtitle="Baseline health information. You can update this anytime.">
               <MultiSelect
                 label="Any known allergies?"
                 options={ALLERGY_OPTIONS}
@@ -164,24 +190,27 @@ export default function OnboardingPage() {
 
           <Step title="Cycle">
             <FormStep title="Menstrual health" subtitle="Skip if this doesn't apply to you.">
-              <ChoiceGroup label="Where are you in your reproductive life?" options={["Regular cycles", "Perimenopause", "Menopause", "Prefer not to say"]} />
-              <CycleLengthField />
-            </FormStep>
-          </Step>
-
-          <Step title="Goals">
-            <FormStep title="Goals" subtitle="Pick what matters most right now — you can change these later.">
               <ChoiceGroup
-                multi
-                label="What would you like to focus on?"
-                options={["Better sleep", "More activity", "Nutrition", "Cycle tracking", "Mental wellbeing", "Preventive care"]}
+                label="Where are you in your reproductive life?"
+                options={Object.keys(LIFE_STAGE).concat("Prefer not to say")}
+                value={lifeStage}
+                onChange={setLifeStage}
               />
+              <div className="grid grid-cols-2 gap-3 items-start">
+                <NumberField label="Cycle length" suffix="days" optional min={15} max={90} startAt={28} value={cycleLength} onChange={setCycleLength} hint="Your typical cycle, if you know it." />
+                <NumberField label="Period length" suffix="days" optional min={1} max={15} startAt={5} value={periodLength} onChange={setPeriodLength} hint="How long it usually lasts." />
+              </div>
             </FormStep>
           </Step>
 
           <Step title="Preferences">
-            <FormStep title="Preferences" subtitle="You can change any of this later in Settings.">
-              <ChoiceGroup label="How would you like Women360 to feel?" options={["Standard experience", "Senior Mode — simple & spacious"]} />
+            <FormStep title="Preferences" subtitle="You can change this later in Settings.">
+              <ChoiceGroup
+                label="How would you like Women360 to feel?"
+                options={["Standard experience", "Senior Mode: simple and spacious"]}
+                value={feel}
+                onChange={setFeel}
+              />
             </FormStep>
           </Step>
         </FlowStepper>
@@ -200,28 +229,21 @@ function FormStep({ title, subtitle, children }: { title: string; subtitle?: str
   );
 }
 
-function ChoiceGroup({ label, options, multi }: { label: string; options: string[]; multi?: boolean }) {
-  const [selected, setSelected] = useState<string[]>([]);
-  function toggle(opt: string) {
-    if (multi) {
-      setSelected((s) => (s.includes(opt) ? s.filter((x) => x !== opt) : [...s, opt]));
-    } else {
-      setSelected([opt]);
-    }
-  }
+/** One choice from a short list. Choosing the selected one again clears it, so a question can go back to unanswered. */
+function ChoiceGroup({ label, options, value, onChange }: { label: string; options: string[]; value: string; onChange: (v: string) => void }) {
   return (
-    <div>
+    <div role="group" aria-label={label}>
       <p className="text-sm font-medium mb-2">{label}</p>
       <div className="flex flex-wrap gap-2">
         {options.map((opt) => (
           <button
             type="button"
             key={opt}
-            onClick={() => toggle(opt)}
-            aria-pressed={selected.includes(opt)}
+            onClick={() => onChange(value === opt ? "" : opt)}
+            aria-pressed={value === opt}
             className={clsx(
               "px-3.5 py-2 rounded-full text-sm border transition-colors",
-              selected.includes(opt)
+              value === opt
                 ? "bg-maroon-700 text-white border-maroon-700 dark:bg-maroon-300 dark:text-ink-900 dark:border-maroon-300"
                 : "border-[var(--w360-border)] hover:border-maroon-400"
             )}
@@ -232,9 +254,4 @@ function ChoiceGroup({ label, options, multi }: { label: string; options: string
       </div>
     </div>
   );
-}
-
-function CycleLengthField() {
-  const [value, setValue] = useState("");
-  return <NumberField label="Cycle length" suffix="days" optional min={15} max={90} startAt={28} value={value} onChange={setValue} hint="Your typical cycle, if you know it." />;
 }

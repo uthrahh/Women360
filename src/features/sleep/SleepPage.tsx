@@ -246,6 +246,7 @@ export default function SleepPage() {
         <h2 className="font-display text-lg font-semibold mb-3">Recent nights</h2>
         <p className="text-xs text-[var(--w360-text-muted)] mb-2">Select a night to edit or delete it.</p>
         <ItemList
+          ariaLabel="Recent nights"
           items={data.history.map((entry) => ({
             id: entry.id,
             entry,

@@ -189,7 +189,7 @@
   <tr><td>Reliability (NFR-06)</td><td>Schema changes ship as committed migrations applied on deploy; CI fails if the schema and the migrations disagree. Errors return a uniform envelope and failed saves show an error rather than silently dropping data.</td></tr>
   <tr><td>Usability (NFR-07)</td><td>One-tap logging, templates, progressive disclosure, plain language, no streak guilt, honest empty states, and Senior Mode.</td></tr>
   <tr><td>Responsiveness (NFR-08)</td><td>Layouts checked at phone and desktop widths with no horizontal scrolling; a bottom navigation bar on phones.</td></tr>
-  <tr><td>Maintainability (NFR-09)</td><td>Strict TypeScript on both sides, ESLint, one folder per domain on the server and a service layer on the client, 322 automated tests, and a written engineering standard in the repository.</td></tr>
+  <tr><td>Maintainability (NFR-09)</td><td>Strict TypeScript on both sides, ESLint, one folder per domain on the server and a service layer on the client, 324 automated tests, and a written engineering standard in the repository.</td></tr>
   <tr><td>Portability (NFR-10)</td><td>All configuration through environment variables; a Render blueprint (<code>render.yaml</code>) and a step-by-step <code>DEPLOYMENT.md</code> reproduce the deployment from the repository.</td></tr>
 </table>
 
@@ -430,6 +430,8 @@
 <ul>
   <li><b>Responsive:</b> pages were inspected at phone (375 to 390 px) and desktop widths for horizontal overflow and layout; the phone navigation and Senior Mode were checked separately.</li>
   <li><b>Deployment (22 October 2026):</b> the live site returned HTTP 200; <code>GET /health</code> returned <code>{"ok":true,"data":{"status":"healthy"}}</code> (about 22 s on a cold start); newly added endpoints answered 401 without a token, which shows they are deployed and protected.</li>
+  <li><b>Dependencies (24 October 2026):</b> <code>npm audit --omit=dev</code> reports no vulnerabilities on the server. The front end reports two moderate findings in React Router that only a major upgrade fixes; the application never passes user-supplied text to its link or navigation functions. CI runs the same audit at the high level and a secret scan, and the repository and its history contain no committed secrets (checked by search).</li>
+  <li><b>Accessibility (automated):</b> an axe-core audit of the public pages, 15 signed-in woman screens and the 5 administrator tabs found and led to fixes for unnamed lists and progress bars, heading order, a chart exposed to screen readers, an unlabelled filter, and missing page landmarks. The pages audited after the fixes show no remaining violations. This is an automated check, not a full accessibility review.</li>
   <li><b>Not covered:</b> there is no automated browser end-to-end suite, and the front end has unit tests only for its pure functions. Accessibility was reviewed manually, not with an audit tool.</li>
 </ul>
 
@@ -480,7 +482,9 @@
   <li>Richer coach and administrator tools: coach messaging, per-field sharing choices, and bulk administration.</li>
   <li>Clinical review of the screening schedule and educational content, then localisation by country (SRS §16).</li>
   <li>Push and email reminders; two-way coach messaging; contraception and pregnancy records.</li>
-  <li>Wiring all onboarding steps to stored data; a browser end-to-end test suite; automated accessibility audits.</li>
+  <li>A browser end-to-end test suite, and a manual accessibility review with assistive technology.</li>
+  <li>Email: verification at sign-up and password-reset emails need a mail provider, which is not configured.</li>
+  <li>A lawyer's review of the terms of use and privacy summary, which are drafts.</li>
   <li>A paid hosting tier (no cold start) and automated backups with a tested restore.</li>
 </ul>
 

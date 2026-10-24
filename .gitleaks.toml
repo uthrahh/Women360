@@ -1,0 +1,12 @@
+# Used by the CI secret scan (gitleaks). The only "secrets" in the repository are the
+# published passwords of the shared demonstration accounts, which are meant to be public.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Published demonstration logins"
+paths = [
+  '''server/prisma/seedDemo\.ts''',
+  '''Documentation/report/details\.json''',
+  '''Documentation/Final Project Report\.pdf''',
+]

@@ -14,7 +14,7 @@
   "coachPassword": "Demo-Coach-2026!",
   "adminUser": "demo.admin@women360.demo",
   "adminPassword": "Demo-Admin-2026!",
-  "testRunDate": "22 October 2026",
-  "serverTests": "288 tests in 29 files",
+  "testRunDate": "24 October 2026",
+  "serverTests": "290 tests in 29 files",
   "frontendTests": "34 tests in 5 files"
 }

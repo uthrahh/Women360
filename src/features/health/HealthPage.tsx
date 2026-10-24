@@ -415,6 +415,7 @@ export default function HealthPage() {
                   <EmptyState title="No measurements yet" description="Log your first weight, blood pressure or resting heart rate." />
                 ) : (
                   <ItemList
+                  ariaLabel="Measurements"
                     selectOnHover={false}
                     maxHeight={460}
                     items={vitals.map((v) => ({
@@ -490,6 +491,7 @@ export default function HealthPage() {
                   <>
                     <p className="text-xs text-[var(--w360-text-muted)]">Select a medicine to edit or delete it.</p>
                     <ItemList
+                  ariaLabel="Medicines"
                       maxHeight={460}
                       items={meds.map((m) => ({
                         id: m.id,
@@ -528,6 +530,7 @@ export default function HealthPage() {
                   <>
                     <p className="text-xs text-[var(--w360-text-muted)]">Select an appointment to edit or delete it.</p>
                     <ItemList
+                  ariaLabel="Appointments"
                       maxHeight={460}
                       items={appts.map((a) => ({
                         id: a.id,
