@@ -67,7 +67,7 @@ function Item({ item, busy, onDone, onUndo }: { item: ScreeningItem; busy: boole
         <CardBody className="pt-5 flex flex-col gap-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="font-medium senior:text-xl">{item.title}</h3>
+              <h2 className="font-medium senior:text-xl">{item.title}</h2>
               <p className="text-sm text-[var(--w360-text-muted)] mt-0.5">{headline(item)}</p>
             </div>
             <Badge tone={BADGE[item.status].tone} className="shrink-0">{BADGE[item.status].label}</Badge>

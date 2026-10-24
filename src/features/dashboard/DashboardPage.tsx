@@ -230,6 +230,7 @@ function StandardDashboard() {
               </p>
             ) : (
               <ItemList
+                ariaLabel="Upcoming"
                 items={appts.slice(0, 5).map((x) => ({
                   id: x.id,
                   title: x.title,

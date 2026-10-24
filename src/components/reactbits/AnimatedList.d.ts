@@ -32,6 +32,8 @@ export interface AnimatedListProps<T = AnimatedListItem | string> {
   maxHeight?: number | string;
   className?: string;
   itemClassName?: string;
+  /** The list's accessible name, announced by screen readers. */
+  ariaLabel?: string;
   style?: CSSProperties;
 }
 

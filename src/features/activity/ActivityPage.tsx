@@ -409,6 +409,7 @@ export default function ActivityPage() {
           <>
             <p className="text-xs text-[var(--w360-text-muted)] mb-2">Select an entry to edit or delete it.</p>
             <ItemList
+              ariaLabel="Recent activity"
               maxHeight={460}
               items={data.entries.map((e) => ({
                 id: e.id,

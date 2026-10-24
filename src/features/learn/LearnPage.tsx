@@ -52,6 +52,7 @@ export default function LearnPage() {
           />
         </div>
         <select
+          aria-label="Topic"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-sm senior:text-lg"
@@ -66,6 +67,7 @@ export default function LearnPage() {
         <EmptyState title="No articles found" description="Try a different search term or topic." />
       ) : (
         <ItemList
+          ariaLabel="Articles"
           maxHeight={560}
           items={filtered.map((a) => ({
             id: a.id,

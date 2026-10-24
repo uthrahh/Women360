@@ -22,7 +22,7 @@ export const userService = {
     request<ReproductiveHealth>("/users/me/reproductive-health", { method: "PUT", body: JSON.stringify(input) }),
   /** Everything held about this account, as the JSON the server returns. */
   exportData: () => request<Record<string, unknown>>("/users/me/export"),
-  async updateProfile(patch: { name?: string; dateOfBirth?: string }): Promise<User> {
+  async updateProfile(patch: { name?: string; dateOfBirth?: string; lifeStage?: "REPRODUCTIVE" | "PERIMENOPAUSE" | "MENOPAUSE" | "POSTMENOPAUSE" }): Promise<User> {
     const apiUser = await request<Parameters<typeof toFrontendUser>[0]>("/users/me", {
       method: "PATCH",
       body: JSON.stringify(patch),

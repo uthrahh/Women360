@@ -96,6 +96,8 @@ const AnimatedList = ({
   maxHeight = 440,
   className = '',
   itemClassName = '',
+  // Women360 change: a listbox needs an accessible name.
+  ariaLabel = 'List',
   style
 }) => {
   const rootRef = useRef(null);
@@ -461,6 +463,7 @@ const AnimatedList = ({
         ref={viewportRef}
         className={`animated-list__viewport${displayScrollbar ? '' : ' animated-list__viewport--bare'}`}
         role="listbox"
+        aria-label={ariaLabel}
         tabIndex={0}
         aria-activedescendant={selected >= 0 && selected < items.length ? `${baseId}-${selected}` : undefined}
         style={{

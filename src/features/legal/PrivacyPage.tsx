@@ -41,7 +41,7 @@ export default function PrivacyPage() {
           <p>
             <span className="text-[var(--w360-text)] font-medium">What you log:</span> cycle, meals and hydration,
             activity, sleep, mood and wellbeing, goals and check-ins, medicines and doses, appointments, measurements,
-            your emergency contact, and any feedback you send.
+            your emergency contact, contraception and pregnancy status if you choose to record them, notes a coach writes about you, and any feedback you send.
           </p>
           <p>
             <span className="text-[var(--w360-text)] font-medium">Security records:</span> sign-in successes and
@@ -53,8 +53,9 @@ export default function PrivacyPage() {
           <p>
             You can. Nobody else can unless you grant it. A wellness coach you give access to sees a limited summary
             (goals, wellbeing, sleep, activity and coaching appointments) and can be removed at any time. Your health
-            profile and medicines are never part of that summary. The screen for granting coach access isn't available
-            in the app yet, so no coach can see anything today.
+            profile and medicines are never part of that summary. You give a coach access under Settings, Privacy &amp;
+            sharing, by entering their email, and you can stop sharing there whenever you like. Every time a coach opens
+            your summary or writes a note, it is recorded in an audit log.
           </p>
           <p>
             Women360 doesn't sell your data and doesn't show advertising. The site sets no cookies and uses no
@@ -90,7 +91,7 @@ export default function PrivacyPage() {
           <ul className="list-disc pl-5 flex flex-col gap-1.5">
             <li>The organisation responsible for the service and a contact address for privacy requests.</li>
             <li>How long our hosting providers keep backups after an account is deleted.</li>
-            <li>Terms of use, and the legal basis and any regional requirements for the countries where it will be offered.</li>
+            <li>The legal basis and any regional requirements for the countries where it will be offered. The terms of use are a draft awaiting legal review.</li>
           </ul>
         </Section>
       </main>

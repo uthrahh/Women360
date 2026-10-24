@@ -37,3 +37,20 @@ describe("app", () => {
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
   });
 });
+
+describe("health check", () => {
+  it("can be called from the web pages to wake the server", async () => {
+    const res = await request(createApp()).get("/health");
+    expect(res.headers["cross-origin-resource-policy"]).toBe("cross-origin");
+  });
+});
+
+describe("request ids", () => {
+  it("gives every response its own id and ignores one supplied by the client", async () => {
+    const a = await request(createApp()).get("/health").set("X-Request-Id", "forged-by-client");
+    const b = await request(createApp()).get("/health");
+    expect(a.headers["x-request-id"]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(a.headers["x-request-id"]).not.toBe("forged-by-client");
+    expect(b.headers["x-request-id"]).not.toBe(a.headers["x-request-id"]);
+  });
+});

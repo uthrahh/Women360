@@ -369,6 +369,20 @@ a watch needs a native Health Connect (Android) or HealthKit (iOS) integration a
 not built. The landing and sign-in pages ping the API's health endpoint so the
 free-tier server wakes before sign-in.
 
+**Hardening pass (latest):** the server's validation moved to zod 4 (the 3.x line has an
+advisory for oversized constrained arrays); the front end no longer lists zod at all (it was
+unused). `npm audit --omit=dev` is clean on the server; the front end reports two moderate
+react-router findings that only a v7 upgrade fixes (a separate project). Every response carries a
+server-generated `X-Request-Id`, which is also in the logs. `/health` is deliberately
+cross-origin so the landing and sign-in pages can wake the free-tier server. `/admin` and
+`/coach` are noindex like the rest of the app, `/terms` (a draft awaiting legal review) and a
+sitemap exist, and HSTS is sent. An axe-core audit of the public pages, every woman screen and the
+admin tabs is clean; it is automated, not a full accessibility review. Onboarding now saves every
+question it asks (name, date of birth, life stage, cycle and period length, Senior Mode, allergies,
+medicines); questions with nowhere to be stored were removed. Messages is read-only (messages plus
+coach notes shared with her) and says so. Axe in the dev server needs a temporary script in `public/`:
+never commit it.
+
 Known concrete defects to fix as part of any related work:
 - No `sitemap.xml` (needs the production domain), no terms of use page, no
   Open Graph image or canonical URLs (same reason). Per-route titles exist for
@@ -385,21 +399,10 @@ Known concrete defects to fix as part of any related work:
   still ~430KB (~140KB gzipped) — acceptable since it only loads when a
   user visits Reports, not on initial app load, but worth knowing if
   bundle size becomes a concern later.
-- Settings' "Privacy & sharing" toggles (share with coach, email
-  reminders) are explicitly disclosed in the UI as not yet persisted —
-  no backend endpoint exists for either preference at all, so inventing
-  one was out of scope for a "fix what's broken" pass. A real fix needs
-  a product decision on what "sharing with coach" actually controls,
-  then a new backend endpoint.
-- Onboarding (`OnboardingPage.tsx`, a `FlowStepper`) saves only the Health
-  step: allergies and current medicines go to `PUT /users/me/health-profile`
-  (an empty list means "answered: none"; an untouched question is not sent, so
-  the profile never claims "no allergies" for someone who skipped it). The other
-  steps (name, date of birth, lifestyle, cycle, goals, preferences) are still
-  cosmetic: nothing they collect is stored, and `completeOnboarding()` otherwise
-  only flips the `onboarded` flag. Wiring them is a standalone forms project.
-- Messages has no real two-way reply — `MessagesPage.tsx`'s reply box
-  only appends to local component state and is lost on refresh. The
+- There is no email reminder preference or any email delivery (no provider is configured); the
+  Settings switch that pretended otherwise was removed. Email verification at sign-up and password
+  reset emails likewise need a mail provider.
+- Messages cannot be replied to (the reply box that only pretended to send was removed). The
   `Message` Prisma model itself has no sender-as-current-user concept
   (just a `senderLabel` display string and a `recipientId`), so this
   needs a data-model decision (a real conversation/thread model) before

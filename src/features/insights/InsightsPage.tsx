@@ -43,7 +43,7 @@ export default function InsightsPage() {
           <CardBody className="pt-5">
             <p className="text-sm font-medium mb-1">Sleep vs mood</p>
             <p className="text-xs text-[var(--w360-text-muted)] mb-4">More sleep tends to line up with a better mood the next day.</p>
-            <div className="h-52">
+            <div className="h-52" aria-hidden="true">
               <ResponsiveContainer width="100%" height="100%">
                 <ScatterChart>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--w360-border)" />

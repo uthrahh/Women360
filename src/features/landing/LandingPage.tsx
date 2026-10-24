@@ -150,7 +150,7 @@ function Phone({ className, children, label }: { className?: string; children: R
       )}
     >
       <div className="px-5 pt-9 pb-6 h-full flex flex-col gap-3">
-        <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--w360-text-muted)]">{label}</p>
+        <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--w360-text)]">{label}</p>
         {children}
       </div>
     </div>
@@ -254,6 +254,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[var(--w360-bg)] text-[var(--w360-text)] overflow-x-clip">
       <Grain />
       <Nav />
+      <main>
 
       {/* Hero */}
       <section className="relative px-4 pt-20 pb-24 sm:pt-28 text-center overflow-hidden">
@@ -434,8 +435,12 @@ export default function LandingPage() {
         </AnimatedContent>
       </section>
 
+      </main>
+
       <footer className="px-4 py-8 text-sm text-[var(--w360-text-muted)] text-center">
         <Link to="/privacy" className="underline underline-offset-2 hover:text-[var(--w360-text)]">Privacy</Link>
+        <span className="mx-2">·</span>
+        <Link to="/terms" className="underline underline-offset-2 hover:text-[var(--w360-text)]">Terms</Link>
         <span className="mx-2">·</span>
         <span>© 2026 · A wellness and tracking product, not a diagnostic service</span>
       </footer>
