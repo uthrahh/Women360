@@ -16,8 +16,12 @@ export function TopBar() {
   const [notifs, setNotifs] = useState<AppNotification[] | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Something elsewhere can add a notification while she is on a page (a new pattern worth discussing), so refresh when told.
   useEffect(() => {
-    notificationService.list().then(setNotifs);
+    const load = () => notificationService.list().then(setNotifs);
+    load();
+    window.addEventListener("w360:notifications-changed", load);
+    return () => window.removeEventListener("w360:notifications-changed", load);
   }, []);
 
   useEffect(() => {

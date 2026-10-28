@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { cycleService } from "@/services/cycleService";
 import { localDateISO } from "@/services/mappers";
-import type { CycleDay, CycleDayPhase, CycleSummary } from "@/types";
+import type { ConditionList, CycleDay, CycleDayPhase, CycleSummary } from "@/types";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -19,6 +19,9 @@ import { CONTEXT_TAG_OPTIONS } from "@/lib/cycleContext";
 import { buildCycleCsv } from "@/lib/cycleCsv";
 import { saveFile } from "@/lib/saveFile";
 import { ExplainThisCard } from "@/components/ExplainThisCard";
+import { PatternsCard } from "./PatternsCard";
+import { ConditionsCard } from "./ConditionsCard";
+import { conditionService } from "@/services/conditionService";
 import { insightsService } from "@/services/insightsService";
 import { Hint } from "@/components/ui/Hint";
 
@@ -159,11 +162,22 @@ export default function CyclePage() {
   // What today looked like just before she tapped "Period started today" (null = no entry), so undo can put it back.
   const beforePeriodTap = useRef<CycleDay | null | undefined>(undefined);
 
+  const [conditions, setConditions] = useState<ConditionList | null>(null);
+
   useEffect(() => {
     cycleService.getSummary().then(setCycle);
+    conditionService.list().then(setConditions).catch(() => setConditions(null));
   }, []);
 
   if (!cycle) return <LoadingState label="Loading your cycle" />;
+
+  // Her conditions add the symptoms worth noting to the usual list, without repeating any.
+  const declaredCodes = (conditions?.conditions ?? []).filter((c) => c.declared).map((c) => c.code).join(",");
+  const symptomOptions = [
+    ...SYMPTOM_OPTIONS,
+    ...(conditions?.conditions ?? []).filter((c) => c.declared).flatMap((c) => c.trackSymptoms).filter((s, i, all) => !SYMPTOM_OPTIONS.includes(s) && all.indexOf(s) === i),
+  ];
+  const patternsKey = `${cycle.lastCycleLengths.join("-")}|${cycle.history.length}|${declaredCodes}`;
 
   const hasData = cycle.currentDay !== null && cycle.phase !== null && cycle.nextPeriodDate !== null;
   const existingDay = editingDate ? cycle.history.find((d) => d.date === editingDate) : undefined;
@@ -367,7 +381,7 @@ export default function CyclePage() {
       : `${existingDay ? "Edit" : "Log"} entry for ${new Date(editingDate).toLocaleDateString(undefined, { month: "long", day: "numeric" })}`
     : "";
 
-  const customSymptoms = logForm.symptoms.filter((s) => !SYMPTOM_OPTIONS.includes(s));
+  const customSymptoms = logForm.symptoms.filter((s) => !symptomOptions.includes(s));
 
   const logModal = (
     <Modal open={editingDate !== null} onClose={() => setEditingDate(null)} title={modalTitle} size="sm">
@@ -454,7 +468,7 @@ export default function CyclePage() {
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium senior:text-lg">Symptoms</span>
               <div className="grid grid-cols-2 gap-2">
-                {SYMPTOM_OPTIONS.map((s) => (
+                {symptomOptions.map((s) => (
                   <label key={s} className="flex items-center gap-2 text-sm senior:text-base">
                     <input
                       type="checkbox"
@@ -623,6 +637,9 @@ export default function CyclePage() {
     return (
       <>
         <SeniorCycle cycle={populated} periodStartedToday={cycle.history.find((d) => d.date === localDateISO())?.isPeriod === true} onPeriodToday={togglePeriodStartedToday} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} />
+        <div className="max-w-xl mx-auto px-5">
+          <PatternsCard refreshKey={patternsKey} />
+        </div>
         {cycle.isLate && (
           <div className="max-w-xl mx-auto px-5">
             <ExplainThisCard
@@ -647,6 +664,8 @@ export default function CyclePage() {
 
       <CycleRing cycle={populated} periodStartedToday={cycle.history.find((d) => d.date === localDateISO())?.isPeriod === true} onPeriodToday={togglePeriodStartedToday} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} onSettings={() => setSettingsOpen(true)} />
 
+      <PatternsCard refreshKey={patternsKey} />
+
       {cycle.isLate && (
         <ExplainThisCard
           title="Your period looks later than usual"
@@ -659,6 +678,7 @@ export default function CyclePage() {
           { id: "overview", label: "Overview", content: <OverviewTab cycle={cycle} /> },
           { id: "calendar", label: "Calendar", content: <MonthCalendar onSelectDay={openLogModal} /> },
           { id: "trends", label: "Trends", content: <TrendsTab cycle={cycle} /> },
+          { id: "conditions", label: "My conditions", content: <ConditionsCard list={conditions} cycle={cycle} onChanged={setConditions} /> },
         ]}
       />
       {logModal}

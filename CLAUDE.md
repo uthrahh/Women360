@@ -433,6 +433,27 @@ without daily logging. Period days within 8 days of a period's first day belong 
 today" is now a toggle that says "Period started today" and undoes on a second tap (restoring the day as it was
 before the tap, and asking first if she has added anything since).
 
+**Conditions and "worth discussing with a doctor" signals (latest pass):** a woman can tell the app she
+has PCOS, endometriosis, a thyroid condition, PMDD, perimenopause or anaemia (Cycle > My conditions;
+`UserCondition`, never inferred). That adds the symptoms the guidelines list for it to her symptom list, shows
+the guideline's own note and sources, and builds a plain-text "summary for my doctor". Separately, the server
+looks at her own logs and, when a pattern crosses a published line, shows a collapsed card on the Cycle
+page with her own numbers, the line it crosses, what a doctor may check and the source, plus **one** in-app
+notification the first time (`server/src/modules/conditions/`: `guidelines.ts` holds every threshold and
+citation and separates guideline values from our own "how much data is enough" values; `signals.ts` is pure and
+unit-tested; `HealthSignalState` records notified/dismissed, dismissed stays away 90 days). Six patterns:
+irregular cycle lengths (PCOS 2023 range, 21-35 days), 90+ days without a period, heavy or long periods (FIGO/NICE
+NG88, with low energy as a hint to ask about iron), strong period pain across cycles (ESHRE/NICE, endometriosis),
+a mood dip before the period (DSM-5-TR, PMDD, needs daily mood across 2+ cycles) and cycle changes at 40+ (STRAW+10,
+NICE NG23). Rules worth keeping: never a diagnosis and never wording like "you have X"; silent without enough
+logged data, during pregnancy/postpartum, for a condition she has already declared, or when age explains it
+(irregular cycles give way to perimenopause from 45); a period's pain/energy/heavy days are read from symptom-only
+days inside her usual period length because she logs only the first day; a flagged "unusual" cycle is left out.
+**There is deliberately no thyroid signal**: NICE says to test thyroid only when other symptoms point to it, so
+thyroid appears as a possible cause under irregular cycles and as a declarable condition, not as its own alert. All
+of it is marked "Draft: not yet reviewed by a clinician" and **every citation and link must be checked by a
+clinician before launch**. It is in-app only (no push notification exists yet).
+
 Known concrete defects to fix as part of any related work:
 - No `sitemap.xml` (needs the production domain), no terms of use page, no
   Open Graph image or canonical URLs (same reason). Per-route titles exist for
