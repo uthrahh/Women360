@@ -93,13 +93,30 @@ export interface CycleSummaryResult {
  * still counts toward its length, but spotting that precedes the real flow
  * does not (consistent with it not being able to start the period either).
  */
-export function detectPeriods(periodDays: PeriodDayInput[]): { start: Date; end: Date; excludeCycle: boolean }[] {
+/** A period day logged this soon after a period began is part of that period, even with days between that she didn't log. */
+const PERIOD_SPAN_DAYS = 8;
+
+export interface DetectedPeriod {
+  start: Date;
+  end: Date;
+  excludeCycle: boolean;
+  /**
+   * True only when she logged every day from the start to the end (and at least two).
+   * A person who logs just the first day, or the first day and a few symptom days, hasn't
+   * told us how long the period lasted, so its logged span must not be learned as her
+   * period length: the app counts the days from the start using her usual length instead.
+   */
+  lengthKnown: boolean;
+}
+
+export function detectPeriods(periodDays: PeriodDayInput[]): DetectedPeriod[] {
   const sorted = [...periodDays].sort((a, b) => a.date.getTime() - b.date.getTime());
   const runs: PeriodDayInput[][] = [];
   let current: PeriodDayInput[] = [];
   let prevDate: Date | null = null;
   for (const day of sorted) {
-    if (prevDate && day.date.getTime() - prevDate.getTime() > DAY_MS) {
+    const withinSpan = current.length > 0 && day.date.getTime() - current[0].date.getTime() <= (PERIOD_SPAN_DAYS - 1) * DAY_MS;
+    if (prevDate && day.date.getTime() - prevDate.getTime() > DAY_MS && !withinSpan) {
       runs.push(current);
       current = [];
     }
@@ -108,13 +125,16 @@ export function detectPeriods(periodDays: PeriodDayInput[]): { start: Date; end:
   }
   if (current.length > 0) runs.push(current);
 
-  const periods: { start: Date; end: Date; excludeCycle: boolean }[] = [];
+  const periods: DetectedPeriod[] = [];
   for (const run of runs) {
     const startEntry = run.find((d) => d.flow !== "SPOTTING");
     if (!startEntry) continue; // entirely spotting — doesn't count as a period
+    const end = run[run.length - 1].date;
+    const loggedFromStart = run.filter((d) => d.date >= startEntry.date).length;
     periods.push({
       start: startEntry.date,
-      end: run[run.length - 1].date,
+      end,
+      lengthKnown: loggedFromStart >= 2 && Math.round((end.getTime() - startEntry.date.getTime()) / DAY_MS) + 1 === loggedFromStart,
       // Flagged on any day of the run (people often tick it while editing
       // day 2, not only on the very first day).
       excludeCycle: run.some((d) => d.excludeCycle === true),
@@ -190,7 +210,7 @@ export function computeCycleSummary(input: CycleSummaryInput): CycleSummaryResul
     ? Math.floor((input.today.getTime() - lastPeriod.end.getTime()) / DAY_MS) <= 1
     : false;
   const completedPeriods = lastPeriodPossiblyOngoing ? periods.slice(0, -1) : periods;
-  const loggedPeriodLengths = completedPeriods.map(
+  const loggedPeriodLengths = completedPeriods.filter((p) => p.lengthKnown).map(
     (p) => Math.round((p.end.getTime() - p.start.getTime()) / DAY_MS) + 1
   );
   const loggedPeriodLength = loggedPeriodLengths.length

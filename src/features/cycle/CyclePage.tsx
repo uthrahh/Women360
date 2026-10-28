@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { cycleService } from "@/services/cycleService";
 import { localDateISO } from "@/services/mappers";
 import type { CycleDay, CycleDayPhase, CycleSummary } from "@/types";
@@ -14,7 +14,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useApp } from "@/context/AppContext";
-import { ChevronLeft, ChevronRight, Copy, Download, Settings, Trash2, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, Download, Settings, Trash2, X } from "lucide-react";
 import { CONTEXT_TAG_OPTIONS } from "@/lib/cycleContext";
 import { buildCycleCsv } from "@/lib/cycleCsv";
 import { saveFile } from "@/lib/saveFile";
@@ -111,6 +111,37 @@ function dayToLogForm(day: CycleDay): LogFormState {
   };
 }
 
+/** Anything she wrote on a day beyond the period itself; removing the day would lose it. */
+function entryHasDetails(day: CycleDay) {
+  return (
+    day.pain !== undefined || day.energy !== undefined || Boolean(day.mood) || Boolean(day.symptoms?.length) || Boolean(day.notes) || Boolean(day.contextTags?.length) || day.excludeCycle === true
+  );
+}
+
+/**
+ * One tap logs that the period started today and the button then says so; tapping it again
+ * takes it back. A slip of the finger should be as easy to undo as it was to make.
+ */
+function PeriodTodayButton({ started, onClick, size, fullWidth }: { started: boolean; onClick: () => void; size?: "sm" | "md" | "lg" | "xl"; fullWidth?: boolean }) {
+  return (
+    <Button
+      variant={started ? "secondary" : "primary"}
+      size={size}
+      fullWidth={fullWidth}
+      onClick={onClick}
+      aria-label={started ? "Period started today. Tap to undo." : undefined}
+    >
+      {started ? (
+        <>
+          <Check size={16} aria-hidden /> Period started today <span className="font-normal opacity-70">· tap to undo</span>
+        </>
+      ) : (
+        "Log period started today"
+      )}
+    </Button>
+  );
+}
+
 export default function CyclePage() {
   const { senior } = useApp();
   const [cycle, setCycle] = useState<CycleSummary | null>(null);
@@ -124,6 +155,8 @@ export default function CyclePage() {
   const [bulkSaving, setBulkSaving] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const toast = useToast();
+  // What today looked like just before she tapped "Period started today" (null = no entry), so undo can put it back.
+  const beforePeriodTap = useRef<CycleDay | null | undefined>(undefined);
 
   useEffect(() => {
     cycleService.getSummary().then(setCycle);
@@ -219,14 +252,43 @@ export default function CyclePage() {
       );
   }
 
-  function logPeriodStartedToday() {
-    cycleService.logDay({ date: localDateISO(), isPeriod: true, flow: "medium" }).then(
-      () => {
-        cycleService.getSummary().then(setCycle);
-        toast.show("Period start logged for today");
-      },
-      (err) => toast.show(err instanceof Error ? err.message : "Couldn't log that. Please try again.", { tone: "error" })
-    );
+  function togglePeriodStartedToday() {
+    const today = localDateISO();
+    const entry = cycle!.history.find((d) => d.date === today);
+    const refresh = () => cycleService.getSummary().then(setCycle);
+    const fail = (err: unknown) => toast.show(err instanceof Error ? err.message : "Couldn't save that. Please try again.", { tone: "error" });
+
+    if (entry?.isPeriod !== true) {
+      beforePeriodTap.current = entry ?? null;
+      // A day that already had an entry keeps its flow; a new one starts at medium, the usual first day.
+      cycleService.logDay({ date: today, isPeriod: true, flow: entry ? entry.flow : "medium" }).then(() => {
+        refresh();
+        toast.show("Period start logged for today. Tap the button again to undo.");
+      }, fail);
+      return;
+    }
+
+    const before = beforePeriodTap.current;
+    if (before) {
+      // Today had an entry before the tap (symptoms, say): put it back as it was.
+      cycleService.logDay({ date: today, isPeriod: before.isPeriod, flow: before.flow }).then(() => {
+        beforePeriodTap.current = undefined;
+        refresh();
+        toast.show("Undone. Today isn't marked as a period start.");
+      }, fail);
+      return;
+    }
+    // Nothing was there before (or it was logged on an earlier visit), so undoing removes the day.
+    // If she has added anything to it, or set a flow herself, ask first so nothing is lost by accident.
+    if (entryHasDetails(entry) || (before === undefined && entry.flow !== undefined && entry.flow !== "medium")) {
+      setConfirmDeleteDate(today);
+      return;
+    }
+    cycleService.deleteEntry(today).then(() => {
+      beforePeriodTap.current = undefined;
+      refresh();
+      toast.show("Undone. Today isn't marked as a period start.");
+    }, fail);
   }
 
   function openBulkAdd() {
@@ -541,7 +603,7 @@ export default function CyclePage() {
           description="Once you log a period, flow, or symptom, Women360 will start showing your cycle day, phase, and predictions here."
           action={
             <div className="flex flex-col sm:flex-row items-center gap-2">
-              <Button onClick={logPeriodStartedToday}>Period started today</Button>
+              <PeriodTodayButton started={false} onClick={togglePeriodStartedToday} />
               <Button variant="secondary" onClick={() => openLogModal(localDateISO())}>Log today's flow & symptoms</Button>
               <Button variant="secondary" onClick={openBulkAdd}>Add past periods instead</Button>
             </div>
@@ -559,7 +621,7 @@ export default function CyclePage() {
   if (senior.seniorMode) {
     return (
       <>
-        <SeniorCycle cycle={populated} onPeriodToday={logPeriodStartedToday} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} />
+        <SeniorCycle cycle={populated} periodStartedToday={cycle.history.find((d) => d.date === localDateISO())?.isPeriod === true} onPeriodToday={togglePeriodStartedToday} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} />
         {cycle.isLate && (
           <div className="max-w-xl mx-auto px-5">
             <ExplainThisCard
@@ -582,7 +644,7 @@ export default function CyclePage() {
         <p className="text-[var(--w360-text-muted)] mt-1">A gentle picture of where you are in your cycle.</p>
       </div>
 
-      <CycleRing cycle={populated} onPeriodToday={logPeriodStartedToday} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} onSettings={() => setSettingsOpen(true)} />
+      <CycleRing cycle={populated} periodStartedToday={cycle.history.find((d) => d.date === localDateISO())?.isPeriod === true} onPeriodToday={togglePeriodStartedToday} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} onSettings={() => setSettingsOpen(true)} />
 
       {cycle.isLate && (
         <ExplainThisCard
@@ -642,9 +704,12 @@ function ScalePicker({ label, value, onChange }: { label: string; value: number 
   );
 }
 
+const PERIOD_HINT = (periodLength: number) =>
+  `You only need to log the day it starts. Women360 counts the rest of your ${Math.round(periodLength)}-day period and works out your phases from your cycle length, so on other days you can log just symptoms.`;
+
 function CycleRing({
-  cycle, onPeriodToday, onLog, onBulkAdd, onSettings,
-}: { cycle: PopulatedCycleSummary; onPeriodToday: () => void; onLog: () => void; onBulkAdd: () => void; onSettings: () => void }) {
+  cycle, periodStartedToday, onPeriodToday, onLog, onBulkAdd, onSettings,
+}: { cycle: PopulatedCycleSummary; periodStartedToday: boolean; onPeriodToday: () => void; onLog: () => void; onBulkAdd: () => void; onSettings: () => void }) {
   const size = 180;
   const stroke = 14;
   const r = (size - stroke) / 2;
@@ -696,8 +761,9 @@ function CycleRing({
             </p>
           )}
           <p className="text-xs text-[var(--w360-text-muted)] italic">{CONTRACEPTION_DISCLAIMER}</p>
+          <p className="text-xs text-[var(--w360-text-muted)]">{PERIOD_HINT(cycle.periodLength)}</p>
           <div className="flex flex-wrap items-center gap-2 mt-2">
-            <Button variant="primary" size="sm" onClick={onPeriodToday}>Period started today</Button>
+            <PeriodTodayButton started={periodStartedToday} size="sm" onClick={onPeriodToday} />
             <Button variant="secondary" size="sm" onClick={onLog}>Log today's flow & symptoms</Button>
             <Button variant="secondary" size="sm" onClick={onBulkAdd}>Add past periods</Button>
             <button
@@ -1091,7 +1157,7 @@ function Stat({ label, value, note }: { label: string; value: string; note?: str
   );
 }
 
-function SeniorCycle({ cycle, onPeriodToday, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary; onPeriodToday: () => void; onLog: () => void; onBulkAdd: () => void }) {
+function SeniorCycle({ cycle, periodStartedToday, onPeriodToday, onLog, onBulkAdd }: { cycle: PopulatedCycleSummary; periodStartedToday: boolean; onPeriodToday: () => void; onLog: () => void; onBulkAdd: () => void }) {
   return (
     <div className="max-w-xl mx-auto p-5 flex flex-col gap-5">
       <Card>
@@ -1110,7 +1176,8 @@ function SeniorCycle({ cycle, onPeriodToday, onLog, onBulkAdd }: { cycle: Popula
           </p>
           {cycle.irregularityNote && <p className="text-base text-[var(--w360-text-muted)]">{cycle.irregularityNote}</p>}
           <p className="text-sm text-[var(--w360-text-muted)] italic">{CONTRACEPTION_DISCLAIMER}</p>
-          <Button size="xl" fullWidth onClick={onPeriodToday}>Period started today</Button>
+          <p className="text-base text-[var(--w360-text-muted)]">{PERIOD_HINT(cycle.periodLength)}</p>
+          <PeriodTodayButton started={periodStartedToday} size="xl" fullWidth onClick={onPeriodToday} />
           <Button size="lg" variant="secondary" fullWidth onClick={onLog}>Add today's flow</Button>
           <Button size="lg" variant="secondary" fullWidth onClick={onBulkAdd}>Add past periods</Button>
         </CardBody>

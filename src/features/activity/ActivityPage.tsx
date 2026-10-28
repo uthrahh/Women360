@@ -21,6 +21,7 @@ import { LoadingState, ErrorState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { ActivityFields } from "./ActivityFields";
 import { ActivityHabits } from "./ActivityHabits";
+import { ActivityPlanSection } from "./plan/ActivityPlanSection";
 
 interface FormValues {
   activityCode: string;
@@ -328,6 +329,8 @@ export default function ActivityPage() {
       </div>
 
       <ActivityHabits habits={habits} onChange={(h) => setHabits((list) => list.map((x) => (x.id === h.id ? h : x)))} />
+
+      <ActivityPlanSection onLogged={() => { reload(); }} />
 
       <section aria-label="Quick log" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">

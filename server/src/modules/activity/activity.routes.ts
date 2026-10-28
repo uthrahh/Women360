@@ -4,6 +4,8 @@ import { validate } from "@/middleware/validate";
 import { requireAuth } from "@/middleware/auth";
 import { created, noContent, ok } from "@/lib/response";
 import { activityService } from "./activity.service";
+import { planService } from "./plan/plan.service";
+import { planIdParamSchema, planRequestSchema, todayQuerySchema } from "./plan/plan.validation";
 import {
   activityEntrySchema,
   activityEntryUpdateSchema,
@@ -77,4 +79,38 @@ activityRouter.put(
   "/goal",
   validate({ body: activityGoalSchema }),
   asyncHandler(async (req, res) => ok(res, await activityService.upsertGoal(req.user!.id, req.body)))
+);
+
+// Personalised plans: built from her own data on request, saved only when she starts one.
+activityRouter.get(
+  "/plan/options",
+  validate({ query: todayQuerySchema }),
+  asyncHandler(async (req, res) => ok(res, await planService.options(req.user!.id, String(req.query.today))))
+);
+
+activityRouter.post(
+  "/plan/preview",
+  validate({ body: planRequestSchema }),
+  asyncHandler(async (req, res) => ok(res, await planService.preview(req.user!.id, req.body)))
+);
+
+activityRouter.get(
+  "/plan/active",
+  validate({ query: todayQuerySchema }),
+  asyncHandler(async (req, res) => ok(res, await planService.active(req.user!.id, String(req.query.today))))
+);
+
+activityRouter.post(
+  "/plan",
+  validate({ body: planRequestSchema }),
+  asyncHandler(async (req, res) => created(res, await planService.start(req.user!.id, req.body)))
+);
+
+activityRouter.post(
+  "/plan/:id/end",
+  validate({ params: planIdParamSchema }),
+  asyncHandler(async (req, res) => {
+    await planService.end(req.user!.id, req.params.id);
+    return noContent(res);
+  })
 );

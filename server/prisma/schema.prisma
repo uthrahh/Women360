@@ -99,6 +99,7 @@ model User {
   activityEntries   ActivityEntry[]
   stepsLogs         StepsLog[]
   activityQuickLogs ActivityQuickLog[]
+  activityPlans     ActivityPlan[]
   reproductiveHealth ReproductiveHealth?
   activityQuickLogSeeded Boolean @default(false)
   sleepEntries      SleepEntry[]
@@ -374,6 +375,42 @@ model ActivityEntry {
   createdAt       DateTime  @default(now())
 
   @@index([userId, date])
+}
+
+enum PlanGoal {
+  HEALTH
+  STRENGTH
+  STAMINA
+  BALANCE
+  STRESS
+}
+
+enum PlanStatus {
+  ACTIVE
+  ENDED
+}
+
+// A personalised activity plan she asked for. `plan` is the plan exactly as it was built
+// (modules/activity/plan/planner.ts) and is never rebuilt behind her back; her progress
+// against it is worked out from her logged activity when she looks. Ending a plan keeps
+// the row, so it stays in her data export.
+model ActivityPlan {
+  id             String     @id @default(cuid())
+  userId         String
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal           PlanGoal
+  weeks          Int
+  startDate      DateTime   @db.Date
+  // ISO weekdays she said she can be active (1 = Monday ... 7 = Sunday).
+  days           Int[]
+  sessionMinutes Int
+  activityCodes  String[]   @default([])
+  status         PlanStatus @default(ACTIVE)
+  plan           Json
+  createdAt      DateTime   @default(now())
+  endedAt        DateTime?
+
+  @@index([userId, status])
 }
 
 // One of her one-tap activity shortcuts ("15-min walk"). She adds and removes

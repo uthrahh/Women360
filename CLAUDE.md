@@ -400,6 +400,29 @@ closed-app notification until a push service and a scheduler exist. Durations us
 tab order because the field is already a spinbutton that takes the arrow keys) as well as scrub, typing
 and arrow keys: add `NumberField` or `DurationField`, never a bare number input.
 
+**Activity plans and the cycle period fix (latest pass):** on request, a woman can ask for a
+personalised activity plan (Activity page > "Build my plan"). It is plain arithmetic on her own data,
+not a model: `server/src/modules/activity/plan/` (`planner.ts` is pure and fully unit-tested,
+`baseline.ts` reads her last four weeks, `plan.service.ts` persists). Every health claim lives in
+`plan/guidelines.ts`, with the WHO 2020 physical-activity guidelines named as the source for the
+150-minute aerobic target, the 2 strength days, the 3 balance-and-strength days from age 65, the
+pregnancy/postpartum limit and "a vigorous minute counts double"; the build-up rate (the larger of 15
+minutes or 20% a week, start at 30) and the session sizes are *our own* cautious design values and are
+labelled so. **The plan is marked "Draft: not yet reviewed by a clinician or an exercise professional" and
+must stay so until one has.** Rules worth keeping: it is only ever built when she asks and never pushed as an
+alert; it is built from her logs, age, time and a few answers; it never promises the target (a
+feasibility verdict says whether her history, her weeks or her time limits it, and what would close the
+gap); hard effort is allowed only for an adult under 65 with no pregnancy/postpartum status and no listed
+conditions; under-18s get no plan; weight loss is deliberately not a goal; the server rebuilds the plan from
+her answers and never trusts one sent by the client; progress is computed from her logged activity when she
+looks (a session is done when she logged that kind of activity that day). `ActivityPlan` rows are kept
+when a plan ends and are in her data export. Cycle: `detectPeriods` now only learns a period's length
+when she logged every day of it (`lengthKnown`); logging just the first day, or the first day plus
+symptom days, counts the period from its start for her usual length (Settings), so phases follow her cycle
+without daily logging. Period days within 8 days of a period's first day belong to it. "Log period started
+today" is now a toggle that says "Period started today" and undoes on a second tap (restoring the day as it was
+before the tap, and asking first if she has added anything since).
+
 Known concrete defects to fix as part of any related work:
 - No `sitemap.xml` (needs the production domain), no terms of use page, no
   Open Graph image or canonical URLs (same reason). Per-route titles exist for

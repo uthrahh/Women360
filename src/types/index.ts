@@ -549,3 +549,94 @@ export interface ReproductiveHealth {
   expectedDueDate: string | null;
   notes: string | null;
 }
+
+// ---- Personalised activity plans (built on the server from her own data) ----
+
+export type PlanGoal = "HEALTH" | "STRENGTH" | "STAMINA" | "BALANCE" | "STRESS";
+export type PlanKind = "AEROBIC" | "STRENGTH" | "MOBILITY";
+export type PlanFeasibilityLevel = "ALREADY_THERE" | "COMFORTABLE" | "ACHIEVABLE" | "STRETCH" | "LIMITED_BY_TIME";
+
+export interface PlanSession {
+  date: string;
+  /** ISO weekday, 1 = Monday ... 7 = Sunday. */
+  weekday: number;
+  kind: PlanKind;
+  activityCode: string;
+  label: string;
+  intensity: "LOW" | "MODERATE" | "HIGH";
+  effort: string;
+  feel: string;
+  minutes: number;
+  caloriesEstimate: number | null;
+  note?: string;
+  /** Only on a saved plan: she logged this kind of activity on that day. */
+  done?: boolean;
+}
+
+export interface PlanWeek {
+  week: number;
+  startDate: string;
+  focus: string;
+  aerobicMinutes: number;
+  aerobicEquivalent: number;
+  strengthSessions: number;
+  mobilitySessions: number;
+  totalMinutes: number;
+  sessions: PlanSession[];
+}
+
+export interface PlanFeasibility {
+  level: PlanFeasibilityLevel;
+  headline: string;
+  reasons: string[];
+  suggestions: string[];
+}
+
+export interface ActivityPlan {
+  goal: PlanGoal;
+  goalLabel: string;
+  weeks: number;
+  startDate: string;
+  endDate: string;
+  aerobicTarget: number;
+  startAerobic: number;
+  peakAerobic: number;
+  feasibility: PlanFeasibility;
+  cautions: string[];
+  weeksPlan: PlanWeek[];
+  source: { label: string; url: string };
+  review: { reviewed: boolean; note: string };
+}
+
+export interface ActivePlan {
+  id: string;
+  status: "ACTIVE" | "ENDED";
+  createdAt: string;
+  plan: ActivityPlan;
+  progress: {
+    state: "UPCOMING" | "ACTIVE" | "FINISHED";
+    currentWeek: number;
+    weekDone: { aerobicEquivalent: number; strengthSessions: number; mobilitySessions: number };
+  };
+}
+
+export interface PlanRequest {
+  goal: PlanGoal;
+  weeks: number;
+  /** ISO weekdays, 1 = Monday ... 7 = Sunday. */
+  days: number[];
+  sessionMinutes: number;
+  activityCodes: string[];
+  startDate: string;
+}
+
+export interface PlanOptions {
+  goals: { code: PlanGoal; label: string; description: string }[];
+  weeksChoices: number[];
+  aerobicActivities: { code: string; label: string; group: string; available: boolean }[];
+  defaults: { goal: PlanGoal; weeks: number; days: number[]; sessionMinutes: number; activityCodes: string[] };
+  baseline: { hasHistory: boolean; aerobicMinutesPerWeek: number };
+  pregnancy: "PREGNANT" | "POSTPARTUM" | null;
+  source: { label: string; url: string };
+  review: { reviewed: boolean; note: string };
+}
