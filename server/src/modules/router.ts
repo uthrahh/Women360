@@ -18,10 +18,12 @@ import { notificationsRouter } from "./notifications/notifications.routes";
 import { coachRouter } from "./coach/coach.routes";
 import { adminRouter } from "./admin/admin.routes";
 import { feedbackRouter } from "./feedback/feedback.routes";
+import { conditionsRouter } from "./conditions/conditions.routes";
 
 export const router = Router();
 
 router.use("/auth", authRouter);
+router.use("/conditions", conditionsRouter);
 router.use("/users", usersRouter);
 router.use("/cycle", cycleRouter);
 router.use("/nutrition", nutritionRouter);

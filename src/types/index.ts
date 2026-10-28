@@ -640,3 +640,39 @@ export interface PlanOptions {
   source: { label: string; url: string };
   review: { reviewed: boolean; note: string };
 }
+
+// ---- Conditions she tells us about, and patterns worth discussing with a doctor ----
+
+export type ConditionCode = "PCOS" | "ENDOMETRIOSIS" | "THYROID" | "PMDD" | "PERIMENOPAUSE" | "ANAEMIA";
+
+export interface ConditionInfo {
+  code: ConditionCode;
+  label: string;
+  about: string;
+  trackSymptoms: string[];
+  note: string;
+  sources: { label: string; url: string }[];
+  declared: boolean;
+}
+
+export interface ConditionList {
+  review: { reviewed: boolean; note: string };
+  conditions: ConditionInfo[];
+}
+
+export interface HealthSignal {
+  key: string;
+  title: string;
+  evidence: string[];
+  guideline: string;
+  mayCheck: string[];
+  relatedTo: ConditionCode[];
+  sources: { label: string; url: string }[];
+  nextStep: string;
+}
+
+export interface HealthSignals {
+  review: { reviewed: boolean; note: string };
+  today: string;
+  signals: HealthSignal[];
+}

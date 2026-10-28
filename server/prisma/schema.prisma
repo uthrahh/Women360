@@ -100,6 +100,8 @@ model User {
   stepsLogs         StepsLog[]
   activityQuickLogs ActivityQuickLog[]
   activityPlans     ActivityPlan[]
+  conditions        UserCondition[]
+  signalStates      HealthSignalState[]
   reproductiveHealth ReproductiveHealth?
   activityQuickLogSeeded Boolean @default(false)
   sleepEntries      SleepEntry[]
@@ -375,6 +377,41 @@ model ActivityEntry {
   createdAt       DateTime  @default(now())
 
   @@index([userId, date])
+}
+
+// Conditions she has told us she has (never inferred). They tailor what the app suggests tracking
+// and bringing to her doctor; they are her own record, not a diagnosis the app made.
+enum HealthCondition {
+  PCOS
+  ENDOMETRIOSIS
+  THYROID
+  PMDD
+  PERIMENOPAUSE
+  ANAEMIA
+}
+
+model UserCondition {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  condition HealthCondition
+  createdAt DateTime        @default(now())
+
+  @@unique([userId, condition])
+}
+
+// Where each "worth discussing with a doctor" pattern stands for her: when it first appeared,
+// whether she was told (one in-app notification, once), and whether she set it aside.
+model HealthSignalState {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key         String
+  firstSeenAt DateTime  @default(now())
+  notifiedAt  DateTime?
+  dismissedAt DateTime?
+
+  @@unique([userId, key])
 }
 
 enum PlanGoal {
