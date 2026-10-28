@@ -11,6 +11,7 @@ import { localDateISO } from "@/services/mappers";
 import { FEASIBILITY_LABEL, FEASIBILITY_TONE, dayLabel } from "@/lib/activityPlan";
 import { PlanWeeks, SessionLine } from "./PlanWeeks";
 import type { ActivePlan, Effort } from "@/types";
+import { Hint } from "@/components/ui/Hint";
 
 /** Where she is in the plan she started: this week's sessions, one tap to log one, and how the week is going. */
 export function ActivePlanCard({ active, onChanged, onEnded }: { active: ActivePlan; onChanged: () => void; onEnded: () => void }) {
@@ -79,11 +80,15 @@ export function ActivePlanCard({ active, onChanged, onEnded }: { active: ActiveP
                   <span className="tabular-nums">{doneAerobic} of {plannedAerobic} min</span>
                 </div>
                 <ProgressBar value={pct} label="Aerobic minutes this week" />
-                <p className="text-xs senior:text-base text-[var(--w360-text-muted)]">
-                  {week.strengthSessions > 0 && `Strength ${progress.weekDone.strengthSessions} of ${week.strengthSessions}. `}
-                  {week.mobilitySessions > 0 && `Balance and mobility ${progress.weekDone.mobilitySessions} of ${week.mobilitySessions}. `}
+                {(week.strengthSessions > 0 || week.mobilitySessions > 0) && (
+                  <p className="text-xs senior:text-base text-[var(--w360-text-muted)]">
+                    {week.strengthSessions > 0 && `Strength ${progress.weekDone.strengthSessions} of ${week.strengthSessions}. `}
+                    {week.mobilitySessions > 0 && `Balance and mobility ${progress.weekDone.mobilitySessions} of ${week.mobilitySessions}.`}
+                  </p>
+                )}
+                <Hint id="plan-counts" className="text-xs senior:text-base text-[var(--w360-text-muted)]">
                   Anything you log this week counts, not only the suggested activity.
-                </p>
+                </Hint>
               </div>
 
               <ul className="divide-y divide-[var(--w360-border)]" aria-label="This week's sessions">

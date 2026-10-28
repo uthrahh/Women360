@@ -6,6 +6,7 @@ import { insightsService } from "@/services/insightsService";
 import type { InsightsSummary, MetricCorrelation } from "@/types";
 import { ScatterChart, Scatter, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { Hint } from "@/components/ui/Hint";
 
 const STRENGTH_TONE: Record<MetricCorrelation["strength"], "accent" | "neutral"> = {
   strong: "accent",
@@ -72,11 +73,11 @@ export default function InsightsPage() {
       <section>
         <div className="mb-3">
           <h2 className="font-display text-lg font-semibold">Patterns across your tracked metrics</h2>
-          <p className="text-sm text-[var(--w360-text-muted)] mt-0.5">
+          <Hint id="insights-intro" className="text-sm text-[var(--w360-text-muted)] mt-0.5">
             Every pair of things you log — sleep, mood, energy, stress, activity, hydration, nutrition, period pain —
             checked against each other over the last 90 days. Only patterns strong enough to matter are shown here;
             weak or noisy ones are left out rather than reported as a false signal.
-          </p>
+          </Hint>
         </div>
         {data.correlations.insufficientData ? (
           <EmptyState

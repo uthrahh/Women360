@@ -20,6 +20,7 @@ import { useToast } from "@/components/ui/Toast";
 import PulseHeart from "@/components/reactbits/PulseHeart";
 import BellToggle from "@/components/reactbits/BellToggle";
 import { DEFAULT_REMINDER, REMINDER_TIME_OPTIONS, STRICT_12H_TIME } from "@/lib/reminderTimes";
+import { Hint } from "@/components/ui/Hint";
 
 // One tap to add something common. These create the habit straight away; it
 // can be adjusted afterwards with the pencil.
@@ -266,9 +267,9 @@ export default function HabitsPage() {
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       {isNew && (
         <div>
-          <p className="text-xs text-[var(--w360-text-muted)] mb-2">Tap one to add it right now</p>
+          <Hint id="habits-ideas" className="text-xs text-[var(--w360-text-muted)] mb-2">Tap one to add it right now</Hint>
           {ideasRow}
-          <p className="text-xs text-[var(--w360-text-muted)] mt-4">…or make your own</p>
+          <Hint id="habits-own" className="text-xs text-[var(--w360-text-muted)] mt-4">…or make your own</Hint>
         </div>
       )}
 
@@ -323,7 +324,7 @@ export default function HabitsPage() {
               </optgroup>
             ))}
           </select>
-          <p className="text-xs text-[var(--w360-text-muted)]">Activity habits are listed as today's to-do on the Activity page.</p>
+          <Hint id="habit-activity" className="text-xs text-[var(--w360-text-muted)]">Activity habits are listed as today's to-do on the Activity page.</Hint>
         </div>
       )}
 
@@ -354,7 +355,7 @@ export default function HabitsPage() {
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
-            <p className="text-xs text-[var(--w360-text-muted)]">You'll be notified at this time while Women360 is open in a browser tab or window, and it also shows in your Today list.</p>
+            <Hint id="habit-reminder" className="text-xs text-[var(--w360-text-muted)]">You'll be notified at this time while Women360 is open in a browser tab or window, and it also shows in your Today list.</Hint>
             <NotificationPrompt />
           </>
         )}
@@ -512,10 +513,12 @@ export default function HabitsPage() {
                           );
                         })}
                       </div>
-                      <p className="text-xs text-[var(--w360-text-muted)] mt-1.5">
-                        {h.doneToday ? "Done for today" : "Tap when you've done it"}
-                        {h.streak > 1 ? ` · ${h.streak} ${h.streakUnit}s in a row` : ""}
-                      </p>
+                      {(h.doneToday || h.streak > 1) && (
+                        <p className="text-xs text-[var(--w360-text-muted)] mt-1.5">
+                          {h.doneToday ? "Done for today" : ""}
+                          {h.streak > 1 ? `${h.doneToday ? " · " : ""}${h.streak} ${h.streakUnit}s in a row` : ""}
+                        </p>
+                      )}
                     </div>
                     <PulseHeart
                       key={`${h.id}-${heartEpoch}`}

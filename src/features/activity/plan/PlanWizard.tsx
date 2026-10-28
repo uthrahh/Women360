@@ -11,6 +11,7 @@ import { localDateISO } from "@/services/mappers";
 import { FEASIBILITY_LABEL, FEASIBILITY_TONE, WEEKDAYS, toggleDay } from "@/lib/activityPlan";
 import { PlanWeeks } from "./PlanWeeks";
 import type { ActivePlan, ActivityPlan, PlanOptions, PlanRequest } from "@/types";
+import { Hint } from "@/components/ui/Hint";
 
 const choice = (selected: boolean) =>
   clsx(
@@ -89,11 +90,11 @@ export function PlanWizard({ open, onClose, onStarted }: { open: boolean; onClos
         <ResultStep plan={plan} busy={busy} onBack={() => setPlan(null)} onStart={startIt} />
       ) : (
         <div className="flex flex-col gap-6">
-          <p className="text-sm senior:text-base text-[var(--w360-text-muted)]">
+          <Hint id="plan-intro" className="text-sm senior:text-base text-[var(--w360-text-muted)]">
             {options.baseline.hasHistory
               ? `Filled in from your own logs: you've been doing about ${options.baseline.aerobicMinutesPerWeek} minutes of moderate activity a week. Change only what's different.`
               : "You haven't logged recent activity, so the plan starts gently. Change anything that isn't right."}
-          </p>
+          </Hint>
 
           <fieldset>
             <legend className="text-sm font-medium mb-2 senior:text-lg">What is it for?</legend>
@@ -152,7 +153,7 @@ export function PlanWizard({ open, onClose, onStarted }: { open: boolean; onClos
 
           <details className="group">
             <summary className="cursor-pointer text-sm font-medium senior:text-lg">Activities you'd like (optional)</summary>
-            <p className="text-xs text-[var(--w360-text-muted)] mt-1.5 mb-2 senior:text-base">Pick up to three. Left as it is, the plan uses what you already do, or walking.</p>
+            <Hint id="plan-activities" className="text-xs text-[var(--w360-text-muted)] mt-1.5 mb-2 senior:text-base">Pick up to three. Left as it is, the plan uses what you already do, or walking.</Hint>
             <div className="flex flex-wrap gap-2">
               {options.aerobicActivities
                 .filter((a) => a.available)

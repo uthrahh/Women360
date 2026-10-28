@@ -22,6 +22,7 @@ import { useToast } from "@/components/ui/Toast";
 import { ActivityFields } from "./ActivityFields";
 import { ActivityHabits } from "./ActivityHabits";
 import { ActivityPlanSection } from "./plan/ActivityPlanSection";
+import { Hint } from "@/components/ui/Hint";
 
 interface FormValues {
   activityCode: string;
@@ -334,7 +335,8 @@ export default function ActivityPage() {
 
       <section aria-label="Quick log" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-[var(--w360-text-muted)]">Quick log, one tap adds it for today:</span>
+          <span className="text-xs text-[var(--w360-text-muted)]">Quick log:</span>
+          <Hint id="act-quicklog" className="text-xs text-[var(--w360-text-muted)]">One tap adds it for today.</Hint>
           {quick?.map((t) => (
             <span key={t.id} className="inline-flex items-stretch">
               <button
@@ -429,7 +431,7 @@ export default function ActivityPage() {
                   >
                     Update steps
                   </button>
-                  <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">Entered by hand. Syncing from a watch isn't available yet.</p>
+                  <Hint id="act-steps-manual" className="text-xs text-[var(--w360-text-muted)] mt-0.5">Entered by hand. Syncing from a watch isn't available yet.</Hint>
                 </>
               )}
             </div>
@@ -486,7 +488,7 @@ export default function ActivityPage() {
           <EmptyState title="No activity logged yet" description="Log a workout or walk to see it here." />
         ) : (
           <>
-            <p className="text-xs text-[var(--w360-text-muted)] mb-2">Select an entry to edit or delete it.</p>
+            <Hint id="act-select-entry" className="text-xs text-[var(--w360-text-muted)] mb-2">Select an entry to edit or delete it.</Hint>
             <ItemList
               ariaLabel="Recent activity"
               maxHeight={460}

@@ -18,6 +18,7 @@ import type { Appointment, Medication, MedicationAdherence, MedicationDose, Vita
 import { Pill, CalendarClock, Plus, Check, X as XIcon } from "lucide-react";
 import { PreventiveCare } from "./PreventiveCare";
 import { ReproductiveHealthTab } from "./ReproductiveHealthTab";
+import { Hint } from "@/components/ui/Hint";
 
 interface MedFormValues {
   name: string;
@@ -287,7 +288,7 @@ export default function HealthPage() {
         <NumberField label="Remaining" suffix="left" optional max={1000} startAt={30} value={medForm.remaining} onChange={(v) => setMedForm((f) => ({ ...f, remaining: v }))} error={medErrors.remaining} hint="Optional: how many doses you have left." />
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-medium senior:text-lg">Reminder times (optional)</span>
-          <p className="text-xs text-[var(--w360-text-muted)]">Shown in-app as due/overdue when you open Women360 — not a push notification.</p>
+          <Hint id="med-reminder" className="text-xs text-[var(--w360-text-muted)]">Shown in-app as due/overdue when you open Women360 — not a push notification.</Hint>
           {medForm.times.map((t, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
@@ -489,7 +490,7 @@ export default function HealthPage() {
                   <EmptyState title="No medicines added yet" description="Add a medicine to keep track of your dose and schedule." />
                 ) : (
                   <>
-                    <p className="text-xs text-[var(--w360-text-muted)]">Select a medicine to edit or delete it.</p>
+                    <Hint id="health-select-med" className="text-xs text-[var(--w360-text-muted)]">Select a medicine to edit or delete it.</Hint>
                     <ItemList
                   ariaLabel="Medicines"
                       maxHeight={460}
@@ -528,7 +529,7 @@ export default function HealthPage() {
                   <EmptyState title="No appointments yet" description="Add an upcoming checkup, screening or coach session." />
                 ) : (
                   <>
-                    <p className="text-xs text-[var(--w360-text-muted)]">Select an appointment to edit or delete it.</p>
+                    <Hint id="health-select-appt" className="text-xs text-[var(--w360-text-muted)]">Select an appointment to edit or delete it.</Hint>
                     <ItemList
                   ariaLabel="Appointments"
                       maxHeight={460}
