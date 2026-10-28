@@ -3,6 +3,12 @@ import { Plus, X } from "lucide-react";
 import clsx from "clsx";
 import ScrubField from "@/components/reactbits/ScrubField";
 import { useBrandColors } from "@/hooks/useBrandColors";
+import { StepButtons } from "@/components/ui/StepButtons";
+
+const decimalsOf = (n: number) => {
+  const [, fraction = ""] = String(n).split(".");
+  return fraction.length;
+};
 
 interface NumberFieldProps {
   /** Shown inside the chip (keep it short) and read out as the field name. */
@@ -27,7 +33,7 @@ interface NumberFieldProps {
 
 /**
  * The app's number input: drag the chip sideways to scrub, tap to type, arrow
- * keys to nudge (Shift = bigger steps, Alt = finer). An empty field stays empty
+ * keys or the up and down arrow buttons to nudge (Shift = bigger steps, Alt = finer). An empty field stays empty
  * until the person engages it — a logged "0 g protein" is a claim, so we never
  * fill one in on their behalf.
  */
@@ -63,6 +69,15 @@ export function NumberField({
   function engage() {
     justEngaged.current = true;
     onChange(String(Math.min(max, Math.max(min, startAt ?? min))));
+  }
+
+  // The arrow buttons step the value by one `step`, kept to the precision of the step and the value.
+  function nudge(direction: 1 | -1) {
+    if (!entered) return engage();
+    const current = Number(value);
+    const places = Math.max(decimalsOf(step), decimalsOf(current));
+    const next = Math.min(max, Math.max(min, Number((current + direction * step).toFixed(places))));
+    if (next !== current) onChange(String(next));
   }
 
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
@@ -108,6 +123,12 @@ export function NumberField({
             </span>
           </button>
         )}
+        <StepButtons
+          onStep={nudge}
+          label={label}
+          disableUp={entered && Number(value) >= max}
+          disableDown={entered && Number(value) <= min}
+        />
         {optional && entered && (
           <button
             type="button"

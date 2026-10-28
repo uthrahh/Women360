@@ -335,8 +335,12 @@ export const MOOD_LABELS = ["Struggling", "Low", "Okay", "Good", "Great"];
 interface ApiActivityEntry {
   id: string;
   type: string;
+  activityCode: string;
   durationMinutes: number;
   intensity: string;
+  distanceKm: number | null;
+  sets: number | null;
+  caloriesBurned: number | null;
   notes: string | null;
   date: string;
 }
@@ -345,21 +349,15 @@ export function toFrontendActivityEntry(entry: ApiActivityEntry): ActivityEntry 
   return {
     id: entry.id,
     type: entry.type,
+    activityCode: entry.activityCode,
     duration: entry.durationMinutes,
     intensity: lower<ActivityEntry["intensity"]>(entry.intensity),
+    distanceKm: entry.distanceKm ?? undefined,
+    sets: entry.sets ?? undefined,
+    caloriesBurned: entry.caloriesBurned,
     notes: entry.notes ?? undefined,
     date: toRelativeDay(entry.date),
     day: entry.date.slice(0, 10),
-  };
-}
-
-export function toBackendActivityEntry(entry: Omit<ActivityEntry, "id" | "date" | "day">, date: string) {
-  return {
-    date,
-    type: entry.type,
-    durationMinutes: entry.duration,
-    intensity: upper(entry.intensity),
-    notes: entry.notes,
   };
 }
 
@@ -369,6 +367,7 @@ interface ApiActivitySummary {
   activeMinutes: number;
   activeMinutesGoal: number;
   weeklyMinutes: { day: string; minutes: number }[];
+  weightKg: number | null;
   entries: ApiActivityEntry[];
 }
 
@@ -469,6 +468,7 @@ interface ApiHabit {
   unit: string | null;
   daysPerWeek: number;
   reminder: string | null;
+  activityCode?: string | null;
   doneToday: boolean;
   amountToday: number | null;
   streak: number;
@@ -485,6 +485,7 @@ export function toFrontendHabit(h: ApiHabit): Habit {
     unit: h.unit ?? undefined,
     daysPerWeek: h.daysPerWeek,
     reminder: h.reminder ?? undefined,
+    activityCode: h.activityCode ?? undefined,
     doneToday: h.doneToday,
     amountToday: h.amountToday ?? undefined,
     streak: h.streak,

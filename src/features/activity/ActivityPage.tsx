@@ -1,7 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { Check, Flame, Pencil, Plus, Trash2, X } from "lucide-react";
 import { activityService } from "@/services/activityService";
 import { cycleService } from "@/services/cycleService";
-import type { ActivityEntry, ActivitySummary, CycleSummary, QuickLogItem } from "@/types";
+import { habitService } from "@/services/habitService";
+import { localDateISO } from "@/services/mappers";
+import { effortOf, emptyFields, formatDuration, shortcutKey, type FieldsValue } from "@/lib/activity";
+import type { ActivityCatalog, ActivityEntry, ActivitySummary, CycleSummary, Effort, Habit, QuickLogItem } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Button } from "@/components/ui/Button";
@@ -11,131 +17,151 @@ import { Input } from "@/components/ui/Input";
 import { ItemList } from "@/components/ui/ItemList";
 import { NumberField } from "@/components/ui/NumberField";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { LoadingState, EmptyState } from "@/components/ui/states";
+import { LoadingState, ErrorState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
-import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
-import { localDateISO } from "@/services/mappers";
+import { ActivityFields } from "./ActivityFields";
+import { ActivityHabits } from "./ActivityHabits";
 
-/** A small inline form to add one of her own shortcuts: what, how long, how hard. */
-function QuickLogAdder({ onAdd }: { onAdd: (v: { type: string; duration: number; intensity: ActivityEntry["intensity"] }) => Promise<boolean> }) {
-  const [type, setType] = useState("");
-  const [duration, setDuration] = useState("");
-  const [intensity, setIntensity] = useState<ActivityEntry["intensity"]>("moderate");
-  return (
-    <form
-      className="flex flex-wrap items-end gap-3 rounded-2xl border border-[var(--w360-border)] bg-[var(--w360-bg-warm)] p-4"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        const minutes = Number(duration);
-        if (!type.trim() || !(minutes >= 1)) return;
-        if (await onAdd({ type: type.trim(), duration: minutes, intensity })) {
-          setType("");
-          setDuration("");
-        }
-      }}
-    >
-      <Input label="New shortcut" value={type} onChange={(e) => setType(e.target.value)} placeholder="e.g. Swim" required />
-      <NumberField label="Duration" suffix="min" min={1} max={600} startAt={30} value={duration} onChange={setDuration} />
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="quick-intensity" className="text-sm font-medium">Intensity</label>
-        <select
-          id="quick-intensity"
-          value={intensity}
-          onChange={(e) => setIntensity(e.target.value as ActivityEntry["intensity"])}
-          className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-sm"
-        >
-          <option value="low">Low</option>
-          <option value="moderate">Moderate</option>
-          <option value="high">High</option>
-        </select>
-      </div>
-      <Button type="submit" size="sm" disabled={!type.trim() || !duration}>Add to quick log</Button>
-    </form>
-  );
+interface FormValues {
+  activityCode: string;
+  effort: Effort;
+  minutes: number;
+  distanceKm: number | null;
+  sets: number | null;
+  notes: string;
+  day: string;
+  addToQuickLog: boolean;
 }
 
-type Prefill = { type: string; duration: number; intensity: QuickLogItem["intensity"] };
-type FormValues = { type: string; duration: number; intensity: ActivityEntry["intensity"]; notes: string; day: string; addToQuickLog: boolean };
+const fieldsOf = (e: ActivityEntry): FieldsValue => ({
+  code: e.activityCode === "other" ? "" : e.activityCode,
+  effort: e.intensity,
+  minutes: e.duration,
+  distance: e.distanceKm !== undefined ? String(e.distanceKm) : "",
+  sets: e.sets !== undefined ? String(e.sets) : "",
+});
 
-/** The activity form. Shared by "Add activity" and by editing an entry. */
+/** The form for a new activity and for editing one: the same fields either way. */
 function ActivityForm({
+  catalog,
+  weightKg,
   entry,
   prefill,
+  quickKeys,
   submitLabel,
   onSubmit,
   offerQuickLog,
 }: {
+  catalog: ActivityCatalog;
+  weightKg: number | null;
   entry?: ActivityEntry;
-  prefill?: Prefill | null;
+  prefill?: FieldsValue | null;
+  quickKeys: Set<string>;
   submitLabel: string;
   onSubmit: (values: FormValues) => void;
   offerQuickLog?: boolean;
 }) {
   const toast = useToast();
-  const initial = entry ?? prefill;
-  const [duration, setDuration] = useState(initial ? String(initial.duration) : "");
+  const [fields, setFields] = useState<FieldsValue>(entry ? fieldsOf(entry) : prefill ?? emptyFields());
+  const [notes, setNotes] = useState(entry?.notes ?? "");
+  const [day, setDay] = useState(entry?.day ?? localDateISO());
+  const [addToQuickLog, setAddToQuickLog] = useState(false);
+
+  const complete = fields.code !== "" && fields.effort !== "" && !!fields.minutes;
+  const alreadyQuick = complete && quickKeys.has(shortcutKey(fields.code, fields.minutes!, fields.effort as Effort));
+
   return (
     <form
       className="flex flex-col gap-4"
       onSubmit={(e) => {
         e.preventDefault();
-        const form = new FormData(e.currentTarget);
-        const minutes = Number(duration);
-        if (!(minutes >= 1)) {
-          toast.show("Enter how many minutes it lasted.", { tone: "error" });
-          return;
-        }
+        if (!fields.code) return toast.show("Choose an activity.", { tone: "error" });
+        if (!fields.minutes) return toast.show("Enter how long it lasted.", { tone: "error" });
         onSubmit({
-          type: String(form.get("type") ?? "").trim() || "Activity",
-          duration: minutes,
-          intensity: String(form.get("intensity") ?? "moderate") as ActivityEntry["intensity"],
-          notes: String(form.get("notes") ?? "").trim(),
-          day: String(form.get("day") ?? "") || localDateISO(),
-          addToQuickLog: form.get("addToQuickLog") === "on",
+          activityCode: fields.code,
+          effort: fields.effort as Effort,
+          minutes: fields.minutes,
+          distanceKm: fields.distance !== "" ? Number(fields.distance) : null,
+          sets: fields.sets !== "" ? Number(fields.sets) : null,
+          notes: notes.trim(),
+          day,
+          addToQuickLog: addToQuickLog && !alreadyQuick,
         });
       }}
     >
-      <Input label="Activity type" name="type" defaultValue={initial?.type ?? ""} placeholder="e.g. Brisk walk" required />
-      <NumberField name="duration" label="Duration" suffix="min" min={1} max={600} startAt={30} value={duration} onChange={setDuration} />
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="intensity" className="text-sm font-medium">Intensity</label>
-        <select
-          id="intensity"
-          name="intensity"
-          defaultValue={initial?.intensity ?? "moderate"}
-          className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg senior:py-3.5"
-        >
-          <option value="low">Low</option>
-          <option value="moderate">Moderate</option>
-          <option value="high">High</option>
-        </select>
-      </div>
+      <ActivityFields catalog={catalog} weightKg={weightKg} value={fields} onChange={setFields} idPrefix={entry ? "edit" : "add"} />
       {entry && (
         <>
-          <Input label="Day" name="day" type="date" defaultValue={entry.day} max={localDateISO()} required />
-          <Input label="Notes" name="notes" defaultValue={entry.notes ?? ""} placeholder="Optional" />
+          <Input label="Day" type="date" value={day} max={localDateISO()} onChange={(e) => setDay(e.target.value)} required />
+          <Input label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" maxLength={500} />
         </>
       )}
       {offerQuickLog && (
-        <label className="flex items-center gap-2 text-sm senior:text-base">
-          <input type="checkbox" name="addToQuickLog" className="w-4 h-4 accent-[var(--w360-accent)]" />
-          Also add this to my quick log
+        <label className={`flex items-start gap-2 text-sm senior:text-base ${alreadyQuick ? "opacity-70" : ""}`}>
+          <input
+            type="checkbox"
+            checked={addToQuickLog && !alreadyQuick}
+            disabled={alreadyQuick}
+            onChange={(e) => setAddToQuickLog(e.target.checked)}
+            className="w-4 h-4 mt-0.5 accent-[var(--w360-accent)]"
+          />
+          <span>
+            Also add this to my quick log
+            {alreadyQuick && <span className="block text-xs text-[var(--w360-text-muted)]">It's already in your quick log.</span>}
+          </span>
         </label>
       )}
-      <Button type="submit">{submitLabel}</Button>
+      <Button type="submit" disabled={!complete}>{submitLabel}</Button>
+    </form>
+  );
+}
+
+/** A small inline form to add one of her own shortcuts. An identical one can't be added twice. */
+function QuickLogAdder({
+  catalog,
+  weightKg,
+  quickKeys,
+  onAdd,
+}: {
+  catalog: ActivityCatalog;
+  weightKg: number | null;
+  quickKeys: Set<string>;
+  onAdd: (v: { activityCode: string; duration: number; intensity: Effort }) => Promise<boolean>;
+}) {
+  const [fields, setFields] = useState<FieldsValue>(emptyFields());
+  const complete = fields.code !== "" && fields.effort !== "" && !!fields.minutes;
+  const duplicate = complete && quickKeys.has(shortcutKey(fields.code, fields.minutes!, fields.effort as Effort));
+
+  return (
+    <form
+      className="flex flex-col gap-4 rounded-2xl border border-[var(--w360-border)] bg-[var(--w360-bg-warm)] p-4 max-w-lg"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!complete || duplicate) return;
+        if (await onAdd({ activityCode: fields.code, duration: fields.minutes!, intensity: fields.effort as Effort })) setFields(emptyFields());
+      }}
+    >
+      <p className="text-sm font-medium">New shortcut</p>
+      <ActivityFields catalog={catalog} weightKg={weightKg} value={fields} onChange={setFields} withExtras={false} idPrefix="quick" />
+      {duplicate && <p className="text-sm text-[var(--w360-warning-text)]" role="alert">That's already in your quick log.</p>}
+      <div>
+        <Button type="submit" size="sm" disabled={!complete || duplicate}>Add to quick log</Button>
+      </div>
     </form>
   );
 }
 
 export default function ActivityPage() {
   const [data, setData] = useState<ActivitySummary | null>(null);
+  const [catalog, setCatalog] = useState<ActivityCatalog | null>(null);
+  const [failed, setFailed] = useState(false);
   const [cycle, setCycle] = useState<CycleSummary | null>(null);
   const [quick, setQuick] = useState<QuickLogItem[] | null>(null);
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [customising, setCustomising] = useState(false);
   const [busyChip, setBusyChip] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [prefill, setPrefill] = useState<Prefill | null>(null);
+  const [prefill, setPrefill] = useState<FieldsValue | null>(null);
   const [formKey, setFormKey] = useState(0);
   const [deleteTarget, setDeleteTarget] = useState<ActivityEntry | null>(null);
   const [detail, setDetail] = useState<ActivityEntry | null>(null);
@@ -146,18 +172,29 @@ export default function ActivityPage() {
   const toast = useToast();
 
   const reload = () => activityService.getSummary().then(setData);
-
-  useEffect(() => {
-    reload();
-    cycleService.getSummary().then(setCycle);
+  const load = () => {
+    setFailed(false);
+    Promise.all([reload(), activityService.catalog().then(setCatalog)]).catch(() => setFailed(true));
+    cycleService.getSummary().then(setCycle).catch(() => undefined);
     activityService.listQuickLog().then(setQuick).catch(() => setQuick([]));
-  }, []);
+    habitService.list().then(setHabits).catch(() => setHabits([]));
+  };
+  useEffect(load, []);
 
-  if (!data) return <LoadingState label="Loading activity" />;
+  const quickKeys = useMemo(() => new Set((quick ?? []).map((q) => shortcutKey(q.activityCode, q.duration, q.intensity))), [quick]);
+  const effortName = (code: string, effort: Effort) =>
+    catalog?.activities.find((a) => a.code === code)?.levels.find((l) => effortOf(l.key) === effort)?.short ?? effort;
+  const effortLabel = (code: string, effort: Effort) =>
+    catalog?.activities.find((a) => a.code === code)?.levels.find((l) => effortOf(l.key) === effort)?.label ?? effort;
+
+  if (failed) return <ErrorState title="Couldn't load your activity" onRetry={load} />;
+  if (!data || !catalog) return <LoadingState label="Loading activity" />;
 
   const fail = (err: unknown, fallback: string) => toast.show(err instanceof Error ? err.message : fallback, { tone: "error" });
+  const today = localDateISO();
+  const caloriesToday = data.weightKg === null ? null : data.entries.filter((e) => e.day === today).reduce((sum, e) => sum + (e.caloriesBurned ?? 0), 0);
 
-  function openAdd(template?: Prefill) {
+  function openAdd(template?: FieldsValue) {
     setPrefill(template ?? null);
     setFormKey((k) => k + 1);
     setAddOpen(true);
@@ -168,7 +205,7 @@ export default function ActivityPage() {
     if (busyChip) return;
     setBusyChip(item.id);
     try {
-      await activityService.logActivity({ type: item.type, duration: item.duration, intensity: item.intensity });
+      await activityService.logActivity({ activityCode: item.activityCode, duration: item.duration, intensity: item.intensity });
       await reload();
       toast.show(`Logged ${item.label}`);
     } catch (err) {
@@ -187,14 +224,9 @@ export default function ActivityPage() {
     }
   }
 
-  async function addQuick(v: { type: string; duration: number; intensity: ActivityEntry["intensity"] }) {
+  async function addQuick(v: { activityCode: string; duration: number; intensity: Effort }) {
     try {
-      const created = await activityService.addQuickLog({
-        label: `${v.duration}-min ${v.type.toLowerCase()}`,
-        type: v.type,
-        duration: v.duration,
-        intensity: v.intensity,
-      });
+      const created = await activityService.addQuickLog(v);
       setQuick((q) => (q ? [...q, created] : [created]));
       return true;
     } catch (err) {
@@ -205,8 +237,8 @@ export default function ActivityPage() {
 
   async function handleAdd(v: FormValues) {
     try {
-      await activityService.logActivity({ type: v.type, duration: v.duration, intensity: v.intensity });
-      if (v.addToQuickLog) await addQuick(v);
+      await activityService.logActivity({ activityCode: v.activityCode, duration: v.minutes, intensity: v.effort, distanceKm: v.distanceKm, sets: v.sets });
+      if (v.addToQuickLog) await addQuick({ activityCode: v.activityCode, duration: v.minutes, intensity: v.effort });
       await reload();
       setAddOpen(false);
       toast.show("Activity logged");
@@ -218,7 +250,15 @@ export default function ActivityPage() {
   async function handleEdit(v: FormValues) {
     if (!detail) return;
     try {
-      await activityService.updateEntry(detail.id, { type: v.type, duration: v.duration, intensity: v.intensity, notes: v.notes, day: v.day });
+      await activityService.updateEntry(detail.id, {
+        activityCode: v.activityCode,
+        duration: v.minutes,
+        intensity: v.effort,
+        distanceKm: v.distanceKm,
+        sets: v.sets,
+        notes: v.notes,
+        day: v.day,
+      });
       await reload();
       setDetail(null);
       setEditing(false);
@@ -258,7 +298,7 @@ export default function ActivityPage() {
     }
   }
 
-  const activityForm = <ActivityForm key={formKey} prefill={prefill} submitLabel="Save activity" onSubmit={handleAdd} offerQuickLog />;
+  const gentle = quick?.find((q) => q.intensity === "low");
 
   return (
     <div className="flex flex-col gap-6">
@@ -274,9 +314,20 @@ export default function ActivityPage() {
           triggerIcon={<Plus size={16} />}
           title="Add activity"
         >
-          {activityForm}
+          <ActivityForm
+            key={formKey}
+            catalog={catalog}
+            weightKg={data.weightKg}
+            prefill={prefill}
+            quickKeys={quickKeys}
+            submitLabel="Save activity"
+            onSubmit={handleAdd}
+            offerQuickLog
+          />
         </LogPopover>
       </div>
+
+      <ActivityHabits habits={habits} onChange={(h) => setHabits((list) => list.map((x) => (x.id === h.id ? h : x)))} />
 
       <section aria-label="Quick log" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -290,6 +341,7 @@ export default function ActivityPage() {
                 className={`text-xs px-3 py-1.5 border border-[var(--w360-border)] hover:border-maroon-400 hover:text-maroon-700 dark:hover:text-maroon-300 transition-colors senior:text-sm disabled:opacity-50 ${customising ? "rounded-l-full" : "rounded-full"}`}
               >
                 {busyChip === t.id ? "Logging..." : t.label}
+                {busyChip !== t.id && t.caloriesBurned !== null && <span className="text-[var(--w360-text-muted)]"> · {t.caloriesBurned} kcal</span>}
               </button>
               {customising && (
                 <button
@@ -303,9 +355,7 @@ export default function ActivityPage() {
               )}
             </span>
           ))}
-          {quick && quick.length === 0 && !customising && (
-            <span className="text-xs text-[var(--w360-text-muted)]">Nothing here yet.</span>
-          )}
+          {quick && quick.length === 0 && !customising && <span className="text-xs text-[var(--w360-text-muted)]">Nothing here yet.</span>}
           <button
             type="button"
             onClick={() => setCustomising((c) => !c)}
@@ -315,7 +365,7 @@ export default function ActivityPage() {
             {customising ? "Done" : (<><Pencil size={12} /> Edit</>)}
           </button>
         </div>
-        {customising && <QuickLogAdder onAdd={addQuick} />}
+        {customising && <QuickLogAdder catalog={catalog} weightKg={data.weightKg} quickKeys={quickKeys} onAdd={addQuick} />}
       </section>
 
       {cycle?.phase === "menstrual" && !suggestionDismissed && (
@@ -324,11 +374,19 @@ export default function ActivityPage() {
             <div>
               <p className="text-sm font-medium senior:text-base">Lower-intensity days can feel better right now</p>
               <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">
-                Just a suggestion based on your cycle — a walk, stretch or yoga session, or skip it entirely.
+                Just a suggestion based on your cycle: a walk, stretch or yoga session, or skip it entirely.
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Button variant="secondary" size="sm" onClick={() => openAdd(quick?.find((q) => q.intensity === "low"))}>Log something gentle</Button>
+              {gentle && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => openAdd({ code: gentle.activityCode, effort: gentle.intensity, minutes: gentle.duration, distance: "", sets: "" })}
+                >
+                  Log something gentle
+                </Button>
+              )}
               <button
                 onClick={() => setSuggestionDismissed(true)}
                 aria-label="Dismiss this suggestion"
@@ -341,7 +399,7 @@ export default function ActivityPage() {
         </Card>
       )}
 
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid lg:grid-cols-3 sm:grid-cols-2 gap-4">
         <Card>
           <CardBody className="flex items-center gap-5 pt-5">
             <ProgressRing value={(data.steps / data.stepsGoal) * 100} size={80} label={`${Math.round((data.steps / data.stepsGoal) * 100)}%`} />
@@ -384,12 +442,30 @@ export default function ActivityPage() {
             </div>
           </CardBody>
         </Card>
+        <Card>
+          <CardBody className="flex items-center gap-5 pt-5">
+            <span aria-hidden className="grid place-items-center w-20 h-20 rounded-full bg-[var(--w360-tint)] text-[var(--w360-accent)] shrink-0">
+              <Flame size={30} strokeWidth={1.6} />
+            </span>
+            <div>
+              <p className="text-sm text-[var(--w360-text-muted)]">Calories burned today</p>
+              <p className="text-2xl font-display font-semibold tabular-nums">{caloriesToday === null ? "-" : `${caloriesToday} kcal`}</p>
+              {caloriesToday === null ? (
+                <p className="text-xs text-[var(--w360-text-muted)]">
+                  <Link to="/app/health" className="underline underline-offset-2">Log your weight</Link> to see an estimate.
+                </p>
+              ) : (
+                <p className="text-xs text-[var(--w360-text-muted)]">An estimate from your {data.weightKg} kg.</p>
+              )}
+            </div>
+          </CardBody>
+        </Card>
       </div>
 
       <Card>
         <CardBody className="pt-5">
           <p className="text-sm font-medium mb-3">This week</p>
-          <div className="h-44">
+          <div className="h-44" aria-hidden="true">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data.weeklyMinutes}>
                 <XAxis dataKey="day" stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
@@ -415,8 +491,10 @@ export default function ActivityPage() {
                 id: e.id,
                 entry: e,
                 title: e.type,
-                description: [e.date, e.notes].filter(Boolean).join(" · "),
-                meta: `${e.duration} min · ${e.intensity}`,
+                description: [e.date, e.distanceKm !== undefined ? `${e.distanceKm} km` : null, e.sets !== undefined ? `${e.sets} sets` : null, e.notes].filter(Boolean).join(" · "),
+                meta: [formatDuration(e.duration), e.activityCode === "other" ? null : effortName(e.activityCode, e.intensity), e.caloriesBurned !== null ? `${e.caloriesBurned} kcal` : null]
+                  .filter(Boolean)
+                  .join(" · "),
               }))}
               onItemSelect={(row) => setDetail(row.entry)}
             />
@@ -426,7 +504,7 @@ export default function ActivityPage() {
 
       <Modal open={detail !== null} onClose={() => { setDetail(null); setEditing(false); }} title={editing ? "Edit activity" : (detail?.type ?? "Activity")} size="sm">
         {detail && editing && (
-          <ActivityForm entry={detail} submitLabel="Save changes" onSubmit={handleEdit} />
+          <ActivityForm catalog={catalog} weightKg={data.weightKg} entry={detail} quickKeys={quickKeys} submitLabel="Save changes" onSubmit={handleEdit} />
         )}
         {detail && !editing && (
           <div className="flex flex-col gap-4">
@@ -434,9 +512,27 @@ export default function ActivityPage() {
               <dt className="text-[var(--w360-text-muted)]">When</dt>
               <dd>{detail.date}</dd>
               <dt className="text-[var(--w360-text-muted)]">Duration</dt>
-              <dd className="tabular-nums">{detail.duration} min</dd>
-              <dt className="text-[var(--w360-text-muted)]">Intensity</dt>
-              <dd className="capitalize">{detail.intensity}</dd>
+              <dd className="tabular-nums">{formatDuration(detail.duration)}</dd>
+              {detail.activityCode !== "other" && (
+                <>
+                  <dt className="text-[var(--w360-text-muted)]">Effort</dt>
+                  <dd>{effortLabel(detail.activityCode, detail.intensity)}</dd>
+                </>
+              )}
+              {detail.distanceKm !== undefined && (
+                <>
+                  <dt className="text-[var(--w360-text-muted)]">Distance</dt>
+                  <dd className="tabular-nums">{detail.distanceKm} km</dd>
+                </>
+              )}
+              {detail.sets !== undefined && (
+                <>
+                  <dt className="text-[var(--w360-text-muted)]">Sets</dt>
+                  <dd className="tabular-nums">{detail.sets}</dd>
+                </>
+              )}
+              <dt className="text-[var(--w360-text-muted)]">Calories</dt>
+              <dd className="tabular-nums">{detail.caloriesBurned !== null ? `About ${detail.caloriesBurned} kcal` : detail.activityCode === "other" ? "Not estimated (older entry; edit it to pick an activity)" : "Log your weight to see this"}</dd>
               {detail.notes && (
                 <>
                   <dt className="text-[var(--w360-text-muted)]">Notes</dt>
@@ -469,6 +565,10 @@ export default function ActivityPage() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
+
+      <p className="text-xs text-[var(--w360-text-muted)]">
+        Calorie figures are estimates from your logged weight and standard values for each activity (2011 Compendium of Physical Activities). They are a guide, not a measurement.
+      </p>
     </div>
   );
 }

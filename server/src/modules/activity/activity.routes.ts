@@ -17,6 +17,11 @@ export const activityRouter = Router();
 activityRouter.use(requireAuth);
 
 activityRouter.get(
+  "/catalog",
+  asyncHandler(async (_req, res) => ok(res, activityService.catalog()))
+);
+
+activityRouter.get(
   "/summary",
   asyncHandler(async (req, res) => ok(res, await activityService.getSummary(req.user!.id)))
 );

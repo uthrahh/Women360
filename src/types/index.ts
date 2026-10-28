@@ -132,11 +132,20 @@ export interface NutritionSummary {
   meals: MealEntry[];
 }
 
+export type Effort = "low" | "moderate" | "high";
+
 export interface ActivityEntry {
   id: string;
+  /** The activity's readable name ("Walking"). */
   type: string;
+  /** Which catalog activity; "other" for entries logged before the catalog existed. */
+  activityCode: string;
   duration: number; // minutes
-  intensity: "low" | "moderate" | "high";
+  intensity: Effort;
+  distanceKm?: number;
+  sets?: number;
+  /** An estimate from her latest logged weight; null when there is no weight or the activity is unknown. */
+  caloriesBurned: number | null;
   notes?: string;
   date: string;
   /** YYYY-MM-DD, for editing; `date` is the friendly "Today" / "Yesterday" label. */
@@ -148,8 +157,24 @@ export interface QuickLogItem {
   id: string;
   label: string;
   type: string;
+  activityCode: string;
   duration: number;
-  intensity: "low" | "moderate" | "high";
+  intensity: Effort;
+  caloriesBurned: number | null;
+}
+
+/** One activity she can choose, with the effort levels it actually has. */
+export interface CatalogActivity {
+  code: string;
+  label: string;
+  group: string;
+  extras: ("distanceKm" | "sets")[];
+  levels: { key: "LOW" | "MODERATE" | "HIGH"; label: string; short: string; met: number }[];
+}
+
+export interface ActivityCatalog {
+  source: { label: string; url: string };
+  activities: CatalogActivity[];
 }
 
 export interface ActivitySummary {
@@ -158,6 +183,8 @@ export interface ActivitySummary {
   activeMinutes: number;
   activeMinutesGoal: number;
   weeklyMinutes: { day: string; minutes: number }[];
+  /** Her latest logged weight in kilograms, which the calorie estimates use; null if none. */
+  weightKg: number | null;
   entries: ActivityEntry[];
 }
 
@@ -233,6 +260,8 @@ export interface Habit {
   /** 7 = every day. */
   daysPerWeek: number;
   reminder?: string;
+  /** A catalog activity code, or "any", when the habit is a physical activity. */
+  activityCode?: string;
   doneToday: boolean;
   amountToday?: number;
   /** Consecutive days (daily habits) or weeks (N-a-week habits) that were met. */

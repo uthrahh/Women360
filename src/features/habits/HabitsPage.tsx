@@ -2,9 +2,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Plus, Check, X } from "lucide-react";
 import clsx from "clsx";
 import { habitService, type HabitInput } from "@/services/habitService";
+import { activityService } from "@/services/activityService";
+import { NotificationPrompt } from "@/components/NotificationPrompt";
 import { localDateISO, to12Hour, to24Hour } from "@/services/mappers";
 import { quickStep } from "@/lib/quickStep";
-import type { Habit } from "@/types";
+import type { ActivityCatalog, Habit } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Button } from "@/components/ui/Button";
@@ -22,13 +24,13 @@ import { DEFAULT_REMINDER, REMINDER_TIME_OPTIONS, STRICT_12H_TIME } from "@/lib/
 // One tap to add something common. These create the habit straight away; it
 // can be adjusted afterwards with the pencil.
 const IDEAS: HabitInput[] = [
-  { title: "Walk 10,000 steps", target: 10000, unit: "steps" },
+  { title: "Walk 10,000 steps", target: 10000, unit: "steps", activityCode: "walking" },
   { title: "Drink 8 glasses of water", target: 8, unit: "glasses" },
-  { title: "Move for 30 minutes", target: 30, unit: "min" },
-  { title: "Stretch", target: 10, unit: "min" },
+  { title: "Move for 30 minutes", target: 30, unit: "min", activityCode: "any" },
+  { title: "Stretch", target: 10, unit: "min", activityCode: "stretching" },
   { title: "Take my vitamin" },
   { title: "Meditate", target: 5, unit: "min" },
-  { title: "Strength session", daysPerWeek: 3 },
+  { title: "Strength session", daysPerWeek: 3, activityCode: "strength-training" },
   { title: "Wind down before bed" },
 ];
 
@@ -42,9 +44,10 @@ interface HabitForm {
   frequency: "daily" | "some";
   days: string;
   reminder: string; // 24h "HH:MM", or "" for none
+  activity: string; // a catalog code, "any", or "" when it is not a physical activity
 }
 
-const emptyForm = (): HabitForm => ({ title: "", tracking: "tick", target: "", unit: "", frequency: "daily", days: "", reminder: "" });
+const emptyForm = (): HabitForm => ({ title: "", tracking: "tick", target: "", unit: "", frequency: "daily", days: "", reminder: "", activity: "" });
 
 const formFrom = (h: Habit): HabitForm => ({
   title: h.title,
@@ -54,6 +57,7 @@ const formFrom = (h: Habit): HabitForm => ({
   frequency: h.daysPerWeek >= 7 ? "daily" : "some",
   days: h.daysPerWeek >= 7 ? "" : String(h.daysPerWeek),
   reminder: h.reminder && STRICT_12H_TIME.test(h.reminder.trim()) ? to24Hour(h.reminder) : "",
+  activity: h.activityCode ?? "",
 });
 
 const num = (n: number) => Number(n.toFixed(2)).toLocaleString();
@@ -109,10 +113,12 @@ export default function HabitsPage() {
   // Bumped when a tap fails, to remount the hearts so a count they already
   // animated up snaps back to what the server holds.
   const [heartEpoch, setHeartEpoch] = useState(0);
+  const [catalog, setCatalog] = useState<ActivityCatalog | null>(null);
   const toast = useToast();
 
   useEffect(() => {
     habitService.list().then(setHabits);
+    activityService.catalog().then(setCatalog).catch(() => setCatalog(null));
   }, []);
 
   if (!habits) return <LoadingState label="Loading habits" />;
@@ -204,6 +210,7 @@ export default function HabitsPage() {
       unit: form.tracking === "count" ? form.unit.trim() || null : null,
       daysPerWeek: form.frequency === "daily" ? 7 : Number(form.days),
       reminder: form.reminder ? to12Hour(form.reminder) : null,
+      activityCode: form.activity || null,
     };
     setSaving(true);
     try {
@@ -299,6 +306,27 @@ export default function HabitsPage() {
         <NumberField label="Days a week" suffix="days" min={1} max={6} step={1} startAt={3} value={form.days} onChange={(v) => set({ days: v })} error={errors.days} />
       )}
 
+      {catalog && (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="habit-activity" className="text-sm font-medium">Is this a physical activity?</label>
+          <select
+            id="habit-activity"
+            value={form.activity}
+            onChange={(e) => set({ activity: e.target.value })}
+            className="px-3.5 py-2.5 rounded border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm"
+          >
+            <option value="">No</option>
+            <option value="any">Yes, any movement</option>
+            {[...new Set(catalog.activities.map((a) => a.group))].map((group) => (
+              <optgroup key={group} label={group}>
+                {catalog.activities.filter((a) => a.group === group).map((a) => <option key={a.code} value={a.code}>{a.label}</option>)}
+              </optgroup>
+            ))}
+          </select>
+          <p className="text-xs text-[var(--w360-text-muted)]">Activity habits are listed as today's to-do on the Activity page.</p>
+        </div>
+      )}
+
       <div className="flex flex-col gap-2">
         <BellToggle
           size="sm"
@@ -326,7 +354,8 @@ export default function HabitsPage() {
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
-            <p className="text-xs text-[var(--w360-text-muted)]">Shown in your Today list when you open Women360 — not a push notification.</p>
+            <p className="text-xs text-[var(--w360-text-muted)]">You'll be notified at this time while Women360 is open in a browser tab or window, and it also shows in your Today list.</p>
+            <NotificationPrompt />
           </>
         )}
       </div>

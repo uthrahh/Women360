@@ -362,8 +362,13 @@ model ActivityEntry {
   userId          String
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   type            String
+  // Which activity from the catalog (modules/activity/catalog.ts); "other" for entries
+  // logged before there was a catalog. `type` keeps the readable name.
+  activityCode    String    @default("other")
   durationMinutes Int
   intensity       Intensity
+  distanceKm      Float?
+  sets            Int?
   notes           String?
   date            DateTime  @db.Date
   createdAt       DateTime  @default(now())
@@ -380,10 +385,13 @@ model ActivityQuickLog {
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   label           String
   type            String
+  activityCode    String    @default("other")
   durationMinutes Int
   intensity       Intensity
   createdAt       DateTime  @default(now())
 
+  // The same activity, length and effort can only be a shortcut once.
+  @@unique([userId, activityCode, durationMinutes, intensity])
   @@index([userId])
 }
 
@@ -488,6 +496,9 @@ model Habit {
   unit        String?
   daysPerWeek Int        @default(7)
   reminder    String?
+  // Set when the habit is a physical activity (a catalog code, or "any"), so the
+  // Activity page can list it as today's to-do.
+  activityCode String?
   archivedAt  DateTime?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
