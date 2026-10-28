@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from "react";
 import clsx from "clsx";
 import { StepButtons } from "@/components/ui/StepButtons";
+import { useHintVisible } from "@/hooks/useHintVisible";
 
 interface DurationFieldProps {
   label: string;
@@ -23,6 +24,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * the hours: up from 59 goes to the next hour, down from 00 to the previous one.
  */
 export function DurationField({ label, value, onChange, max = 1440, error, hint, startAtMinutes = 30 }: DurationFieldProps) {
+  const hintVisible = useHintVisible(`field:${label}`);
   const hours = value === null ? null : Math.floor(value / 60);
   const minutes = value === null ? null : value % 60;
   const clamp = (total: number) => Math.max(0, Math.min(max, total));
@@ -71,7 +73,7 @@ export function DurationField({ label, value, onChange, max = 1440, error, hint,
         />
       </div>
       {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
-      {!error && hint && <p className="text-xs text-[var(--w360-text-muted)]">{hint}</p>}
+      {!error && hint && hintVisible && <p className="text-xs text-[var(--w360-text-muted)]">{hint}</p>}
     </fieldset>
   );
 }

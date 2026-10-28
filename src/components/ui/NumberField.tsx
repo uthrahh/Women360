@@ -4,6 +4,7 @@ import clsx from "clsx";
 import ScrubField from "@/components/reactbits/ScrubField";
 import { useBrandColors } from "@/hooks/useBrandColors";
 import { StepButtons } from "@/components/ui/StepButtons";
+import { useHintVisible } from "@/hooks/useHintVisible";
 
 const decimalsOf = (n: number) => {
   const [, fraction = ""] = String(n).split(".");
@@ -80,7 +81,9 @@ export function NumberField({
     if (next !== current) onChange(String(next));
   }
 
-  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+  const hintVisible = useHintVisible(`field:${label}`);
+  const showHint = Boolean(hint) && hintVisible;
+  const describedBy = error ? `${id}-error` : showHint ? `${id}-hint` : undefined;
 
   return (
     <div className={clsx("flex flex-col gap-1.5", className)} ref={rootRef}>
@@ -146,7 +149,7 @@ export function NumberField({
           {error}
         </p>
       )}
-      {!error && hint && (
+      {!error && showHint && (
         <p id={`${id}-hint`} className="text-xs text-[var(--w360-text-muted)]">
           {hint}
         </p>

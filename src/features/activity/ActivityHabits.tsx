@@ -7,6 +7,7 @@ import { NotificationPrompt } from "@/components/NotificationPrompt";
 import { habitService } from "@/services/habitService";
 import { isDueToday } from "@/lib/reminders";
 import type { Habit } from "@/types";
+import { Hint } from "@/components/ui/Hint";
 
 /**
  * Today's to-do for the habits that are physical activities: what is still to do,
@@ -43,9 +44,9 @@ export function ActivityHabits({ habits, onChange }: { habits: Habit[]; onChange
 
   if (rows.length === 0) {
     return (
-      <p className="text-xs text-[var(--w360-text-muted)]">
+      <Hint id="act-habits-empty" className="text-xs text-[var(--w360-text-muted)]">
         Habits you mark as physical activities appear here as today's to-do. <Link to="/app/habits" className="underline underline-offset-2">Set up a habit</Link>
-      </p>
+      </Hint>
     );
   }
 

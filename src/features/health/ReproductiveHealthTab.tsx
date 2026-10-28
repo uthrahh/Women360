@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/Toast";
 import { userService } from "@/services/userService";
 import { localDateISO } from "@/services/mappers";
 import type { ContraceptionMethod, PregnancyStatus } from "@/types";
+import { Hint } from "@/components/ui/Hint";
 
 const CONTRACEPTION: { value: ContraceptionMethod; label: string }[] = [
   { value: "NONE", label: "None" },
@@ -85,9 +86,9 @@ export function ReproductiveHealthTab() {
     <Card>
       <CardBody className="pt-5">
         <form onSubmit={save} className="flex flex-col gap-4 max-w-lg">
-          <p className="text-sm text-[var(--w360-text-muted)]">
+          <Hint id="repro-intro" className="text-sm text-[var(--w360-text-muted)]">
             For your own records. Women360 does not use this to predict fertility or to give medical advice, and you can leave anything blank.
-          </p>
+          </Hint>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="rh-contraception" className="text-sm font-medium">Contraception</label>
             <select id="rh-contraception" value={contraception} onChange={(e) => setContraception(e.target.value)} className={selectClass}>

@@ -14,6 +14,7 @@ import { LoadingState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { Moon, Sunrise, Plus } from "lucide-react";
+import { Hint } from "@/components/ui/Hint";
 
 interface SleepFormValues {
   date: string;
@@ -140,9 +141,9 @@ export default function SleepPage() {
           <p className="text-xs text-[var(--w360-text-muted)] senior:text-sm" aria-live="polite">
             {form.quality} — {SLEEP_QUALITY_LABELS[form.quality]}
           </p>
-          <p className="text-xs text-[var(--w360-text-muted)] italic">
+          <Hint id="sleep-rating" className="text-xs text-[var(--w360-text-muted)] italic">
             This is your own rating — trust how you actually feel over any number.
-          </p>
+          </Hint>
         </fieldset>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="sleep-notes" className="text-sm font-medium">Notes (optional)</label>
@@ -244,7 +245,7 @@ export default function SleepPage() {
 
       <section>
         <h2 className="font-display text-lg font-semibold mb-3">Recent nights</h2>
-        <p className="text-xs text-[var(--w360-text-muted)] mb-2">Select a night to edit or delete it.</p>
+        <Hint id="sleep-select" className="text-xs text-[var(--w360-text-muted)] mb-2">Select a night to edit or delete it.</Hint>
         <ItemList
           ariaLabel="Recent nights"
           items={data.history.map((entry) => ({

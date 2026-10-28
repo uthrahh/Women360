@@ -1,19 +1,24 @@
 import { InputHTMLAttributes, forwardRef, useId } from "react";
 import clsx from "clsx";
+import { useHintVisible } from "@/hooks/useHintVisible";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   hint?: string;
+  /** Keep the hint on screen (for a status, not an instruction). */
+  hintAlways?: boolean;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, hint, className, id, ...props }, ref) => {
+  ({ label, error, hint, hintAlways, className, id, ...props }, ref) => {
     // Controlled inputs often skip `name`/`id` (value/onChange already
     // identifies the field) — without a fallback, the <label> and <input>
     // never associate, which breaks screen readers silently.
     const generatedId = useId();
     const inputId = id || props.name || generatedId;
+    const hintVisible = useHintVisible(`field:${label ?? hint ?? inputId}`);
+    const showHint = Boolean(hint) && (hintAlways || hintVisible);
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
@@ -32,7 +37,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             className
           )}
           aria-invalid={!!error}
-          aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
+          aria-describedby={error ? `${inputId}-error` : showHint ? `${inputId}-hint` : undefined}
           {...props}
         />
         {error && (
@@ -40,7 +45,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {error}
           </p>
         )}
-        {!error && hint && (
+        {!error && showHint && (
           <p id={`${inputId}-hint`} className="text-xs text-[var(--w360-text-muted)]">
             {hint}
           </p>

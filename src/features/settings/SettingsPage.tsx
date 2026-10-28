@@ -13,6 +13,7 @@ import { FeedbackTab } from "./FeedbackTab";
 import { CoachAccessTab } from "./CoachAccessTab";
 import { YourDataTab } from "./YourDataTab";
 import { ProfileCard } from "./ProfileCard";
+import { Hint } from "@/components/ui/Hint";
 
 export default function SettingsPage() {
   const { auth, theme, senior } = useApp();
@@ -97,7 +98,7 @@ export default function SettingsPage() {
               <Card><CardBody className="pt-5">
                 <form className="flex flex-col gap-4" onSubmit={handleSaveProfile}>
                   <Input label="Full name" value={name} onChange={(e) => setName(e.target.value)} error={nameError} required />
-                  <Input label="Email" value={auth.user?.email ?? ""} type="email" disabled hint="Email can't be changed yet." />
+                  <Input label="Email" value={auth.user?.email ?? ""} type="email" disabled hint="Email can't be changed yet." hintAlways />
                   <Input label="Date of birth" type="date" value={dob ?? ""} onChange={(e) => setDob(e.target.value)} />
                   <div className="flex gap-2">
                     <Button size="sm" type="submit" disabled={savingProfile}>{savingProfile ? "Saving…" : "Save changes"}</Button>
@@ -136,7 +137,7 @@ export default function SettingsPage() {
             id: "essentials", label: "Customize essentials",
             content: (
               <Card><CardBody className="pt-5">
-                <p className="text-sm text-[var(--w360-text-muted)] mb-4">Choose which functions appear on your Senior Mode home screen.</p>
+                <Hint id="settings-essentials" className="text-sm text-[var(--w360-text-muted)] mb-4">Choose which functions appear on your Senior Mode home screen.</Hint>
                 <div className="flex flex-col gap-1">
                   {senior.essentials.map((e) => (
                     <label key={e.key} className="flex items-center gap-3 py-2.5 border-b border-[var(--w360-border)] last:border-0 cursor-pointer">

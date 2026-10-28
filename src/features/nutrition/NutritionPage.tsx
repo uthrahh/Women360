@@ -15,6 +15,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { Droplet, Apple, Plus } from "lucide-react";
+import { Hint } from "@/components/ui/Hint";
 
 const HYDRATION_STEP_ML = 250;
 
@@ -380,7 +381,7 @@ export default function NutritionPage() {
           />
         ) : (
           <>
-            <p className="text-xs text-[var(--w360-text-muted)] mb-2">Select a meal to edit or delete it.</p>
+            <Hint id="nutr-select" className="text-xs text-[var(--w360-text-muted)] mb-2">Select a meal to edit or delete it.</Hint>
             <ItemList
               ariaLabel="Today's meals"
               items={data.meals.map((m) => ({

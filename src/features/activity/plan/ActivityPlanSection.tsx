@@ -36,7 +36,7 @@ export function ActivityPlanSection({ onLogged }: { onLogged: () => void }) {
             <div className="min-w-0">
               <h2 className="font-display text-lg senior:text-2xl font-semibold">A plan for a goal</h2>
               <p className="text-sm senior:text-base text-[var(--w360-text-muted)]">
-                Pick a goal and get a week-by-week plan built from your own activity, your time and your age, with an honest view of how realistic it is.
+                A week-by-week plan for a goal, built from your own activity.
               </p>
             </div>
             <Button variant="secondary" onClick={() => setOpen(true)}>Build my plan</Button>

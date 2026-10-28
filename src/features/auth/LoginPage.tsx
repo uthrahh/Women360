@@ -66,7 +66,7 @@ export default function LoginPage() {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             error={error || undefined}
-            hint="Lost your phone? Use one of your backup codes instead."
+            hint="Lost your phone? Use one of your backup codes instead." hintAlways
             inputMode="text"
             autoComplete="one-time-code"
             autoFocus

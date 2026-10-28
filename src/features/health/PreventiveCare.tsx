@@ -12,6 +12,7 @@ import { screeningService } from "@/services/screeningService";
 import { userService } from "@/services/userService";
 import { localDateISO } from "@/services/mappers";
 import type { ScreeningItem, ScreeningPlan, ScreeningStatus } from "@/types";
+import { Hint } from "@/components/ui/Hint";
 
 const BADGE: Record<ScreeningStatus, { label: string; tone: "neutral" | "accent" | "success" | "warning" }> = {
   needs_dob: { label: "Needs your birth date", tone: "neutral" },
@@ -196,9 +197,9 @@ export function PreventiveCare() {
         Guidance last checked {fmt(plan.reviewedOn)}. Treat the schedule below as a starting point and confirm it with your doctor.
       </Banner>
 
-      <p className="text-sm text-[var(--w360-text-muted)]">
+      <Hint id="prev-intro" className="text-sm text-[var(--w360-text-muted)]">
         Regular check-ups catch problems early, often before you feel anything. These follow guidance used in {plan.region}. Tap once when you've had one and we'll work out when it's next due.
-      </p>
+      </Hint>
 
       {!plan.hasDateOfBirth && (
         <Card tone="tint">

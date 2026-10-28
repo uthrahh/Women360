@@ -18,6 +18,7 @@ import { DEFAULT_REMINDER, REMINDER_TIME_OPTIONS, STRICT_12H_TIME } from "@/lib/
 import { quickStep } from "@/lib/quickStep";
 import { CheckCircle2, Circle, Plus, Pencil, Trash2, Check, X } from "lucide-react";
 import clsx from "clsx";
+import { Hint } from "@/components/ui/Hint";
 
 // One tap to start from something common. The kind decides which fields appear,
 // so each of these arrives with the right ones already filled.
@@ -367,7 +368,7 @@ export default function GoalsPage() {
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       {isNew && (
         <div>
-          <p className="text-xs text-[var(--w360-text-muted)] mb-2">Tap one to add it now (or to start filling it in), or make your own</p>
+          <Hint id="goals-ideas" className="text-xs text-[var(--w360-text-muted)] mb-2">Tap one to add it now (or to start filling it in), or make your own</Hint>
           <div className="flex flex-wrap gap-2">
             {IDEAS.map((idea) => (
               <button
@@ -476,7 +477,7 @@ export default function GoalsPage() {
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
-            <p className="text-xs text-[var(--w360-text-muted)]">Shown in your Today list when you open Women360 — not a push notification.</p>
+            <Hint id="goal-reminder" className="text-xs text-[var(--w360-text-muted)]">Shown in your Today list when you open Women360 — not a push notification.</Hint>
           </>
         )}
       </div>

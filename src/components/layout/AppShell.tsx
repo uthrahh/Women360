@@ -8,10 +8,19 @@ import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
 import { SeniorTopBar } from "./SeniorNav";
 import { Banner } from "@/components/ui/Banner";
+import { TipsProvider } from "@/context/TipsContext";
 
 const ROUTE_TITLES = menuTree.flatMap((n) => ("leaf" in n ? [n.leaf] : n.items));
 
 export function AppShell() {
+  return (
+    <TipsProvider>
+      <Shell />
+    </TipsProvider>
+  );
+}
+
+function Shell() {
   const { senior, auth } = useApp();
   useReminders();
   const demoNotice = auth.user?.isDemo ? (

@@ -20,6 +20,7 @@ import { buildCycleCsv } from "@/lib/cycleCsv";
 import { saveFile } from "@/lib/saveFile";
 import { ExplainThisCard } from "@/components/ExplainThisCard";
 import { insightsService } from "@/services/insightsService";
+import { Hint } from "@/components/ui/Hint";
 
 const PHASE_LABEL: Record<string, string> = {
   menstrual: "Menstrual", follicular: "Follicular", ovulation: "Ovulation", luteal: "Luteal",
@@ -384,10 +385,10 @@ export default function CyclePage() {
           <fieldset className="flex flex-col gap-2.5 rounded-2xl bg-[var(--w360-tint)] p-4">
             <legend className="sr-only">What was going on this cycle</legend>
             <p className="text-sm font-medium senior:text-lg">Was anything unusual about this cycle?</p>
-            <p className="text-xs text-[var(--w360-text-muted)] senior:text-base">
+            <Hint id="cycle-context" className="text-xs text-[var(--w360-text-muted)] senior:text-base">
               Optional. Tell Women360 what was going on and it won't mistake a stressful or disrupted month for your
               normal.
-            </p>
+            </Hint>
             <div className="flex flex-wrap gap-2">
               {CONTEXT_TAG_OPTIONS.map((o) => {
                 const on = logForm.contextTags.includes(o.value);
@@ -434,9 +435,9 @@ export default function CyclePage() {
             <option value="heavy">Heavy</option>
           </select>
           {logForm.flow === "spotting" && (
-            <p className="text-xs text-[var(--w360-text-muted)]">
+            <Hint id="cycle-spotting" className="text-xs text-[var(--w360-text-muted)]">
               Spotting alone won't count as the start of a new period in your predictions.
-            </p>
+            </Hint>
           )}
         </div>
         {showDetails ? (
@@ -543,11 +544,11 @@ export default function CyclePage() {
   const bulkModal = (
     <Modal open={bulkOpen} onClose={() => setBulkOpen(false)} title="Add past periods" size="sm">
       <div className="flex flex-col gap-4">
-        <p className="text-sm text-[var(--w360-text-muted)] senior:text-base">
+        <Hint id="cycle-bulk" className="text-sm text-[var(--w360-text-muted)] senior:text-base">
           Add the start dates of your last few periods and Women360 can predict your next one right away, instead of
           waiting for you to log two full cycles going forward. Each one logs a realistic run of days from that
           start, using your current period-length estimate — not just the single start day.
-        </p>
+        </Hint>
         <div className="flex flex-col gap-2.5">
           {bulkDates.map((d, i) => (
             <div key={i} className="flex items-center gap-2">
@@ -761,7 +762,7 @@ function CycleRing({
             </p>
           )}
           <p className="text-xs text-[var(--w360-text-muted)] italic">{CONTRACEPTION_DISCLAIMER}</p>
-          <p className="text-xs text-[var(--w360-text-muted)]">{PERIOD_HINT(cycle.periodLength)}</p>
+          <Hint id="cycle-period-start" className="text-xs text-[var(--w360-text-muted)]">{PERIOD_HINT(cycle.periodLength)}</Hint>
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <PeriodTodayButton started={periodStartedToday} size="sm" onClick={onPeriodToday} />
             <Button variant="secondary" size="sm" onClick={onLog}>Log today's flow & symptoms</Button>
@@ -926,10 +927,10 @@ function ExportCard() {
       <CardBody className="pt-5 flex flex-col gap-3">
         <div>
           <p className="text-sm font-medium">Your data is yours</p>
-          <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">
+          <Hint id="cycle-export" className="text-xs text-[var(--w360-text-muted)] mt-0.5">
             Export every day you've logged as a spreadsheet-ready file — to keep a backup, switch apps, or bring to an
             appointment.
-          </p>
+          </Hint>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" size="sm" onClick={download} disabled={busy}>
@@ -1019,10 +1020,10 @@ function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void })
           <ErrorState title="Couldn't load this month" description="Check your connection and try again." onRetry={load} />
         ) : (
           <>
-        <p className="text-sm text-[var(--w360-text-muted)] mb-4">
+        <Hint id="cycle-calendar" className="text-sm text-[var(--w360-text-muted)] mb-4">
           Tap a day to log period, flow, pain, mood, energy, symptoms or a note. Colour shows the cycle phase — solid
           for a logged period, softer for an estimated phase.
-        </p>
+        </Hint>
         <div className="grid grid-cols-7 gap-1.5 text-center mb-1.5">
           {WEEKDAY_LABELS.map((w) => (
             <span key={w} className="text-[10px] font-medium text-[var(--w360-text-muted)]">{w}</span>
@@ -1176,7 +1177,7 @@ function SeniorCycle({ cycle, periodStartedToday, onPeriodToday, onLog, onBulkAd
           </p>
           {cycle.irregularityNote && <p className="text-base text-[var(--w360-text-muted)]">{cycle.irregularityNote}</p>}
           <p className="text-sm text-[var(--w360-text-muted)] italic">{CONTRACEPTION_DISCLAIMER}</p>
-          <p className="text-base text-[var(--w360-text-muted)]">{PERIOD_HINT(cycle.periodLength)}</p>
+          <Hint id="cycle-period-start" className="text-base text-[var(--w360-text-muted)]">{PERIOD_HINT(cycle.periodLength)}</Hint>
           <PeriodTodayButton started={periodStartedToday} size="xl" fullWidth onClick={onPeriodToday} />
           <Button size="lg" variant="secondary" fullWidth onClick={onLog}>Add today's flow</Button>
           <Button size="lg" variant="secondary" fullWidth onClick={onBulkAdd}>Add past periods</Button>
@@ -1227,10 +1228,10 @@ function CycleSettingsModal({ open, onClose, onSaved }: { open: boolean; onClose
   return (
     <Modal open={open} onClose={onClose} title="Cycle settings" size="sm">
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-        <p className="text-sm text-[var(--w360-text-muted)] senior:text-base">
+        <Hint id="cycle-profile" className="text-sm text-[var(--w360-text-muted)] senior:text-base">
           Used as a starting estimate until you've logged a few cycles of your own — after that, your own logged
           pattern takes over the prediction.
-        </p>
+        </Hint>
         <NumberField
           label="Cycle length"
           suffix="days"

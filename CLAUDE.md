@@ -37,6 +37,16 @@ progressive disclosure, never everything at once, no streak guilt. When adding o
 reviewing a screen, count the taps and fields and cut. Prefer pre-filling from her
 own history over asking again.
 
+**Instructions are not permanent furniture.** A screen should look calm: explanations and
+how-to text (`Select an entry to edit it`, what a feature does, how a field works) appear the first
+time someone meets them and again only when she asks (the Help button in the top bar, which turns tips
+on for the current screen and off when she moves on). Use `<Hint id="...">` (`components/ui/Hint.tsx`) for
+a paragraph and the `hint` prop on `Input`/`NumberField`/`DurationField` for a field; both follow the
+rule automatically (`useHintVisible`, remembered in `lib/hints.ts`). **Never hide** a medical
+disclaimer, a privacy promise, what an irreversible action will do, an error, or an honest limitation she
+must know (those stay plain text); never repeat an instruction on every row of a list. When adding a
+screen, ask of each line of helper text: is it an instruction (hint) or something she must always see (plain)?
+
 **Senior Mode is a core, load-bearing USP**, not an accessibility toggle. It
 restructures navigation and information architecture (large plain-language
 tiles the user chooses in Settings → Customize essentials), it is not a

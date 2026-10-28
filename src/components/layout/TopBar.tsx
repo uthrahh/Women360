@@ -1,4 +1,5 @@
 import { Bell, Menu, Moon, Sun, UserCircle2 } from "lucide-react";
+import { HelpButton } from "@/components/HelpButton";
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "@/context/AppContext";
@@ -47,8 +48,8 @@ export function TopBar() {
   );
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 sm:px-6 h-16 bg-[var(--w360-bg)]/90 backdrop-blur">
-      <div className="flex items-center gap-1 min-w-0">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-2 sm:gap-3 px-4 sm:px-6 h-16 bg-[var(--w360-bg)]/90 backdrop-blur">
+      <div className="flex items-center gap-1 shrink-0">
         <button
           onClick={() => setMenuOpen(true)}
           aria-label="Open menu"
@@ -60,7 +61,7 @@ export function TopBar() {
         <Link to="/app/dashboard" className="lg:hidden font-display text-xl font-semibold tracking-tight">Women360</Link>
       </div>
       <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-0.5 sm:gap-1.5">
         <button
           onClick={senior.toggleSeniorMode}
           className={clsx(
@@ -79,10 +80,11 @@ export function TopBar() {
           <span className="sm:hidden">Senior</span>
           <span className="hidden sm:inline">Senior Mode</span>
         </button>
+        <HelpButton className="p-1.5 sm:p-2 rounded" />
         <button
           onClick={theme.toggle}
           aria-label="Toggle dark mode"
-          className="p-2 rounded hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+          className="p-1.5 sm:p-2 rounded hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
         >
           {theme.theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </button>

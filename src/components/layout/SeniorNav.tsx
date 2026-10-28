@@ -3,6 +3,7 @@ import { Sun, Moon, Settings as SettingsIcon, ArrowLeft } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { seniorNavMap } from "@/config/navigation";
 import { Link, useLocation } from "react-router-dom";
+import { HelpButton } from "@/components/HelpButton";
 
 export function SeniorTopBar({ title }: { title?: string }) {
   const { theme, senior } = useApp();
@@ -21,6 +22,7 @@ export function SeniorTopBar({ title }: { title?: string }) {
         <span className="font-display text-2xl font-semibold truncate">{title ?? "MY HEALTH"}</span>
       </div>
       <div className="flex items-center gap-2 shrink-0">
+        <HelpButton size={24} className="p-2.5" />
         <button onClick={theme.toggle} aria-label="Toggle dark mode" className="p-2.5 rounded-full hover:bg-black/[0.05] dark:hover:bg-white/[0.08]">
           {theme.theme === "dark" ? <Sun size={24} /> : <Moon size={24} />}
         </button>
