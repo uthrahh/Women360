@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { sendEmail } from "@/lib/mailer";
+import { passwordResetEmail } from "@/lib/emailTemplates";
 import { assertPasswordAcceptable } from "@/lib/passwordPolicy";
 import { hashToken } from "@/lib/jwt";
 import { BadRequestError, ConflictError, ForbiddenError, TooManyRequestsError, UnauthorizedError } from "@/lib/errors";
@@ -218,8 +220,9 @@ export const authService = {
           expiresAt: new Date(Date.now() + 60 * 60 * 1000),
         },
       });
-      // TODO(email): send `token` via a transactional email provider once
-      // one is configured. Never log the raw token.
+      // Not awaited: how long the mail server takes must not show whether the account exists.
+      // The shared demo accounts have no real inbox.
+      if (!user.isDemo) void sendEmail(passwordResetEmail(user.email, token));
       logger.info({ userId: user.id }, "Password reset requested");
     }
   },

@@ -416,9 +416,11 @@ Known concrete defects to fix as part of any related work:
   still ~430KB (~140KB gzipped) — acceptable since it only loads when a
   user visits Reports, not on initial app load, but worth knowing if
   bundle size becomes a concern later.
-- There is no email reminder preference or any email delivery (no provider is configured); the
-  Settings switch that pretended otherwise was removed. Email verification at sign-up and password
-  reset emails likewise need a mail provider.
+- Email: a provider-agnostic mailer exists (`server/src/lib/mailer.ts`, SMTP via `SMTP_URL` + `MAIL_FROM`,
+  links built from `APP_URL`) and password-reset emails are sent through it. **Until those two variables are
+  set on Render, no email is sent and a forgotten password cannot be recovered.** There is still no email
+  verification at sign-up and no email reminder preference (the Settings switch that pretended otherwise
+  was removed); both build on the same mailer.
 - Messages cannot be replied to (the reply box that only pretended to send was removed). The
   `Message` Prisma model itself has no sender-as-current-user concept
   (just a `senderLabel` display string and a `recipientId`), so this
