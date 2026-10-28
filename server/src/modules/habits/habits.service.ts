@@ -16,6 +16,7 @@ interface HabitInput {
   unit?: string | null;
   daysPerWeek?: number;
   reminder?: string | null;
+  activityCode?: string | null;
 }
 
 /** A day counts when something was logged and, if the habit has a target, the amount reached it. */

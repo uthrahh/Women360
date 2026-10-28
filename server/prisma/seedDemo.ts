@@ -116,7 +116,11 @@ async function main() {
     wellbeing.push({ userId, date: date(i), mood: 1 + (i % 4), stress: (i * 3) % 4, energy: 1 + ((i + 1) % 4) });
     hydration.push({ userId, date: date(i), amountMl: 1200 + ((i * 250) % 1000) });
     steps.push({ userId, date: date(i), steps: 4000 + ((i * 1370) % 6000) });
-    if (i % 2 === 0) activity.push({ userId, date: date(i), type: i % 4 ? "Brisk walk" : "Yoga", durationMinutes: 20 + (i % 3) * 10, intensity: i % 4 ? "MODERATE" : "LOW" });
+    if (i % 2 === 0) activity.push(
+        i % 4
+          ? { userId, date: date(i), type: "Walking", activityCode: "walking", durationMinutes: 20 + (i % 3) * 10, intensity: "MODERATE", distanceKm: 2 + (i % 3) }
+          : { userId, date: date(i), type: "Yoga", activityCode: "yoga", durationMinutes: 20 + (i % 3) * 10, intensity: "LOW" }
+      );
     if (i < 7) for (const [time, name, calories, proteinG, fibreG, servings] of meals) mealRows.push({ userId, date: date(i), time, name, calories, proteinG, fibreG, servings });
   }
   await prisma.sleepEntry.createMany({ data: sleep });
@@ -154,9 +158,10 @@ async function main() {
       { userId, title: "Book my annual health check-up", kind: "ONE_OFF", category: "PREVENTIVE", completed: true },
     ],
   });
-  const walk = await prisma.habit.create({ data: { userId, title: "Walk 10,000 steps", target: 10000, unit: "steps" } });
+  const walk = await prisma.habit.create({ data: { userId, title: "Walk 10,000 steps", target: 10000, unit: "steps", activityCode: "walking", reminder: "7:00 AM" } });
   const vitamin = await prisma.habit.create({ data: { userId, title: "Take my vitamin" } });
-  await prisma.habit.create({ data: { userId, title: "Strength session", daysPerWeek: 3 } });
+  await prisma.habit.create({ data: { userId, title: "Strength session", daysPerWeek: 3, activityCode: "strength-training" } });
+  await prisma.habit.create({ data: { userId, title: "Stretch before bed", target: 10, unit: "min", activityCode: "stretching", reminder: "9:30 PM" } });
   for (let i = 1; i <= 5; i++) {
     await prisma.habitLog.create({ data: { habitId: walk.id, date: date(i), amount: 10000 } });
     await prisma.habitLog.create({ data: { habitId: vitamin.id, date: date(i) } });

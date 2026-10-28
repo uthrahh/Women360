@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isValidIsoDay } from "@/lib/streak";
+import { ACTIVITY_CODES } from "@/modules/activity/catalog";
 
 const isoDay = z.string().refine(isValidIsoDay, "Use a date in YYYY-MM-DD format.");
 
@@ -11,6 +12,8 @@ const fields = {
   // 7 = every day; 1-6 = that many days a week.
   daysPerWeek: z.number().int().min(1).max(7),
   reminder: z.string().trim().max(120).nullable(),
+  // A catalog activity, or "any" for general movement; null when the habit is not an activity.
+  activityCode: z.enum([...ACTIVITY_CODES, "any"]).nullable(),
 };
 
 export const createHabitSchema = z.object({
@@ -19,6 +22,7 @@ export const createHabitSchema = z.object({
   unit: fields.unit.optional(),
   daysPerWeek: fields.daysPerWeek.default(7),
   reminder: fields.reminder.optional(),
+  activityCode: fields.activityCode.optional(),
 });
 
 export const updateHabitSchema = z.object({
@@ -27,6 +31,7 @@ export const updateHabitSchema = z.object({
   unit: fields.unit.optional(),
   daysPerWeek: fields.daysPerWeek.optional(),
   reminder: fields.reminder.optional(),
+  activityCode: fields.activityCode.optional(),
   archived: z.boolean().optional(),
 });
 

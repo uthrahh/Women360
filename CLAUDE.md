@@ -383,6 +383,23 @@ medicines); questions with nowhere to be stored were removed. Messages is read-o
 coach notes shared with her) and says so. Axe in the dev server needs a temporary script in `public/`:
 never commit it.
 
+**Activity catalog, calories and reminders (latest pass):** an activity is chosen from a
+fixed catalog (`server/src/modules/activity/catalog.ts`, served at `GET /activity/catalog`):
+each has its own effort levels, a MET value per level taken from the 2011 Compendium of Physical
+Activities (the code is recorded beside each), and only the extra fields it really has (distance,
+sets). Calories are *computed at read time* as MET x latest logged weight x hours and are an estimate
+(shown as such; no weight logged means no figure, never a guess); legacy free-text entries were
+mapped by the migration and `other` has no estimate. The quick log refuses a repeat of the same
+activity, length and effort (unique index, 409, race-safe; the form also stops it). Habits can be
+linked to an activity (`Habit.activityCode`, a catalog code or "any"), and those habits appear as
+today's to-do on the Activity page. Reminders (`lib/reminders.ts`, `hooks/useReminders.ts`, `public/sw.js`)
+fire at the habit's time **only while Women360 is open** (browser tab or window): there is no web push,
+the free-tier API sleeps, and the Capacitor WebView has no notifications. Do not describe it as
+closed-app notification until a push service and a scheduler exist. Durations use `DurationField`
+(hh:mm). Every number entry has clickable up/down arrows (`StepButtons`, hold to repeat, out of the
+tab order because the field is already a spinbutton that takes the arrow keys) as well as scrub, typing
+and arrow keys: add `NumberField` or `DurationField`, never a bare number input.
+
 Known concrete defects to fix as part of any related work:
 - No `sitemap.xml` (needs the production domain), no terms of use page, no
   Open Graph image or canonical URLs (same reason). Per-route titles exist for

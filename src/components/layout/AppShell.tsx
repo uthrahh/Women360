@@ -2,6 +2,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { menuTree } from "@/config/navigation";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useApp } from "@/context/AppContext";
+import { useReminders } from "@/hooks/useReminders";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
@@ -12,6 +13,7 @@ const ROUTE_TITLES = menuTree.flatMap((n) => ("leaf" in n ? [n.leaf] : n.items))
 
 export function AppShell() {
   const { senior, auth } = useApp();
+  useReminders();
   const demoNotice = auth.user?.isDemo ? (
     <Banner tone="info" title="Shared demonstration account" className="mb-5">
       The data here is synthetic. You can add, edit and delete records freely; the password, two-factor and account deletion are switched off for this account.
