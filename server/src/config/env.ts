@@ -15,6 +15,13 @@ const envSchema = z.object({
   // 32-byte key (`openssl rand -base64 32`) that encrypts each person's
   // authenticator secret at rest. Unset = the feature is off, nothing breaks.
   TWO_FACTOR_ENCRYPTION_KEY: z.string().optional(),
+  // Outgoing email. Both must be set for mail to be sent (any SMTP provider works): SMTP_URL is
+  // like smtps://user:password@smtp.example.com:465 and MAIL_FROM like "Women360 <no-reply@example.com>".
+  // Without them no email leaves the server, and the app says so rather than pretending.
+  SMTP_URL: z.string().optional(),
+  MAIL_FROM: z.string().optional(),
+  // Where the web app lives, for links inside emails. Defaults to the first allowed CORS origin.
+  APP_URL: z.string().url().optional(),
   // Optional comma-separated list of IP addresses allowed to reach /admin.
   ADMIN_IP_ALLOWLIST: z.string().optional(),
 });
@@ -42,6 +49,8 @@ export const env = {
   twoFactorKey,
   twoFactorAvailable: twoFactorKey !== null,
   adminIpAllowlist: (parsed.data.ADMIN_IP_ALLOWLIST ?? "").split(",").map((ip) => ip.trim()).filter(Boolean),
+  mailConfigured: Boolean(parsed.data.SMTP_URL && parsed.data.MAIL_FROM),
+  appUrl: (parsed.data.APP_URL ?? parsed.data.CORS_ORIGINS.split(",")[0].trim()).replace(/\/+$/, ""),
   isProduction: parsed.data.NODE_ENV === "production",
   isTest: parsed.data.NODE_ENV === "test",
   corsOrigins: parsed.data.CORS_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean),

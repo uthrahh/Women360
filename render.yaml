@@ -48,5 +48,12 @@ services:
         sync: false
       - key: SEED_DEMO_ACCOUNTS
         value: "true"
+      # Outgoing email. Without SMTP_URL and MAIL_FROM no email is sent, including password resets.
+      - key: SMTP_URL
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: APP_URL
+        value: https://women-360.vercel.app
       - key: SUPPORT_EMAIL
         value: support@example.com
