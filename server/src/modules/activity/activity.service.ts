@@ -20,7 +20,7 @@ const DEFAULT_QUICK_LOG: { activityCode: string; durationMinutes: number; intens
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /** Her most recent logged weight in kilograms, or null if she has none (or it can't be read). */
-async function latestWeightKg(userId: string): Promise<number | null> {
+export async function latestWeightKg(userId: string): Promise<number | null> {
   const rows = await prisma.vitalMeasurement.findMany({ where: { userId, type: "WEIGHT" }, orderBy: { date: "desc" }, take: 5 });
   for (const row of rows) {
     const kg = parseWeightKg(row.value);

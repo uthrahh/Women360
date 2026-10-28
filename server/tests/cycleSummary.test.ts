@@ -233,7 +233,7 @@ describe("phaseForDate", () => {
 describe("detectPeriods", () => {
   it("is exported and groups consecutive period days the same way computeCycleSummary uses internally", () => {
     const result = detectPeriods(period("2026-01-01", 5));
-    expect(result).toEqual([{ start: d("2026-01-01"), end: d("2026-01-05"), excludeCycle: false }]);
+    expect(result).toEqual([{ start: d("2026-01-01"), end: d("2026-01-05"), excludeCycle: false, lengthKnown: true }]);
   });
 });
 
@@ -272,5 +272,46 @@ describe("computeCycleSummary — cycles flagged as unusual", () => {
     const result = run(period("2026-05-27", 4));
     expect(result.predictionBasis.usedProfileDefault).toBe(true);
     expect(run(build([])).predictionBasis.usedProfileDefault).toBe(false);
+  });
+});
+
+describe("logging only the first day of a period", () => {
+  const profile = { averageCycleLength: 28, averagePeriodLength: 5 };
+  const summaryOn = (periodDays: PeriodDayInput[], today: string) => computeCycleSummary({ periodDays, today: d(today), profile, isPerimenopause: false });
+
+  it("counts the period from its start for her usual length, instead of learning a one-day period", () => {
+    const start: PeriodDayInput[] = [{ date: d("2026-01-01"), flow: "MEDIUM" }];
+    for (const [today, phase] of [["2026-01-01", "menstrual"], ["2026-01-03", "menstrual"], ["2026-01-05", "menstrual"], ["2026-01-08", "follicular"]] as const) {
+      const result = summaryOn(start, today);
+      expect(result.phase).toBe(phase);
+      expect(result.loggedPeriodLength).toBeNull();
+      expect(result.periodLength).toBe(5);
+    }
+  });
+
+  it("does not learn a one-day period length even once the next period proves the first one over", () => {
+    const result = summaryOn(
+      [{ date: d("2026-01-01"), flow: "MEDIUM" }, { date: d("2026-01-29"), flow: "MEDIUM" }, { date: d("2026-02-26"), flow: "MEDIUM" }],
+      "2026-02-28"
+    );
+    expect(result.loggedPeriodLength).toBeNull();
+    expect(result.periodLength).toBe(5);
+    expect(result.lastCycleLengths).toEqual([28, 28]);
+  });
+
+  it("keeps a symptom day she marked as a period day inside the same period", () => {
+    const periods = detectPeriods([{ date: d("2026-01-01"), flow: "MEDIUM" }, { date: d("2026-01-04"), flow: undefined }]);
+    expect(periods).toHaveLength(1);
+    expect(periods[0].start).toEqual(d("2026-01-01"));
+    expect(periods[0].lengthKnown).toBe(false);
+  });
+
+  it("still starts a new period once the span has passed", () => {
+    expect(detectPeriods([{ date: d("2026-01-01"), flow: "MEDIUM" }, { date: d("2026-01-12"), flow: "MEDIUM" }])).toHaveLength(2);
+  });
+
+  it("still learns her period length when she logs every day", () => {
+    const periodDays = [...period("2026-01-01", 4), ...period("2026-01-29", 4), ...period("2026-02-26", 4)];
+    expect(summaryOn(periodDays, "2026-03-10").loggedPeriodLength).toBe(4);
   });
 });
