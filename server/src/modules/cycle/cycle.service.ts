@@ -371,12 +371,12 @@ export const cycleService = {
 
   async getProfile(userId: string) {
     const profile = await prisma.cycleProfile.findUnique({ where: { userId } });
-    return profile ?? { userId, averageCycleLength: 28, averagePeriodLength: 5 };
+    return profile ?? { userId, averageCycleLength: 28, averagePeriodLength: 5, showOvulationOnHome: false };
   },
 
   async upsertProfile(
     userId: string,
-    input: { averageCycleLength: number; averagePeriodLength: number }
+    input: { averageCycleLength: number; averagePeriodLength: number; showOvulationOnHome?: boolean }
   ) {
     return prisma.cycleProfile.upsert({
       where: { userId },

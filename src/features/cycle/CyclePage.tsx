@@ -1210,6 +1210,7 @@ function SeniorCycle({ cycle, periodStartedToday, onPeriodToday, onLog, onBulkAd
 function CycleSettingsModal({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved: () => void }) {
   const [averageCycleLength, setAverageCycleLength] = useState("28");
   const [averagePeriodLength, setAveragePeriodLength] = useState("5");
+  const [showOvulation, setShowOvulation] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const toast = useToast();
@@ -1219,6 +1220,7 @@ function CycleSettingsModal({ open, onClose, onSaved }: { open: boolean; onClose
     cycleService.getProfile().then((p) => {
       setAverageCycleLength(String(p.averageCycleLength));
       setAveragePeriodLength(String(p.averagePeriodLength));
+      setShowOvulation(Boolean(p.showOvulationOnHome));
     });
   }, [open]);
 
@@ -1234,7 +1236,7 @@ function CycleSettingsModal({ open, onClose, onSaved }: { open: boolean; onClose
 
     setSaving(true);
     try {
-      await cycleService.upsertProfile({ averageCycleLength: cycleLen, averagePeriodLength: periodLen });
+      await cycleService.upsertProfile({ averageCycleLength: cycleLen, averagePeriodLength: periodLen, showOvulationOnHome: showOvulation });
       onSaved();
       toast.show("Cycle settings saved");
       onClose();
@@ -1272,6 +1274,13 @@ function CycleSettingsModal({ open, onClose, onSaved }: { open: boolean; onClose
           onChange={setAveragePeriodLength}
           error={errors.periodLen}
         />
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" className="mt-1 w-4 h-4 accent-[#6B1D30]" checked={showOvulation} onChange={(e) => setShowOvulation(e.target.checked)} />
+          <span>
+            <span className="block text-sm senior:text-base font-medium">Show ovulation on my home screen</span>
+            <span className="block text-xs senior:text-sm text-[var(--w360-text-muted)]">The home screen shows your cycle only while you are menstruating. Turn this on to see it during the ovulation phase too. It is an estimate.</span>
+          </span>
+        </label>
         <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save settings"}</Button>
       </form>
     </Modal>

@@ -29,6 +29,7 @@ export const cycleEntrySchema = z.object({
 export const cycleProfileSchema = z.object({
   averageCycleLength: z.number().int().min(15).max(90),
   averagePeriodLength: z.number().int().min(1).max(15),
+  showOvulationOnHome: z.boolean().optional(),
 });
 
 export const listQuerySchema = z.object({

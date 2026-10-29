@@ -1,7 +1,8 @@
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { sleepService } from "@/services/sleepService";
-import { calcSleepDuration, localDateISO, to24Hour } from "@/services/mappers";
+import { localDateISO, to24Hour } from "@/services/mappers";
+import { addDaysISO, defaultWakeDate, derivedBedDate, sleepSpanHours } from "@/lib/sleepSpan";
 import { SLEEP_QUALITY_LABELS, type SleepEntry, type SleepSummary } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -17,19 +18,42 @@ import { Moon, Sunrise, Plus } from "lucide-react";
 import { Hint } from "@/components/ui/Hint";
 
 interface SleepFormValues {
-  date: string;
+  bedDate: string; // the day she went to bed
   bedtime: string; // 24-hour "HH:MM"
+  wakeDate: string; // the morning she woke; the night is filed under it
   wake: string; // 24-hour "HH:MM"
+  /** She has picked a day herself, so changing the other day or the times no longer moves it. */
+  bedDateChosen: boolean;
+  wakeDateChosen: boolean;
   quality: number;
   notes: string;
 }
 
+const TOO_LONG_OR_BACKWARDS = "Waking up has to be after bedtime, and no more than 24 hours later.";
+
 function emptyForm(): SleepFormValues {
-  return { date: localDateISO(), bedtime: "23:00", wake: "07:00", quality: 3, notes: "" };
+  const today = localDateISO();
+  return { bedDate: addDaysISO(today, -1), bedtime: "23:00", wakeDate: today, wake: "07:00", bedDateChosen: false, wakeDateChosen: false, quality: 3, notes: "" };
 }
 
 function entryToForm(e: SleepEntry): SleepFormValues {
-  return { date: e.date, bedtime: to24Hour(e.bedtime), wake: to24Hour(e.wakeTime), quality: e.quality, notes: e.notes ?? "" };
+  return { bedDate: e.bedDate, bedtime: to24Hour(e.bedtime), wakeDate: e.date, wake: to24Hour(e.wakeTime), bedDateChosen: true, wakeDateChosen: true, quality: e.quality, notes: e.notes ?? "" };
+}
+
+/**
+ * The two days follow each other until she picks one. Choosing the day she went to bed puts the
+ * wake day one day later when the night crosses midnight (and the same day when she went to bed
+ * after it); choosing the wake day puts the bed day just before it. Changing a time keeps the day
+ * she picked and moves the other one.
+ */
+type Changed = "bedDate" | "wakeDate" | "time";
+function reconcile(form: SleepFormValues, change: Partial<Pick<SleepFormValues, "bedDate" | "bedtime" | "wakeDate" | "wake">>, changed: Changed): SleepFormValues {
+  const next: SleepFormValues = { ...form, ...change };
+  if (changed === "bedDate") next.bedDateChosen = true;
+  if (changed === "wakeDate") next.wakeDateChosen = true;
+  if (next.bedDateChosen && !next.wakeDateChosen) next.wakeDate = defaultWakeDate(next.bedDate, next.bedtime, next.wake);
+  else if (!next.bedDateChosen) next.bedDate = derivedBedDate(next.wakeDate, next.bedtime, next.wake);
+  return next;
 }
 
 export default function SleepPage() {
@@ -59,19 +83,25 @@ export default function SleepPage() {
     setEditingEntry(entry);
   }
 
-  const previewHours = calcSleepDuration(form.bedtime, form.wake);
+  const previewHours = sleepSpanHours(form.bedDate, form.bedtime, form.wakeDate, form.wake);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!form.date) {
-      setError("Choose a date.");
+    if (!form.bedDate || !form.wakeDate) {
+      setError("Choose both days.");
+      return;
+    }
+    if (previewHours === null) {
+      setError(TOO_LONG_OR_BACKWARDS);
       return;
     }
     setError("");
     setSaving(true);
     try {
-      await sleepService.logEntry(form.date, {
+      await sleepService.logEntry({
+        bedDate: form.bedDate,
         bedtime24: form.bedtime,
+        wakeDate: form.wakeDate,
         wake24: form.wake,
         quality: form.quality,
         notes: form.notes.trim() || undefined,
@@ -103,21 +133,34 @@ export default function SleepPage() {
 
   const sleepForm = (
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-        <Input
-          label="Date"
-          type="date"
-          value={form.date}
-          onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-          max={localDateISO()}
-          error={error || undefined}
-          disabled={editingEntry !== "new"}
-          required
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <Input label="Bedtime" type="time" value={form.bedtime} onChange={(e) => setForm((f) => ({ ...f, bedtime: e.target.value }))} required />
-          <Input label="Wake time" type="time" value={form.wake} onChange={(e) => setForm((f) => ({ ...f, wake: e.target.value }))} required />
-        </div>
-        <p className="text-sm text-[var(--w360-text-muted)]">Duration: <span className="font-medium text-[var(--w360-text)]">{previewHours}h</span></p>
+        <fieldset className="flex flex-col gap-1.5">
+          <legend className="text-sm font-medium senior:text-lg mb-1">Went to bed</legend>
+          <div className="grid grid-cols-[3fr_2fr] gap-3">
+            <Input aria-label="Went to bed, day" type="date" value={form.bedDate} max={form.wakeDate} onChange={(e) => setForm((f) => reconcile(f, { bedDate: e.target.value }, "bedDate"))} required />
+            <Input aria-label="Went to bed, time" type="time" value={form.bedtime} onChange={(e) => setForm((f) => reconcile(f, { bedtime: e.target.value }, "time"))} required />
+          </div>
+        </fieldset>
+        <fieldset className="flex flex-col gap-1.5">
+          <legend className="text-sm font-medium senior:text-lg mb-1">Woke up</legend>
+          <div className="grid grid-cols-[3fr_2fr] gap-3">
+            <Input
+              aria-label="Woke up, day"
+              type="date"
+              value={form.wakeDate}
+              min={form.bedDate}
+              max={localDateISO()}
+              onChange={(e) => setForm((f) => reconcile(f, { wakeDate: e.target.value }, "wakeDate"))}
+              disabled={editingEntry !== "new"}
+              required
+            />
+            <Input aria-label="Woke up, time" type="time" value={form.wake} onChange={(e) => setForm((f) => reconcile(f, { wake: e.target.value }, "time"))} required />
+          </div>
+        </fieldset>
+        {error || previewHours === null ? (
+          <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error || TOO_LONG_OR_BACKWARDS}</p>
+        ) : (
+          <p className="text-sm text-[var(--w360-text-muted)]">Duration: <span className="font-medium text-[var(--w360-text)]">{previewHours}h</span></p>
+        )}
         <fieldset className="flex flex-col gap-1.5">
           <legend className="text-sm font-medium senior:text-lg mb-1">Sleep quality</legend>
           <div className="grid grid-cols-5 gap-1.5" role="radiogroup" aria-label="Sleep quality, 1 to 5">
