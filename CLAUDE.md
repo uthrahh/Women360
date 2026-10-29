@@ -454,6 +454,15 @@ thyroid appears as a possible cause under irregular cycles and as a declarable c
 of it is marked "Draft: not yet reviewed by a clinician" and **every citation and link must be checked by a
 clinician before launch**. It is in-app only (no push notification exists yet).
 
+**The landing page is the marketing page and is deliberately short (latest pass):** hero with one
+illustration, "What it does" (a typographic grid, no cards), Senior Mode and every age, privacy, four FAQs, a
+closing call to action. It leads with prevention because that is what a plain tracker doesn't do. Rules: every
+line must describe something the app does today (the check-up and pattern features are marked as not yet
+reviewed by a clinician, and the FAQ says so); no testimonials, user counts, ratings, "free" or any pricing
+claim (no business model is decided); the phone is an illustration and says "No real data is shown"; no drifting
+blobs, tilted cards or extra illustrated sections, and add a section only by removing one. The old life-stage tabs,
+"small moments" scroller, example notes and their animation CSS were removed.
+
 Known concrete defects to fix as part of any related work:
 - No `sitemap.xml` (needs the production domain), no terms of use page, no
   Open Graph image or canonical URLs (same reason). Per-route titles exist for

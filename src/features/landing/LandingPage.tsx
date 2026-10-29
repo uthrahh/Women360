@@ -1,56 +1,68 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Activity, Apple, CalendarHeart, Moon, Plus, ShieldCheck, Smile } from "lucide-react";
+import { Plus } from "lucide-react";
 import AnimatedContent from "@/components/reactbits/AnimatedContent";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { buttonClasses } from "@/components/ui/Button";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { warmUpApi } from "@/services/apiClient";
-import { PersonaTabs } from "./PersonaTabs";
 import { cn } from "@/lib/utils";
 
-// The public landing page: a floating pill nav, drifting soft blobs, a paper-like
-// grain, everyday moments, the capabilities, the life stages, an app preview,
-// Senior Mode, example entries, privacy and an FAQ. Nothing here is real user
-// data: the phones are illustrations and the notes are labelled as examples.
+// The public landing page. It has one job: help a woman see what Women360 does that a
+// plain tracker doesn't, and start. So it leads with prevention (check-ups, patterns worth a
+// doctor's time, plans), says plainly who it is for and how her data is treated, answers the
+// four questions people actually ask, and stops. Nothing here is real user data: the phone is
+// an illustration and says so, and there are no testimonials, counts or ratings.
 
-const REVEAL = { distance: 30, duration: 0.8, ease: "power2.out", threshold: 0.12 } as const;
+const REVEAL = { distance: 24, duration: 0.7, ease: "power2.out", threshold: 0.12 } as const;
 const SOFT_SHADOW = "shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]";
 const SIGNATURE_ITALIC = "font-display italic font-normal";
+const H2 = "font-display text-3xl sm:text-4xl font-semibold tracking-tight [text-wrap:balance]";
 
 const GRAIN =
   "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
 
-const CAPABILITIES = [
-  { icon: CalendarHeart, title: "Menstrual health", desc: "Cycle tracking, symptoms and elegant, honest trend reading, never a diagnosis." },
-  { icon: Apple, title: "Nutrition", desc: "Meals, hydration and the nutrients that matter, logged in seconds." },
-  { icon: Activity, title: "Activity", desc: "Steps, workouts, strength and mobility, in context." },
-  { icon: Moon, title: "Sleep", desc: "Duration, quality and consistency, tracked over time." },
-  { icon: Smile, title: "Wellbeing", desc: "Mood, stress and energy, in a calm place to check in." },
-  { icon: ShieldCheck, title: "Preventive health", desc: "Screenings and check-ups, reminded at the right time." },
-];
-
-const MOMENTS = [
-  { when: "Morning", text: "Tick off today's medicine in one tap." },
-  { when: "After lunch", text: "Log a meal you've had before without retyping it." },
-  { when: "Evening", text: "Say how you feel, then try two minutes of slow breathing." },
-  { when: "When you wake", text: "Note how you slept, with a rating that's yours." },
-  { when: "Any day", text: "See your next period as a range, not a false-precision date." },
-  { when: "Once a year", text: "See which check-ups are due, and record the ones you've had." },
-];
-
-const NOTES = [
+// Every line is something the app does today. The check-up and pattern rules are marked as
+// not yet reviewed by a clinician inside the app, and the FAQ below says so.
+const POINTS = [
   {
-    tag: "Example entry",
-    text: "Slept about seven hours and woke once. Mood okay, a little tired. Walked after lunch. Took the vitamin.",
-    sign: "Sleep, mood, movement",
-    tilt: "md:-rotate-1",
+    title: "Check-ups, when they're due",
+    body: "See the screenings suggested for your age, with the source named. Record the ones you've had and the next date is worked out for you.",
   },
   {
-    tag: "Example entry",
-    text: "Period due in about four days, give or take. Headache this morning. Drank more water than yesterday.",
-    sign: "Cycle, symptoms, water",
-    tilt: "md:rotate-1",
+    title: "Patterns worth a conversation",
+    body: "When your own logs cross a published guideline line, such as long or irregular cycles, you see your numbers beside it and a suggestion to talk to a doctor. Never a diagnosis.",
+  },
+  {
+    title: "A cycle you can plan around",
+    body: "Your next period as a range from your own history, not a false-precision date. Log only the day it starts and the rest follows.",
+  },
+  {
+    title: "A plan for a goal, when you ask",
+    body: "Pick a goal and get a week-by-week activity plan built from what you already do, your time and your age, with an honest view of how realistic it is.",
+  },
+  {
+    title: "If you live with a condition",
+    body: "Tell Women360 about PCOS, endometriosis or a thyroid condition and it suggests the symptoms worth noting and prepares a summary for your doctor.",
+  },
+  {
+    title: "Quick to log, kind when you don't",
+    body: "One tap for a habit or a meal you've had before. Miss a day and nothing happens: there are no streaks to lose.",
+  },
+];
+
+const TRUST = [
+  {
+    title: "Yours to take or erase",
+    body: "Download everything held about your account, or delete it completely, from Settings whenever you like.",
+  },
+  {
+    title: "Shared only if you choose",
+    body: "A wellness coach sees a limited summary, and only when you give access. Your health profile and medicines are never part of it.",
+  },
+  {
+    title: "Honest about what it is",
+    body: "A wellness and tracking tool, not a diagnostic service. It points you toward professional care rather than replacing it.",
   },
 ];
 
@@ -61,15 +73,7 @@ const FAQ = [
   },
   {
     q: "What do the check-up reminders follow?",
-    a: "India's national screening programme and WHO guidance. They are currently marked as not yet reviewed by a clinician, so treat them as a starting point and confirm them with your doctor.",
-  },
-  {
-    q: "Can I take my data with me, or delete it?",
-    a: "Yes. In Settings, under Your data, you can download everything held about your account, or erase your account completely.",
-  },
-  {
-    q: "Is it only for younger women?",
-    a: "No. It's built for adults of every age. Senior Mode turns the app into a few large, clearly labelled essentials that you choose yourself.",
+    a: "India's national screening programme and WHO guidance, with the source named beside each. They are currently marked as not yet reviewed by a clinician, so treat them as a starting point and confirm them with your doctor.",
   },
   {
     q: "Do I need a watch or another device?",
@@ -92,16 +96,6 @@ function Grain() {
   );
 }
 
-function Blob({ className, color, delay = "0s" }: { className: string; color: string; delay?: string }) {
-  return (
-    <div
-      aria-hidden
-      className={cn("absolute rounded-full blur-3xl opacity-60 motion-safe:animate-[w360-float_6s_ease-in-out_infinite_alternate]", className)}
-      style={{ background: color, animationDelay: delay }}
-    />
-  );
-}
-
 function Nav() {
   return (
     <header className="sticky top-4 z-40 px-4">
@@ -119,9 +113,9 @@ function Nav() {
           <span className="font-display text-lg font-semibold">Women360</span>
         </Link>
         <div className="hidden sm:flex items-center gap-6 text-sm font-medium text-[var(--w360-text-muted)]">
-          <a href="#features" className="hover:text-[var(--w360-text)]">Features</a>
-          <a href="#life-stages" className="hover:text-[var(--w360-text)]">Life stages</a>
-          <a href="#senior-mode" className="hover:text-[var(--w360-text)]">Senior Mode</a>
+          <a href="#what" className="hover:text-[var(--w360-text)]">What it does</a>
+          <a href="#every-age" className="hover:text-[var(--w360-text)]">Every age</a>
+          <a href="#privacy" className="hover:text-[var(--w360-text)]">Privacy</a>
           <a href="#questions" className="hover:text-[var(--w360-text)]">Questions</a>
         </div>
         <div className="flex items-center gap-1.5">
@@ -139,18 +133,14 @@ function Nav() {
   );
 }
 
-function Phone({ className, children, label }: { className?: string; children: ReactNode; label: string }) {
+function Phone({ children, label }: { children: ReactNode; label: string }) {
   return (
     <div
       aria-hidden
-      className={cn(
-        "shrink-0 rounded-[2.75rem] border-[6px] border-[var(--w360-text)] bg-[var(--w360-bg-raised)] overflow-hidden",
-        "shadow-[0_24px_60px_-20px_rgba(0,0,0,0.25)]",
-        className
-      )}
+      className="shrink-0 w-[280px] sm:w-[300px] h-[460px] sm:h-[520px] rounded-[2.75rem] border-[6px] border-[var(--w360-text)] bg-[var(--w360-tint)] overflow-hidden shadow-[0_24px_60px_-20px_rgba(0,0,0,0.25)]"
     >
       <div className="px-5 pt-9 pb-6 h-full flex flex-col gap-3">
-        <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--w360-text)]">{label}</p>
+        <p className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--w360-tint-text)]">{label}</p>
         {children}
       </div>
     </div>
@@ -158,59 +148,33 @@ function Phone({ className, children, label }: { className?: string; children: R
 }
 
 const ROW = "flex items-center justify-between gap-3 rounded-2xl bg-[var(--w360-bg-raised)] px-4 py-3 text-sm";
+const ROW_STACK = "flex flex-col gap-0.5 rounded-2xl bg-[var(--w360-bg-raised)] px-4 py-3 text-sm mt-2";
 
-function Preview() {
+/** One illustrated screen: a day's few taps, the cycle as a range, a check-up that is due. */
+function HeroPhone() {
   return (
-    <section id="preview" className="px-4 py-24 overflow-hidden">
-      <AnimatedContent {...REVEAL} className="max-w-3xl mx-auto text-center">
-        <h2 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight">One quiet place for your day.</h2>
-        <p className="text-[var(--w360-text-muted)] mt-4 max-w-md mx-auto">Open it, tap what you've done, and get on with your day.</p>
-      </AnimatedContent>
-
-      <AnimatedContent {...REVEAL} className="mt-16 flex items-start justify-center">
-        <Phone
-          label="Habits"
-          className="hidden lg:block w-[280px] h-[580px] opacity-80 translate-y-12 -mr-10 bg-[var(--w360-bg-warm)]"
-        >
+    <div className="flex flex-col items-center">
+      <Phone label="Today">
+        <p className="font-display text-3xl font-semibold leading-tight mt-1 text-[var(--w360-tint-text)]">Three small things.</p>
+        <div className="flex flex-col gap-2">
           {["Walk 10,000 steps", "Take my vitamin", "Stretch for five minutes"].map((h, i) => (
             <div key={h} className={ROW}>
               <span>{h}</span>
-              <span
-                className={cn(
-                  "w-5 h-5 rounded-full border-2 border-[var(--w360-accent)]",
-                  i === 1 && "bg-[var(--w360-accent)]"
-                )}
-              />
+              <span className={cn("w-5 h-5 rounded-full border-2 border-[var(--w360-accent)]", i === 1 && "bg-[var(--w360-accent)]")} />
             </div>
           ))}
-        </Phone>
-
-        <Phone label="Today" className="relative z-10 w-[300px] h-[620px] bg-[var(--w360-tint)]">
-          <p className="font-display text-3xl font-semibold leading-tight mt-2 text-[var(--w360-tint-text)]">How are you feeling?</p>
-          <p className="text-sm text-[var(--w360-tint-text)] opacity-80">Two minutes is enough.</p>
-          <div className="flex-1 grid place-items-center">
-            <span className="grid place-items-center w-36 h-36 rounded-full bg-[var(--w360-accent)] text-[var(--w360-bg-raised)] font-medium motion-safe:animate-[w360-pulse_4s_ease-in-out_infinite]">
-              Breathe
-            </span>
-          </div>
-        </Phone>
-
-        <Phone
-          label="Check-ups"
-          className="hidden lg:block w-[280px] h-[580px] opacity-80 translate-y-24 -ml-10 bg-[var(--w360-bg-warm)]"
-        >
-          {["Blood pressure", "Blood sugar", "Cervical screening"].map((c) => (
-            <div key={c} className={ROW}>
-              <span>{c}</span>
-              <span className="text-xs rounded-full bg-[var(--w360-tint)] text-[var(--w360-tint-text)] px-2 py-0.5">Not recorded yet</span>
-            </div>
-          ))}
-        </Phone>
-      </AnimatedContent>
-      <p className="text-center text-xs text-[var(--w360-text-muted)] mt-10 lg:mt-28">
-        Illustration of the app. No real data is shown.
-      </p>
-    </section>
+        </div>
+        <div className={ROW_STACK}>
+          <span>Next period</span>
+          <span className="text-xs text-[var(--w360-text-muted)]">In about 5 days, give or take</span>
+        </div>
+        <div className={ROW}>
+          <span>Blood pressure</span>
+          <span className="text-xs rounded-full bg-[var(--w360-tint)] text-[var(--w360-tint-text)] px-2 py-0.5 border border-[var(--w360-border)]">Check-up due</span>
+        </div>
+      </Phone>
+      <p className="text-xs text-[var(--w360-text-muted)] mt-4">Illustration of the app. No real data is shown.</p>
+    </div>
   );
 }
 
@@ -218,17 +182,17 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   const id = useId();
   return (
-    <div className="rounded-2xl border border-[var(--w360-border)] bg-[var(--w360-bg-raised)]">
+    <div className="border-t border-[var(--w360-border)] last:border-b">
       <h3>
         <button
           type="button"
           aria-expanded={open}
           aria-controls={id}
           onClick={() => setOpen((o) => !o)}
-          className="w-full flex items-center justify-between gap-4 p-6 text-left font-medium rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--w360-focus)]"
+          className="w-full flex items-center justify-between gap-4 py-5 text-left font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--w360-focus)]"
         >
           {q}
-          <Plus size={20} aria-hidden className={cn("shrink-0 transition-transform duration-500 ease-in-out", open && "rotate-45")} />
+          <Plus size={20} aria-hidden className={cn("shrink-0 transition-transform duration-300 ease-in-out", open && "rotate-45")} />
         </button>
       </h3>
       {/* Animating grid rows takes the panel from 0 to its natural height. */}
@@ -237,10 +201,10 @@ function FaqItem({ q, a }: { q: string; a: string }) {
         role="region"
         aria-label={q}
         aria-hidden={!open}
-        className={cn("grid transition-[grid-template-rows] duration-500 ease-in-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}
+        className={cn("grid transition-[grid-template-rows] duration-300 ease-in-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}
       >
         <div className="overflow-hidden">
-          <p className="px-6 pb-6 text-[var(--w360-text-muted)] leading-relaxed">{a}</p>
+          <p className="pb-5 text-[var(--w360-text-muted)] leading-relaxed max-w-prose">{a}</p>
         </div>
       </div>
     </div>
@@ -255,186 +219,114 @@ export default function LandingPage() {
       <Grain />
       <Nav />
       <main>
-
-      {/* Hero */}
-      <section className="relative px-4 pt-20 pb-24 sm:pt-28 text-center overflow-hidden">
-        <Blob className="w-[360px] h-[360px] -top-10 -left-24" color="var(--w360-tint)" />
-        <Blob
-          className="w-[320px] h-[320px] top-24 -right-20"
-          color="color-mix(in srgb, var(--w360-accent) 22%, var(--w360-bg))"
-          delay="-3s"
-        />
-        <AnimatedContent {...REVEAL} trigger="mount" stagger={0.1} className="relative max-w-3xl mx-auto">
-          <p className="text-sm font-medium text-[var(--w360-text-muted)] mb-6">A personal health operating system</p>
-          <h1 className="font-display text-5xl sm:text-7xl md:text-[5.5rem] font-semibold tracking-tight leading-[1.02]">
-            A calmer way to look after <span className={cn(SIGNATURE_ITALIC, "text-[var(--w360-accent)]")}>your</span> health.
-          </h1>
-          <p className="text-lg text-[var(--w360-text-muted)] mt-8 max-w-[500px] mx-auto">
-            Women360 brings your cycle, nutrition, activity, sleep and wellbeing into one calm, honest view, built for every stage of your life, from your twenties to your nineties.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 mt-10">
-            <Link to="/register" className={cn(buttonClasses({ size: "lg" }), SOFT_SHADOW)}>Create your account</Link>
-            <Link to="/login" className={buttonClasses({ size: "lg", variant: "secondary" })}>Log in</Link>
-          </div>
-        </AnimatedContent>
-      </section>
-
-      {/* Moments */}
-      <section id="moments" className="py-16">
-        <AnimatedContent {...REVEAL} className="px-4 max-w-3xl mx-auto mb-8">
-          <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight">Small moments, small taps.</h2>
-        </AnimatedContent>
-        <div
-          role="region"
-          aria-label="Everyday moments. Scroll sideways to see more."
-          tabIndex={0}
-          className="flex gap-4 overflow-x-auto snap-x snap-mandatory px-4 pb-6 w360-hide-scrollbar focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--w360-focus)] rounded-3xl"
-        >
-          {MOMENTS.map((m) => (
-            <article
-              key={m.when}
-              className={cn(
-                "group snap-start shrink-0 w-72 h-40 rounded-3xl bg-[var(--w360-bg-raised)] border border-[var(--w360-border)] p-5 flex flex-col justify-between",
-                SOFT_SHADOW
-              )}
-            >
-              <p className="text-sm text-[var(--w360-text-muted)]">{m.when}</p>
-              <p className="text-xl leading-snug transition-colors duration-300 group-hover:text-[var(--w360-accent)]">{m.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="px-4 py-20">
-        <div className="max-w-4xl mx-auto">
-          <AnimatedContent {...REVEAL}>
-            <p className="text-sm font-medium text-[var(--w360-text-muted)] mb-3">
-              How am I doing, what should I pay attention to, and what can I do next?
-            </p>
-            <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight max-w-lg">
-              Everything that makes up your health, in one place.
-            </h2>
-          </AnimatedContent>
-          <AnimatedContent className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-10 mt-14" {...REVEAL} stagger={0.07}>
-            {CAPABILITIES.map((c) => (
-              <div key={c.title}>
-                <c.icon size={24} strokeWidth={1.6} className="text-[var(--w360-accent)] mb-3" aria-hidden />
-                <h3 className="font-medium text-lg">{c.title}</h3>
-                <p className="text-[var(--w360-text-muted)] mt-1.5">{c.desc}</p>
+        {/* Hero */}
+        <section className="px-4 pt-16 pb-20 sm:pt-24 sm:pb-28">
+          <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-14 lg:gap-8 items-center">
+            <AnimatedContent {...REVEAL} trigger="mount" stagger={0.1} className="text-center lg:text-left">
+              <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-semibold tracking-tight leading-[1.04] [text-wrap:balance]">
+                A calmer way to look after <span className={cn(SIGNATURE_ITALIC, "text-[var(--w360-accent)]")}>your</span> health.
+              </h1>
+              <p className="text-lg text-[var(--w360-text-muted)] mt-7 max-w-xl mx-auto lg:mx-0">
+                Log your cycle, meals, movement, sleep and mood in a few taps. Women360 turns what you log into early, plain-language nudges: which check-ups are due, and patterns worth taking to a doctor.
+              </p>
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-3 mt-9">
+                <Link to="/register" className={cn(buttonClasses({ size: "lg" }), SOFT_SHADOW)}>Create your account</Link>
+                <a href="#what" className="text-sm font-medium underline underline-offset-4 hover:text-[var(--w360-accent)]">See what it does</a>
               </div>
-            ))}
-          </AnimatedContent>
-        </div>
-      </section>
-
-      {/* Life stages */}
-      <section id="life-stages" className="px-4 py-20">
-        <div className="max-w-5xl mx-auto rounded-[2.5rem] bg-[var(--w360-bg-warm)] border border-[var(--w360-border)] px-6 sm:px-12 py-14">
-          <AnimatedContent {...REVEAL}>
-            <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight max-w-lg">
-              Built for the whole of a woman's life, 18 to 100.
-            </h2>
-          </AnimatedContent>
-          <div className="mt-10">
-            <AnimatedContent {...REVEAL}>
-              <PersonaTabs />
+              <p className="text-sm text-[var(--w360-text-muted)] mt-6">
+                No watch or device needed. Download or delete your data whenever you like.
+              </p>
+            </AnimatedContent>
+            <AnimatedContent {...REVEAL} trigger="mount" className="flex justify-center lg:justify-end">
+              <HeroPhone />
             </AnimatedContent>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <Preview />
-
-      {/* Senior Mode */}
-      <section id="senior-mode" className="px-4 py-20">
-        <AnimatedContent className="max-w-4xl mx-auto grid lg:grid-cols-2 gap-12 items-center" {...REVEAL} stagger={0.15}>
-          <div>
-            <p className="text-sm font-medium text-[var(--w360-text-muted)] mb-3">Senior Mode</p>
-            <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight">
-              Not a bigger font. A different way of using the app.
-            </h2>
-            <p className="text-[var(--w360-text-muted)] mt-4 max-w-md">
-              Turn it on and Women360 becomes a handful of large, clearly-labelled essentials, chosen by you, instead of a full dashboard. Fewer taps, no clutter, nothing essential hidden.
-            </p>
-            <Link to="/register" className={cn(buttonClasses({ variant: "secondary" }), "mt-6")}>See it in your account</Link>
+        {/* What it does */}
+        <section id="what" className="px-4 py-20 border-t border-[var(--w360-border)]">
+          <div className="max-w-5xl mx-auto">
+            <AnimatedContent {...REVEAL}>
+              <h2 className={cn(H2, "max-w-xl")}>Made to help you act early, not just keep a log.</h2>
+              <p className="text-[var(--w360-text-muted)] mt-4 max-w-xl">
+                Cycle, nutrition, activity, sleep, mood, medicines and appointments in one place, and the things below on top of them.
+              </p>
+            </AnimatedContent>
+            <AnimatedContent className="grid sm:grid-cols-2 gap-x-14 gap-y-10 mt-14" {...REVEAL} stagger={0.06}>
+              {POINTS.map((p) => (
+                <div key={p.title} className="border-t border-[var(--w360-border)] pt-5">
+                  <h3 className="font-medium text-lg">{p.title}</h3>
+                  <p className="text-[var(--w360-text-muted)] mt-2 max-w-md">{p.body}</p>
+                </div>
+              ))}
+            </AnimatedContent>
           </div>
-          <div aria-hidden className={cn("rounded-[2rem] border-2 border-[var(--w360-border)] bg-[var(--w360-bg-raised)] p-6", SOFT_SHADOW)}>
-            <p className="font-display text-xl font-semibold mb-4">MY HEALTH</p>
-            <div className="flex flex-col gap-2.5">
-              {["How I'm Doing", "My Medicines", "My Appointments", "My Activity"].map((t) => (
-                <div key={t} className="px-5 py-4 rounded-2xl border-2 border-[var(--w360-border)] font-medium">{t}</div>
+        </section>
+
+        {/* Every age / Senior Mode */}
+        <section id="every-age" className="px-4 py-20">
+          <AnimatedContent className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-12 items-center rounded-[2.5rem] bg-[var(--w360-bg-warm)] border border-[var(--w360-border)] px-6 sm:px-12 py-14" {...REVEAL} stagger={0.15}>
+            <div>
+              <h2 className={H2}>Made for every stage, from 18 to 100.</h2>
+              <p className="text-[var(--w360-text-muted)] mt-4 max-w-md">
+                Senior Mode turns Women360 into a handful of large, clearly labelled essentials that you choose yourself. It's a different way of using the app, not just a bigger font.
+              </p>
+              <Link to="/register" className="inline-block mt-6 text-sm font-medium underline underline-offset-4 hover:text-[var(--w360-accent)]">
+                See it in your account
+              </Link>
+            </div>
+            <div aria-hidden className={cn("rounded-[2rem] border-2 border-[var(--w360-border)] bg-[var(--w360-bg-raised)] p-6", SOFT_SHADOW)}>
+              <p className="font-display text-xl font-semibold mb-4">MY HEALTH</p>
+              <div className="flex flex-col gap-2.5">
+                {["How I'm Doing", "My Medicines", "My Appointments", "My Activity"].map((t) => (
+                  <div key={t} className="px-5 py-4 rounded-2xl border-2 border-[var(--w360-border)] font-medium">{t}</div>
+                ))}
+              </div>
+            </div>
+          </AnimatedContent>
+        </section>
+
+        {/* Privacy */}
+        <section id="privacy" className="px-4 py-20">
+          <div className="max-w-5xl mx-auto grid lg:grid-cols-[0.8fr_1.2fr] gap-12">
+            <AnimatedContent {...REVEAL}>
+              <h2 className={H2}>Your health information stays yours.</h2>
+              <Link to="/privacy" className="inline-block mt-5 underline underline-offset-4 text-sm font-medium">
+                Read how your data is handled
+              </Link>
+            </AnimatedContent>
+            <AnimatedContent {...REVEAL} stagger={0.08} className="flex flex-col">
+              {TRUST.map((t) => (
+                <div key={t.title} className="border-t border-[var(--w360-border)] py-5 first:pt-0 first:border-t-0 lg:first:border-t lg:first:pt-5">
+                  <h3 className="font-medium text-lg">{t.title}</h3>
+                  <p className="text-[var(--w360-text-muted)] mt-1.5 max-w-md">{t.body}</p>
+                </div>
+              ))}
+            </AnimatedContent>
+          </div>
+        </section>
+
+        {/* Questions */}
+        <section id="questions" className="px-4 py-20">
+          <AnimatedContent {...REVEAL} className="max-w-2xl mx-auto">
+            <h2 className={cn(H2, "mb-8")}>Questions, answered plainly.</h2>
+            <div>
+              {FAQ.map((f) => (
+                <FaqItem key={f.q} {...f} />
               ))}
             </div>
-          </div>
-        </AnimatedContent>
-      </section>
+          </AnimatedContent>
+        </section>
 
-      {/* Example entries */}
-      <section className="px-4 py-20">
-        <AnimatedContent {...REVEAL} className="max-w-3xl mx-auto">
-          <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight">What a day's notes can look like.</h2>
-          <p className="text-[var(--w360-text-muted)] mt-3 max-w-md">Written as examples, not by real people.</p>
-        </AnimatedContent>
-        <AnimatedContent {...REVEAL} stagger={0.12} className="max-w-3xl mx-auto mt-10 grid md:grid-cols-2 gap-6">
-          {NOTES.map((n) => (
-            <figure
-              key={n.text}
-              className={cn("rounded-[2rem] bg-[var(--w360-bg-raised)] border border-[var(--w360-border)] p-8", SOFT_SHADOW, n.tilt)}
-            >
-              <figcaption className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--w360-text-muted)]">{n.tag}</figcaption>
-              <blockquote className="text-xl leading-relaxed mt-4">{n.text}</blockquote>
-              <p className="flex items-center gap-3 mt-6 text-[var(--w360-text-muted)]">
-                <span aria-hidden className="w-8 h-px bg-current" />
-                <span className={cn(SIGNATURE_ITALIC, "text-xl")}>{n.sign}</span>
-              </p>
-            </figure>
-          ))}
-        </AnimatedContent>
-      </section>
-
-      {/* Privacy */}
-      <section id="privacy" className="px-4 py-20">
-        <AnimatedContent {...REVEAL} className="max-w-2xl mx-auto text-center">
-          <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight">Your health information stays yours.</h2>
-          <p className="text-[var(--w360-text-muted)] mt-4">
-            A wellness coach sees only a limited summary, and only if you give them access. Your health profile and medicines are never part of it. Women360 is a wellness and tracking tool, not a diagnostic system: it points you toward professional care rather than replacing it.
-          </p>
-          <Link to="/privacy" className="inline-block mt-5 underline underline-offset-2 text-sm">Read how your data is handled</Link>
-        </AnimatedContent>
-      </section>
-
-      {/* Questions */}
-      <section id="questions" className="px-4 py-20">
-        <AnimatedContent {...REVEAL} className="max-w-2xl mx-auto">
-          <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight text-center">Questions, answered plainly.</h2>
-          <div className="flex flex-col gap-3 mt-10">
-            {FAQ.map((f) => (
-              <FaqItem key={f.q} {...f} />
-            ))}
-          </div>
-        </AnimatedContent>
-      </section>
-
-      {/* Get started */}
-      <section className="relative px-4 py-28 text-center overflow-hidden">
-        <Blob className="w-[380px] h-[380px] -bottom-24 -left-20" color="var(--w360-tint)" />
-        <Blob className="w-[320px] h-[320px] -bottom-10 -right-16" color="color-mix(in srgb, var(--w360-accent) 22%, var(--w360-bg))" delay="-3s" />
-        <AnimatedContent {...REVEAL} className="relative max-w-xl mx-auto">
-          <span aria-hidden className="relative mx-auto grid place-items-center w-14 h-14 rounded-2xl bg-[var(--w360-text)]">
-            <span className="w-3 h-3 rounded-full bg-[var(--w360-accent)]" />
-          </span>
-          <h2 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight mt-8">Start with today.</h2>
-          <p className="text-[var(--w360-text-muted)] mt-4">Your data stays yours: download it or delete it whenever you like.</p>
-          <Link
-            to="/register"
-            className="inline-block mt-8 rounded-full bg-[var(--w360-text)] text-[var(--w360-bg)] font-medium px-8 py-4 transition-transform duration-300 hover:scale-105"
-          >
-            Create your account
-          </Link>
-        </AnimatedContent>
-      </section>
-
+        {/* Get started */}
+        <section className="px-4 py-24 text-center">
+          <AnimatedContent {...REVEAL} className="max-w-xl mx-auto">
+            <h2 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight">Start with today.</h2>
+            <Link to="/register" className={cn(buttonClasses({ size: "lg" }), SOFT_SHADOW, "mt-8")}>
+              Create your account
+            </Link>
+          </AnimatedContent>
+        </section>
       </main>
 
       <footer className="px-4 py-8 text-sm text-[var(--w360-text-muted)] text-center">

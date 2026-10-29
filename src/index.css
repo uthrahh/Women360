@@ -112,30 +112,3 @@ body {
    shouldn't add the global focus outline on top of it. */
 .scrub-field__input:focus-visible { outline: none; }
 
-/* ---- Landing life-stage illustrations -------------------------------------
-   Small looping SVG motions. The global prefers-reduced-motion rule above
-   collapses these to a single frame for people who ask for less movement. */
-@keyframes w360-orbit { to { transform: rotate(360deg); } }
-@keyframes w360-drift { from { transform: translateX(0); } to { transform: translateX(-240px); } }
-@keyframes w360-grow { from { transform: scaleY(0.12); } to { transform: scaleY(1); } }
-@keyframes w360-select {
-  0%, 26% { transform: translateY(0); }
-  33%, 59% { transform: translateY(58px); }
-  66%, 92% { transform: translateY(116px); }
-  100% { transform: translateY(0); }
-}
-@keyframes w360-panel-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-.w360-orbit { animation: w360-orbit 22s linear infinite; }
-.w360-drift { animation: w360-drift var(--w360-drift-time, 12s) linear infinite; }
-.w360-grow { transform-box: fill-box; transform-origin: bottom; animation: w360-grow 900ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-.w360-select { animation: w360-select 7s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
-.w360-panel-in { animation: w360-panel-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-
-/* ---- Landing page ------------------------------------------------
-   Slow background drift and a gentle pulse; reduced-motion users get neither
-   (the rule near the top collapses them, and the markup uses motion-safe). */
-@keyframes w360-float { from { transform: translateY(-10px); } to { transform: translateY(10px); } }
-@keyframes w360-pulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--w360-accent) 35%, transparent); }
-  50% { transform: scale(1.05); box-shadow: 0 0 0 18px color-mix(in srgb, var(--w360-accent) 0%, transparent); }
-}
