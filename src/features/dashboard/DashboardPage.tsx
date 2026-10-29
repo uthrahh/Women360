@@ -5,7 +5,6 @@ import { useApp } from "@/context/AppContext";
 import { SeniorTileGrid } from "@/components/layout/SeniorNav";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { ProgressRing } from "@/components/ui/ProgressRing";
 import { LoadingState } from "@/components/ui/states";
 import { ItemList } from "@/components/ui/ItemList";
 import { TodayTasks } from "./TodayTasks";
@@ -14,20 +13,13 @@ import { sleepService } from "@/services/sleepService";
 import { activityService } from "@/services/activityService";
 import { nutritionService } from "@/services/nutritionService";
 import { healthService } from "@/services/healthService";
-import { goalService } from "@/services/goalService";
 import { habitService } from "@/services/habitService";
 import { wellbeingService } from "@/services/wellbeingService";
 import { MOOD_LABELS } from "@/services/mappers";
+import { cycleCardPhase } from "@/lib/cycleCard";
 import { SLEEP_QUALITY_LABELS } from "@/types";
-import type { CycleSummary, SleepSummary, ActivitySummary, NutritionSummary, Appointment, Goal, Habit, WellbeingEntry } from "@/types";
-import { Droplet, Moon, Activity as ActivityIcon, Smile, CalendarClock, Plus, ChevronRight, Flame, type LucideIcon } from "lucide-react";
-
-const PHASE_LABEL: Record<string, string> = {
-  menstrual: "Menstrual phase",
-  follicular: "Follicular phase",
-  ovulation: "Ovulation phase",
-  luteal: "Luteal phase",
-};
+import type { CycleSummary, SleepSummary, ActivitySummary, NutritionSummary, Appointment, Habit, WellbeingEntry } from "@/types";
+import { Droplet, Moon, Activity as ActivityIcon, Smile, Plus, ChevronRight, type LucideIcon } from "lucide-react";
 
 const QUICK_LOG = [
   { label: "Period", to: "/app/cycle" },
@@ -37,9 +29,6 @@ const QUICK_LOG = [
   { label: "Mood", to: "/app/wellbeing" },
   { label: "Measurement", to: "/app/health" },
 ];
-
-const primaryLinkClass =
-  "inline-flex items-center justify-center gap-2 rounded-full bg-maroon-700 text-white px-5 py-3 text-sm font-medium transition-[background-color,transform] hover:bg-maroon-800 active:scale-[0.98] dark:bg-maroon-300 dark:text-ink-900 dark:hover:bg-maroon-200";
 
 function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -56,22 +45,22 @@ function StandardDashboard() {
   const { auth } = useApp();
   const nav = useNavigate();
   const [cycle, setCycle] = useState<CycleSummary | null>(null);
+  const [showOvulation, setShowOvulation] = useState(false);
   const [sleep, setSleep] = useState<SleepSummary | null>(null);
   const [activity, setActivity] = useState<ActivitySummary | null>(null);
   const [nutrition, setNutrition] = useState<NutritionSummary | null>(null);
   const [appts, setAppts] = useState<Appointment[]>([]);
-  const [goals, setGoals] = useState<Goal[] | null>(null);
   const [habits, setHabits] = useState<Habit[] | null>(null);
   const [todayMood, setTodayMood] = useState<WellbeingEntry | null>(null);
   const [moodLoaded, setMoodLoaded] = useState(false);
 
   useEffect(() => {
     cycleService.getSummary().then(setCycle);
+    cycleService.getProfile().then((p) => setShowOvulation(Boolean(p.showOvulationOnHome))).catch(() => undefined);
     sleepService.getSummary().then(setSleep);
     activityService.getSummary().then(setActivity);
     nutritionService.getToday().then(setNutrition);
     healthService.getAppointments().then(setAppts);
-    goalService.list().then(setGoals);
     habitService.list().then(setHabits);
     wellbeingService.getTodayMood().then((m) => {
       setTodayMood(m);
@@ -79,7 +68,7 @@ function StandardDashboard() {
     });
   }, []);
 
-  const loaded = cycle && sleep && activity && nutrition && goals && habits && moodLoaded;
+  const loaded = cycle && sleep && activity && nutrition && habits && moodLoaded;
   const now = new Date();
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
@@ -88,11 +77,10 @@ function StandardDashboard() {
   if (!loaded) return <LoadingState label="Preparing your snapshot" />;
 
   const hydrationPct = Math.round((nutrition.hydrationMl / nutrition.hydrationGoalMl) * 100);
-  const goalsDone = goals.filter((g) => g.completed).length;
-  const daysActiveThisWeek = activity.weeklyMinutes.filter((d) => d.minutes > 0).length;
+  const cyclePhase = cycleCardPhase(cycle, showOvulation);
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       <header className="w360-rise" style={{ "--i": 0 } as CSSProperties}>
         <p className="text-sm text-[var(--w360-text-muted)]">
           {now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
@@ -103,12 +91,14 @@ function StandardDashboard() {
         </h1>
       </header>
 
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
-        <div className="flex flex-col gap-10 min-w-0">
-          <section className="w360-rise" style={{ "--i": 1 } as CSSProperties} aria-label="Your cycle">
-            <CycleHero cycle={cycle} />
-          </section>
+      {cyclePhase && (
+        <section className="w360-rise" style={{ "--i": 1 } as CSSProperties} aria-label="Your cycle">
+          <CycleCard cycle={cycle} phase={cyclePhase} />
+        </section>
+      )}
 
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+        <div className="flex flex-col gap-8 min-w-0">
           <section className="w360-rise" style={{ "--i": 2 } as CSSProperties} aria-label="To do today">
             <SectionHeading title="To do today" />
             <TodayTasks
@@ -133,9 +123,11 @@ function StandardDashboard() {
               ))}
             </div>
           </section>
+        </div>
 
-          <section className="w360-rise" style={{ "--i": 4 } as CSSProperties} aria-label="Today">
-            <SectionHeading title="Today" />
+        <div className="flex flex-col gap-8 min-w-0">
+          <section className="w360-rise" style={{ "--i": 4 } as CSSProperties} aria-label="Today so far">
+            <SectionHeading title="Today so far" />
             <Card>
               <CardBody className="p-0 divide-y divide-[var(--w360-border)]">
                 <TodayRow
@@ -153,13 +145,7 @@ function StandardDashboard() {
                   to="/app/nutrition"
                   progress={hydrationPct}
                 />
-                <TodayRow
-                  icon={ActivityIcon}
-                  label="Activity"
-                  value={activity.steps.toLocaleString()}
-                  sub="steps today"
-                  to="/app/activity"
-                />
+                <TodayRow icon={ActivityIcon} label="Activity" value={activity.steps.toLocaleString()} sub="steps today" to="/app/activity" />
                 <TodayRow
                   icon={Smile}
                   label="Mood"
@@ -167,133 +153,55 @@ function StandardDashboard() {
                   sub={todayMood ? "logged today" : "Tap to check in"}
                   to="/app/wellbeing"
                 />
-                <TodayRow
-                  icon={Flame}
-                  label="Habits"
-                  value={habits.length ? `${habits.filter((h) => h.doneToday).length}/${habits.length}` : "None yet"}
-                  sub={habits.length ? "done today" : "Add your first one"}
-                  to="/app/habits"
-                />
-                <TodayRow
-                  icon={CalendarClock}
-                  label="Goals"
-                  value={goals.length ? `${goalsDone}/${goals.length}` : "None yet"}
-                  sub={goals.length ? "completed" : "Set your first one"}
-                  to="/app/goals"
-                />
-              </CardBody>
-            </Card>
-          </section>
-        </div>
-
-        <div className="flex flex-col gap-10 min-w-0">
-          <section className="w360-rise" style={{ "--i": 5 } as CSSProperties} aria-label="This week">
-            <SectionHeading title="This week" />
-            <Card>
-              <CardBody className="pt-5 grid grid-cols-2 gap-4">
-                <div className="flex flex-col items-center text-center gap-3">
-                  <ProgressRing
-                    size={84}
-                    strokeWidth={7}
-                    value={activity.activeMinutesGoal ? (activity.activeMinutes / activity.activeMinutesGoal) * 100 : 0}
-                    label={`${activity.activeMinutes}m`}
-                  />
-                  <div>
-                    <p className="text-sm font-medium">Active today</p>
-                    <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">{daysActiveThisWeek} of 7 days logged</p>
-                  </div>
-                </div>
-                <div className="flex flex-col items-center text-center gap-3">
-                  <ProgressRing size={84} strokeWidth={7} value={sleep.consistencyScore} label={`${sleep.consistencyScore}%`} />
-                  <div>
-                    <p className="text-sm font-medium">Bedtime regularity</p>
-                    <p className="text-xs text-[var(--w360-text-muted)] mt-0.5">
-                      {sleep.history.length > 1 ? "from your logged bedtimes" : "log a few more nights"}
-                    </p>
-                  </div>
-                </div>
               </CardBody>
             </Card>
           </section>
 
-          <section className="w360-rise" style={{ "--i": 6 } as CSSProperties} aria-label="Upcoming">
-            <SectionHeading
-              title="Upcoming"
-              action={<Link to="/app/health" className="text-sm font-medium text-maroon-700 dark:text-maroon-200">View all</Link>}
-            />
-            {appts.length === 0 ? (
-              <p className="text-sm text-[var(--w360-text-muted)]">
-                Nothing scheduled.{" "}
-                <Link to="/app/health" className="font-medium text-maroon-700 dark:text-maroon-200 underline underline-offset-2">
-                  Add an appointment
-                </Link>
-              </p>
-            ) : (
+          {appts.length > 0 && (
+            <section className="w360-rise" style={{ "--i": 5 } as CSSProperties} aria-label="Upcoming">
+              <SectionHeading
+                title="Upcoming"
+                action={<Link to="/app/health" className="text-sm font-medium text-maroon-700 dark:text-maroon-200">View all</Link>}
+              />
               <ItemList
                 ariaLabel="Upcoming"
-                items={appts.slice(0, 5).map((x) => ({
+                items={appts.slice(0, 3).map((x) => ({
                   id: x.id,
                   title: x.title,
                   description: [x.provider, x.location].filter(Boolean).join(" · "),
                   meta: `${shortDate(x.date)} · ${x.time}`,
                 }))}
-                maxHeight={320}
+                maxHeight={240}
                 onItemSelect={() => nav("/app/health?tab=appointments")}
               />
-            )}
-          </section>
+            </section>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function CycleHero({ cycle }: { cycle: CycleSummary }) {
-  if (cycle.currentDay === null || cycle.phase === null) {
-    return (
-      <Card tone="tint">
-        <CardBody className="p-6 sm:p-8">
-          <p className="text-xs font-semibold tracking-[0.14em] uppercase opacity-70">Your cycle</p>
-          <p className="font-display text-3xl sm:text-4xl font-semibold tracking-tight leading-tight mt-3">
-            Start with your last period.
-          </p>
-          <p className="text-sm opacity-80 mt-3 max-w-sm">
-            Add when your last period began and Women360 starts showing your cycle day, phase, and a predicted range.
-          </p>
-          <Link to="/app/cycle" className={`${primaryLinkClass} mt-6`}>Open cycle</Link>
-        </CardBody>
-      </Card>
-    );
-  }
-
-  const range =
-    cycle.nextPeriodRangeStart && cycle.nextPeriodRangeEnd
-      ? `${shortDate(cycle.nextPeriodRangeStart)} – ${shortDate(cycle.nextPeriodRangeEnd)}`
-      : cycle.nextPeriodDate
-        ? `around ${shortDate(cycle.nextPeriodDate)}`
-        : null;
-
+function CycleCard({ cycle, phase }: { cycle: CycleSummary; phase: "menstrual" | "ovulation" }) {
+  const menstruating = phase === "menstrual";
   return (
     <Card tone="tint">
-      <CardBody className="p-6 sm:p-8">
-        <p className="text-xs font-semibold tracking-[0.14em] uppercase opacity-70">Your cycle</p>
-        <div className="flex items-baseline gap-3 mt-3">
-          <span className="font-display text-6xl sm:text-7xl font-semibold tracking-tight tabular-nums leading-none">
-            {cycle.currentDay}
-          </span>
-          <span className="text-base opacity-80">
-            {cycle.isLate ? `day · ${cycle.daysLate} late` : `of ${cycle.cycleLength}`}
-          </span>
-        </div>
-        <p className="text-lg font-medium mt-4">
-          {cycle.isLate ? "Your period may be late" : PHASE_LABEL[cycle.phase]}
-        </p>
-        {range && (
-          <p className="text-sm opacity-80 mt-1">
-            Next period expected {range} — a range, not an exact date.
+      <CardBody className="p-5 sm:p-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold tracking-[0.14em] uppercase opacity-70">Your cycle</p>
+          <p className="font-display text-3xl sm:text-4xl font-semibold tracking-tight leading-tight mt-1.5">
+            {menstruating ? `Day ${cycle.currentDay} of your period` : "Ovulation phase"}
           </p>
-        )}
-        <Link to="/app/cycle" className={`${primaryLinkClass} mt-6`}>Open cycle</Link>
+          <p className="text-sm opacity-80 mt-1">
+            {menstruating ? `Day ${cycle.currentDay} of a ${cycle.cycleLength}-day cycle.` : `Day ${cycle.currentDay} of ${cycle.cycleLength}. An estimate, not a way to prevent or plan pregnancy.`}
+          </p>
+        </div>
+        <Link
+          to="/app/cycle"
+          className="inline-flex items-center justify-center rounded-full border border-maroon-700 text-maroon-700 dark:border-maroon-300 dark:text-maroon-200 px-5 py-2.5 text-sm font-medium transition-colors hover:bg-maroon-50 dark:hover:bg-white/5"
+        >
+          Open cycle
+        </Link>
       </CardBody>
     </Card>
   );

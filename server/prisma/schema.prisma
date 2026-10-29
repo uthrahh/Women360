@@ -255,6 +255,9 @@ model CycleProfile {
   user                User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   averageCycleLength  Int    @default(28)
   averagePeriodLength Int    @default(5)
+  // Opt-in: also show the cycle card on the home screen while she is in the ovulation phase
+  // (by default it only shows while she is menstruating).
+  showOvulationOnHome Boolean @default(false)
 }
 
 model CycleEntry {
@@ -483,7 +486,10 @@ model SleepEntry {
   id             String   @id @default(cuid())
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // The morning she woke (the key for the night). bedDate is the day she went to bed; null on
+  // entries logged before it was asked, whose bed day is worked out from the two times.
   date           DateTime @db.Date
+  bedDate        DateTime? @db.Date
   durationHours  Float
   quality        Int
   bedtime        String

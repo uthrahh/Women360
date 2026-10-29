@@ -463,6 +463,21 @@ claim (no business model is decided); the phone is an illustration and says "No 
 blobs, tilted cards or extra illustrated sections, and add a section only by removing one. The old life-stage tabs,
 "small moments" scroller, example notes and their animation CSS were removed.
 
+**The signed-in home screen is calm by default, and sleep records the real span (latest pass):** the dashboard
+(`features/dashboard/DashboardPage.tsx`) is a greeting, "To do today", "Log something", a four-row "Today so far"
+(sleep, hydration, steps, mood) and "Upcoming" only when there is an appointment. The cycle card sits at the top
+**only while she is menstruating**, and during the ovulation phase only if she turned on "Show ovulation on my
+home screen" (Cycle > Settings, `CycleProfile.showOvulationOnHome`, off by default); never when the period is late,
+never in follicular or luteal, never with no cycle data (`lib/cycleCard.ts`, unit-tested). The old always-on cycle
+hero, "This week" rings and Habits/Goals rows (duplicates of To do and their own pages) were removed: add to the
+home screen only by removing something. Sleep: a night is filed under the **morning she woke** (`SleepEntry.date`,
+the route key) and stores the day she went to bed (`bedDate`, null on older entries, derived from the two times
+when read). The form asks for both a day and a time for bed and for waking; the wake day defaults to one day after
+the bed day when the night crosses midnight and to the same day when she went to bed after midnight, the two days
+follow each other until she picks one, and the wake day is locked when editing (it is the key). The server works
+the duration out from the two days and times itself (`modules/sleep/duration.ts`; wake must be after bed and within
+24 hours) rather than trusting the client's number; an older client that sends no `bedDate` still works.
+
 Known concrete defects to fix as part of any related work:
 - No `sitemap.xml` (needs the production domain), no terms of use page, no
   Open Graph image or canonical URLs (same reason). Per-route titles exist for

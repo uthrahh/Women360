@@ -7,8 +7,9 @@ export const sleepService = {
     const apiSummary = await request<Parameters<typeof toFrontendSleepSummary>[0]>("/sleep/summary");
     return toFrontendSleepSummary(apiSummary);
   },
-  async logEntry(date: string, entry: { bedtime24: string; wake24: string; quality: number; notes?: string }): Promise<SleepEntry> {
-    const apiEntry = await request<Parameters<typeof toFrontendSleepEntry>[0]>(`/sleep/entries/${date}`, {
+  /** `entry.wakeDate` is the morning she woke: the night is filed under it. */
+  async logEntry(entry: { bedDate: string; bedtime24: string; wakeDate: string; wake24: string; quality: number; notes?: string }): Promise<SleepEntry> {
+    const apiEntry = await request<Parameters<typeof toFrontendSleepEntry>[0]>(`/sleep/entries/${entry.wakeDate}`, {
       method: "PUT",
       body: JSON.stringify(toBackendSleepEntry(entry)),
     });

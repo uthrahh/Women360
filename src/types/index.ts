@@ -84,6 +84,8 @@ export interface CycleSummary {
 export interface CycleProfileSettings {
   averageCycleLength: number;
   averagePeriodLength: number;
+  /** Also show the cycle card on the home screen during ovulation (it always shows while menstruating). */
+  showOvulationOnHome?: boolean;
 }
 
 export interface CycleDayPhase {
@@ -190,7 +192,10 @@ export interface ActivitySummary {
 
 export interface SleepEntry {
   id: string;
+  /** The morning she woke; the night is filed under it. */
   date: string;
+  /** The day she went to bed (worked out from the two times for nights saved before it was asked). */
+  bedDate: string;
   bedtime: string;
   wakeTime: string;
   durationHours: number;

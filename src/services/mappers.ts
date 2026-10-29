@@ -25,6 +25,7 @@ import type {
   VitalMeasurement,
   WellbeingEntry,
 } from "@/types";
+import { derivedBedDate, sleepSpanHours } from "@/lib/sleepSpan";
 
 export function lower<T extends string>(value: string): T {
   return value.toLowerCase() as T;
@@ -616,6 +617,7 @@ export function toFrontendReportRecord(apiReport: ApiReportRecord): ReportRecord
 interface ApiSleepEntry {
   id: string;
   date: string;
+  bedDate?: string | null;
   bedtime: string;
   wakeTime: string;
   durationHours: number;
@@ -624,9 +626,11 @@ interface ApiSleepEntry {
 }
 
 export function toFrontendSleepEntry(entry: ApiSleepEntry): SleepEntry {
+  const date = toDateOnly(entry.date) ?? entry.date;
   return {
     id: entry.id,
-    date: toDateOnly(entry.date) ?? entry.date,
+    date,
+    bedDate: toDateOnly(entry.bedDate ?? null) ?? derivedBedDate(date, to24Hour(entry.bedtime), to24Hour(entry.wakeTime)),
     bedtime: entry.bedtime,
     wakeTime: entry.wakeTime,
     durationHours: entry.durationHours,
@@ -649,11 +653,13 @@ export function toFrontendSleepSummary(apiSummary: ApiSleepSummary): SleepSummar
   return { ...apiSummary, history: apiSummary.history.map(toFrontendSleepEntry) };
 }
 
-export function toBackendSleepEntry(entry: { bedtime24: string; wake24: string; quality: number; notes?: string }) {
+export function toBackendSleepEntry(entry: { bedDate: string; bedtime24: string; wakeDate: string; wake24: string; quality: number; notes?: string }) {
   return {
+    bedDate: entry.bedDate,
     bedtime: to12Hour(entry.bedtime24),
     wakeTime: to12Hour(entry.wake24),
-    durationHours: calcSleepDuration(entry.bedtime24, entry.wake24),
+    // The server works the length out from the two days and times itself; this is only the client's own figure.
+    durationHours: sleepSpanHours(entry.bedDate, entry.bedtime24, entry.wakeDate, entry.wake24) ?? calcSleepDuration(entry.bedtime24, entry.wake24),
     quality: entry.quality,
     notes: entry.notes,
   };

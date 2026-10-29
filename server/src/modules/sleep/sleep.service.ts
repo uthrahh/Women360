@@ -1,18 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import { NotFoundError } from "@/lib/errors";
+import { BadRequestError, NotFoundError } from "@/lib/errors";
+import { dayNumber } from "@/lib/streak";
+import { clockMinutes, sleepDurationHours } from "./duration";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function consistencyScore(entries: { bedtime: string }[]): number {
   if (entries.length < 2) return 100;
-  const toMinutes = (t: string) => {
-    const match = /(\d+):(\d+)\s*(AM|PM)?/i.exec(t);
-    if (!match) return 0;
-    let h = Number(match[1]) % 12;
-    if (match[3]?.toUpperCase() === "PM") h += 12;
-    return h * 60 + Number(match[2]);
-  };
-  const minutes = entries.map((e) => toMinutes(e.bedtime));
+  const minutes = entries.map((e) => clockMinutes(e.bedtime) ?? 0);
   const mean = minutes.reduce((a, b) => a + b, 0) / minutes.length;
   const variance = minutes.reduce((sum, m) => sum + (m - mean) ** 2, 0) / minutes.length;
   const stdDevMinutes = Math.sqrt(variance);
@@ -40,13 +35,22 @@ export const sleepService = {
   },
 
   async upsertEntry(userId: string, input: {
-    date: string; durationHours: number; quality: number; bedtime: string; wakeTime: string; notes?: string;
+    date: string; bedDate?: string; durationHours: number; quality: number; bedtime: string; wakeTime: string; notes?: string;
   }) {
-    const { date, ...rest } = input;
+    const { date, bedDate, ...rest } = input;
+    let durationHours = rest.durationHours;
+    if (bedDate) {
+      // She told us both days, so the length comes from them, not from a number the client sent.
+      if (dayNumber(bedDate) > dayNumber(date)) throw new BadRequestError("You can't go to bed after you wake up.");
+      const worked = sleepDurationHours(bedDate, rest.bedtime, date, rest.wakeTime);
+      if (worked === null) throw new BadRequestError("Wake-up has to be after bedtime, and no more than 24 hours later.");
+      durationHours = worked;
+    }
+    const data = { ...rest, durationHours, bedDate: bedDate ? new Date(bedDate) : null };
     return prisma.sleepEntry.upsert({
       where: { userId_date: { userId, date: new Date(date) } },
-      create: { userId, date: new Date(date), ...rest },
-      update: rest,
+      create: { userId, date: new Date(date), ...data },
+      update: data,
     });
   },
 
