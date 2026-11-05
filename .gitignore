@@ -18,3 +18,8 @@ test-results
 server/backups/
 *.dump
 *.dump.enc
+
+# Android release signing: the key and its passwords never go in git
+android/keystore.properties
+*.jks
+*.keystore

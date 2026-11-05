@@ -1,0 +1,86 @@
+name: Android release build
+
+# Builds the signed Android app (APK for installing directly, AAB for Google Play) on demand:
+# Actions > "Android release build" > Run workflow. The app loads the live website, so ordinary website
+# changes reach installed phones without a new build; build again only when the Android shell changes.
+#
+# Needs four repository secrets (Settings > Secrets and variables > Actions):
+#   ANDROID_KEYSTORE_BASE64    the upload key file, as base64:  base64 -w0 women360-upload-key.jks
+#   ANDROID_KEYSTORE_PASSWORD  its password (the same value is used for the key)
+#   ANDROID_KEY_ALIAS          women360-upload
+#   ANDROID_KEY_PASSWORD       the key's password
+# Until they exist the job explains what is missing and passes without building.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build signed APK and AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - name: Check the secrets exist
+        id: secrets
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "::warning::The Android app is not being built yet. Add the four ANDROID_* repository secrets (see the comment at the top of this workflow)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+        if: steps.secrets.outputs.ready == 'true'
+      - name: Install the Android platform and build tools
+        if: steps.secrets.outputs.ready == 'true'
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Build the web app and copy it into the Android project
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          npm ci
+          npm run build
+          npx cap sync android
+      - name: Restore the signing key
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload-key.jks"
+          echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/upload-key.jks" >> "$GITHUB_ENV"
+      - name: Build the signed release
+        if: steps.secrets.outputs.ready == 'true'
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease bundleRelease --console=plain
+      - name: Check the APK is signed
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs android/app/build/outputs/apk/release/app-release.apk
+      - uses: actions/upload-artifact@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          name: women360-android
+          path: |
+            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+          if-no-files-found: error
