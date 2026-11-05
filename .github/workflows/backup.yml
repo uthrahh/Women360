@@ -49,9 +49,9 @@ jobs:
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.secrets.outputs.ready == 'true'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.secrets.outputs.ready == 'true'
         with:
           node-version: 20
@@ -77,7 +77,7 @@ jobs:
         run: node scripts/backup/verify-restore.mjs "${{ steps.backup.outputs.file }}"
       - name: Keep the encrypted backup for 30 days
         if: steps.secrets.outputs.ready == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: women360-backup
           path: |
