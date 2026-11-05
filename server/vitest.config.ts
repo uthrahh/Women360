@@ -20,6 +20,9 @@ export default defineConfig({
       JWT_ACCESS_SECRET: "test-access-secret-please-override-0123456789",
       JWT_REFRESH_SECRET: "test-refresh-secret-please-override-0123456789",
       CORS_ORIGINS: "http://localhost:5173",
+      // Throwaway web-push keys made for the tests; they protect nothing.
+      VAPID_PUBLIC_KEY: "BHzxe064z8zPFDasUNUkQeyIOQagiphIE2WSa5cWidEsYXm0lXA5GFD9sJmJygBKN6OPaP3kTGLiWgFBtH7JHUc",
+      VAPID_PRIVATE_KEY: "QAf-vYE5oGwyY9V6AUFPfPOhxQC-9pXIdSuBZbAatF8",
       // Test-only key (32 zero-padded bytes, base64) so two-factor is exercised.
       TWO_FACTOR_ENCRYPTION_KEY: "dzM2MHRlc3R3MzYwdGVzdHczNjB0ZXN0dzM2MHRlc3Q=",
     },

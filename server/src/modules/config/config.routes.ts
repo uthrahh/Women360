@@ -14,6 +14,8 @@ configRouter.get(
     res.setHeader("Cache-Control", "public, max-age=60");
     return ok(res, {
       clinicalContent: clinicalContentOn(),
+      // Present only when reminders can reach her while the app is closed.
+      pushPublicKey: env.pushConfigured ? env.VAPID_PUBLIC_KEY : null,
       supportEmail: env.SUPPORT_EMAIL ?? null,
     });
   })

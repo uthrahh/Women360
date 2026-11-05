@@ -5,6 +5,8 @@ import { alertAdmin } from "@/lib/alerts";
 import { prisma } from "@/lib/prisma";
 import { purgeOldSecurityEvents } from "@/lib/security/events";
 import { purgeStaleThrottles } from "@/lib/security/throttle";
+import { purgeOldPushRecords, scheduledTick } from "@/modules/push/dispatch";
+import { sendPush } from "@/modules/push/sender";
 
 const app = createApp();
 
@@ -17,14 +19,24 @@ const server = app.listen(env.PORT, () => {
 // start and then daily. A failed sweep is logged, never fatal.
 async function sweep() {
   try {
-    const [events, throttles] = await Promise.all([purgeOldSecurityEvents(), purgeStaleThrottles()]);
-    if (events + throttles > 0) logger.info({ events, throttles }, "Purged expired security data");
+    const [events, throttles, pushRecords] = await Promise.all([purgeOldSecurityEvents(), purgeStaleThrottles(), purgeOldPushRecords()]);
+    if (events + throttles + pushRecords > 0) logger.info({ events, throttles, pushRecords }, "Purged expired security data");
   } catch (err) {
     logger.error({ err }, "Security data sweep failed");
   }
 }
 void sweep();
 setInterval(sweep, 24 * 3_600_000).unref();
+
+// Reminders for people who allowed them on a device. Every minute, while this server is awake. The free
+// hosting tier sleeps when nobody calls it, so an uptime monitor pinging /health every few minutes is what
+// keeps reminders on time (docs/OPERATIONS.md). Off unless the VAPID keys are set.
+if (env.pushConfigured) {
+  setInterval(() => void scheduledTick(sendPush), 60_000).unref();
+  logger.info("Closed-app reminders are on");
+} else {
+  logger.info("Closed-app reminders are off (VAPID keys not set)");
+}
 
 async function shutdown(signal: string) {
   logger.info(`${signal} received, shutting down gracefully`);

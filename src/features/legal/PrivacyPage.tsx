@@ -45,6 +45,13 @@ export default function PrivacyPage() {
             your emergency contact, contraception and pregnancy status if you choose to record them, notes a coach writes about you, and any feedback you send.
           </p>
           <p>
+            <span className="text-[var(--w360-text)] font-medium">Reminder devices:</span> only if you turn on reminders
+            for when Women360 is closed. For each device we keep the address your browser gives us for it, the keys that
+            let us send to it, and your time zone. We use them only to send the reminders you set, and the notification
+            doesn't say what a reminder is for. You can turn it off per device under Settings, Reminders, and it is
+            removed if you delete your account.
+          </p>
+          <p>
             <span className="text-[var(--w360-text)] font-medium">Security records:</span> sign-in successes and
             failures, with a shortened IP address and no email or password, kept for 90 days.
           </p>
@@ -67,7 +74,7 @@ export default function PrivacyPage() {
         <Section title="Services that handle it for us">
           <p>
             The website is delivered by Vercel, the application server runs on Render, and the database is hosted by
-            Supabase. The fonts are loaded from Google Fonts, which means Google sees your IP address when a page loads.
+            Supabase. The fonts are loaded from Google Fonts, which means Google sees your IP address when a page loads. If you turn on reminders for when Women360 is closed, they travel through your browser's own notification service (Google for Chrome, Mozilla for Firefox, Apple for Safari). It sees that a notification was sent to your device, but the message is encrypted so it can't read it.
           </p>
         </Section>
 

@@ -54,18 +54,18 @@ enum PregnancyStatus {
 }
 
 model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
-  passwordHash   String
-  name           String
-  dateOfBirth    DateTime? @db.Date
-  role           Role      @default(WOMAN)
-  lifeStage      LifeStage?
-  avatarInitials String?
-  onboarded      Boolean   @default(false)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  deletedAt      DateTime?
+  id                 String     @id @default(cuid())
+  email              String     @unique
+  passwordHash       String
+  name               String
+  dateOfBirth        DateTime?  @db.Date
+  role               Role       @default(WOMAN)
+  lifeStage          LifeStage?
+  avatarInitials     String?
+  onboarded          Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  deletedAt          DateTime?
   // Any access token issued before this instant is rejected, so changing a
   // password or "sign out everywhere" takes effect immediately instead of
   // after the 15-minute access-token lifetime.
@@ -73,14 +73,14 @@ model User {
   // Two-factor sign-in (TOTP). The secret is AES-256-GCM encrypted (never
   // plaintext); twoFactorLastStep is the last accepted 30-second time step,
   // so a code can't be used twice.
-  twoFactorEnabled   Boolean   @default(false)
+  twoFactorEnabled   Boolean    @default(false)
   twoFactorSecretEnc String?
   twoFactorLastStep  Int?
   // A shared demonstration account (see prisma/seedDemo.ts) whose credentials are
   // published for evaluators. It can look around but cannot change shared
   // settings, delete itself or change its own password, and a demo administrator
   // only ever sees other demo accounts.
-  isDemo             Boolean   @default(false)
+  isDemo             Boolean    @default(false)
 
   twoFactorBackupCodes TwoFactorBackupCode[]
   refreshTokens        RefreshToken[]
@@ -92,31 +92,33 @@ model User {
   activityGoal         ActivityGoal?
   cycleProfile         CycleProfile?
 
-  cycleEntries      CycleEntry[]
-  mealEntries       MealEntry[]
-  hydrationLogs     HydrationLog[]
-  fruitVegLogs      FruitVegLog[]
-  activityEntries   ActivityEntry[]
-  stepsLogs         StepsLog[]
-  activityQuickLogs ActivityQuickLog[]
-  activityPlans     ActivityPlan[]
-  conditions        UserCondition[]
-  signalStates      HealthSignalState[]
-  reproductiveHealth ReproductiveHealth?
-  activityQuickLogSeeded Boolean @default(false)
-  sleepEntries      SleepEntry[]
-  wellbeingEntries  WellbeingEntry[]
-  goals             Goal[]
-  habits            Habit[]
-  screeningRecords  ScreeningRecord[]
-  feedback          Feedback[]
-  appointments      Appointment[]
-  medications       Medication[]
-  medicationLogs    MedicationLog[]
-  vitals            VitalMeasurement[]
-  reports           Report[]
-  notifications     Notification[]
-  receivedMessages  Message[]                @relation("MessageRecipient")
+  cycleEntries           CycleEntry[]
+  mealEntries            MealEntry[]
+  hydrationLogs          HydrationLog[]
+  fruitVegLogs           FruitVegLog[]
+  activityEntries        ActivityEntry[]
+  stepsLogs              StepsLog[]
+  activityQuickLogs      ActivityQuickLog[]
+  activityPlans          ActivityPlan[]
+  conditions             UserCondition[]
+  signalStates           HealthSignalState[]
+  reproductiveHealth     ReproductiveHealth?
+  activityQuickLogSeeded Boolean             @default(false)
+  sleepEntries           SleepEntry[]
+  wellbeingEntries       WellbeingEntry[]
+  goals                  Goal[]
+  habits                 Habit[]
+  screeningRecords       ScreeningRecord[]
+  feedback               Feedback[]
+  pushSubscriptions      PushSubscription[]
+  pushSent               PushSent[]
+  appointments           Appointment[]
+  medications            Medication[]
+  medicationLogs         MedicationLog[]
+  vitals                 VitalMeasurement[]
+  reports                Report[]
+  notifications          Notification[]
+  receivedMessages       Message[]           @relation("MessageRecipient")
 
   coachAssignmentsAsWoman CoachAssignment[] @relation("WomanAssignments")
   coachAssignmentsAsCoach CoachAssignment[] @relation("CoachAssignments")
@@ -129,13 +131,13 @@ model User {
 }
 
 model RefreshToken {
-  id         String    @id @default(cuid())
-  userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash  String    @unique
-  expiresAt  DateTime
-  revokedAt  DateTime?
-  createdAt  DateTime  @default(now())
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
 
   @@index([userId])
 }
@@ -182,28 +184,28 @@ model AuthThrottle {
 // What she chooses to record about contraception and pregnancy. Informational
 // only: nothing here is used to predict fertility or to advise on either.
 model ReproductiveHealth {
-  id              String                @id @default(cuid())
-  userId          String                @unique
-  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String               @id @default(cuid())
+  userId          String               @unique
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   contraception   ContraceptionMethod?
   pregnancyStatus PregnancyStatus?
-  expectedDueDate DateTime?             @db.Date
+  expectedDueDate DateTime?            @db.Date
   notes           String?
-  updatedAt       DateTime              @updatedAt
+  updatedAt       DateTime             @updatedAt
 }
 
 model HealthProfile {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  allergies     String[] @default([])
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  allergies          String[] @default([])
   // Medicine categories or names the person listed at sign-up. Not a medication
   // schedule: doses and reminders live in Medication.
   currentMedications String[] @default([])
-  conditions    String[] @default([])
-  familyHistory String?
-  notes         String?
-  updatedAt     DateTime @updatedAt
+  conditions         String[] @default([])
+  familyHistory      String?
+  notes              String?
+  updatedAt          DateTime @updatedAt
 }
 
 model EmergencyContact {
@@ -250,39 +252,39 @@ enum FlowLevel {
 }
 
 model CycleProfile {
-  id                  String @id @default(cuid())
-  userId              String @unique
-  user                User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  averageCycleLength  Int    @default(28)
-  averagePeriodLength Int    @default(5)
+  id                  String  @id @default(cuid())
+  userId              String  @unique
+  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  averageCycleLength  Int     @default(28)
+  averagePeriodLength Int     @default(5)
   // Opt-in: also show the cycle card on the home screen while she is in the ovulation phase
   // (by default it only shows while she is menstruating).
   showOvulationOnHome Boolean @default(false)
 }
 
 model CycleEntry {
-  id        String     @id @default(cuid())
-  userId    String
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      DateTime   @db.Date
-  isPeriod  Boolean    @default(false)
-  flow      FlowLevel?
-  pain      Int?
-  energy    Int?
-  mood      String?
-  symptoms  String[]   @default([])
-  notes     String?
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime   @db.Date
+  isPeriod     Boolean    @default(false)
+  flow         FlowLevel?
+  pain         Int?
+  energy       Int?
+  mood         String?
+  symptoms     String[]   @default([])
+  notes        String?
   // Why the cycle this period ended was unusual (stress, illness, travel,
   // a medication or birth-control change...) — set on the period's start
   // day. Lets the person tell the app what happened instead of it silently
   // treating an outlier as her normal. Controlled vocabulary, validated in
   // cycle.validation.ts.
-  contextTags String[] @default([])
+  contextTags  String[]   @default([])
   // When true, the cycle that this period's start day ended is left out of
   // cycle-length prediction (it's still shown in history).
-  excludeCycle Boolean @default(false)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  excludeCycle Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -293,13 +295,13 @@ model CycleEntry {
 // ---------------------------------------------------------------------------
 
 model NutritionGoal {
-  id             String @id @default(cuid())
-  userId         String @unique
-  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  hydrationGoalMl Int   @default(2200)
-  proteinGoalG    Float @default(70)
-  fibreGoalG      Float @default(28)
-  fruitVegGoal    Int   @default(5)
+  id              String @id @default(cuid())
+  userId          String @unique
+  user            User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hydrationGoalMl Int    @default(2200)
+  proteinGoalG    Float  @default(70)
+  fibreGoalG      Float  @default(28)
+  fruitVegGoal    Int    @default(5)
 }
 
 model MealEntry {
@@ -322,12 +324,12 @@ model MealEntry {
 }
 
 model HydrationLog {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      DateTime @db.Date
-  amountMl  Int
-  loggedAt  DateTime @default(now())
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date     DateTime @db.Date
+  amountMl Int
+  loggedAt DateTime @default(now())
 
   @@index([userId, date])
 }
@@ -335,12 +337,12 @@ model HydrationLog {
 // A single quick-log tap = one serving, mirroring HydrationLog's shape —
 // replaces what used to be a hardcoded-zero "not modeled yet" field.
 model FruitVegLog {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      DateTime @db.Date
-  servings  Int      @default(1)
-  loggedAt  DateTime @default(now())
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date     DateTime @db.Date
+  servings Int      @default(1)
+  loggedAt DateTime @default(now())
 
   @@index([userId, date])
 }
@@ -356,11 +358,11 @@ enum Intensity {
 }
 
 model ActivityGoal {
-  id                  String @id @default(cuid())
-  userId              String @unique
-  user                User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stepsGoal           Int    @default(8000)
-  activeMinutesGoal   Int    @default(45)
+  id                String @id @default(cuid())
+  userId            String @unique
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stepsGoal         Int    @default(8000)
+  activeMinutesGoal Int    @default(45)
 }
 
 model ActivityEntry {
@@ -483,19 +485,19 @@ model StepsLog {
 }
 
 model SleepEntry {
-  id             String   @id @default(cuid())
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   // The morning she woke (the key for the night). bedDate is the day she went to bed; null on
   // entries logged before it was asked, whose bed day is worked out from the two times.
-  date           DateTime @db.Date
-  bedDate        DateTime? @db.Date
-  durationHours  Float
-  quality        Int
-  bedtime        String
-  wakeTime       String
-  notes          String?
-  createdAt      DateTime @default(now())
+  date          DateTime  @db.Date
+  bedDate       DateTime? @db.Date
+  durationHours Float
+  quality       Int
+  bedtime       String
+  wakeTime      String
+  notes         String?
+  createdAt     DateTime  @default(now())
 
   @@unique([userId, date])
 }
@@ -543,22 +545,22 @@ enum GoalKind {
 }
 
 model Goal {
-  id           String       @id @default(cuid())
+  id           String        @id @default(cuid())
   userId       String
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   title        String
   category     GoalCategory
-  currentValue Float        @default(0)
-  targetValue  Float        @default(100)
-  unit         String       @default("")
+  currentValue Float         @default(0)
+  targetValue  Float         @default(100)
+  unit         String        @default("")
   reminder     String?
-  completed    Boolean      @default(false)
-  kind         GoalKind     @default(TOTAL)
+  completed    Boolean       @default(false)
+  kind         GoalKind      @default(TOTAL)
   // Where a REACH goal started, so progress is measured from there.
   startValue   Float?
-  dueDate      DateTime?    @db.Date
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  dueDate      DateTime?     @db.Date
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   // Superseded by Habit/HabitLog; no code reads or writes this any more. The
   // table is kept (not dropped) until the owner confirms nothing needs it.
   checkIns     GoalCheckIn[]
@@ -568,21 +570,21 @@ model Goal {
 // vitamin, stretch. A habit with a target records an amount each day and counts
 // as done when the amount reaches it; one without is simply ticked off.
 model Habit {
-  id          String     @id @default(cuid())
-  userId      String
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title       String
-  target      Float?
-  unit        String?
-  daysPerWeek Int        @default(7)
-  reminder    String?
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  target       Float?
+  unit         String?
+  daysPerWeek  Int        @default(7)
+  reminder     String?
   // Set when the habit is a physical activity (a catalog code, or "any"), so the
   // Activity page can list it as today's to-do.
   activityCode String?
-  archivedAt  DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  logs        HabitLog[]
+  archivedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  logs         HabitLog[]
 
   @@index([userId])
 }
@@ -752,14 +754,14 @@ model Notification {
 }
 
 model Message {
-  id            String    @id @default(cuid())
-  recipientId   String
-  recipient     User      @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
-  senderLabel   String
-  preview       String
-  body          String?
-  readAt        DateTime?
-  createdAt     DateTime  @default(now())
+  id          String    @id @default(cuid())
+  recipientId String
+  recipient   User      @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  senderLabel String
+  preview     String
+  body        String?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
 
   @@index([recipientId, readAt])
 }
@@ -820,4 +822,45 @@ model AuditLog {
 
   @@index([actorId])
   @@index([action])
+}
+
+// ---------------------------------------------------------------------------
+// Reminders that reach her when the app is closed (web push)
+// ---------------------------------------------------------------------------
+
+// One row per browser/device she allowed reminders on. The endpoint and keys are
+// what the browser's push service needs to deliver a message to that device; they
+// are secrets (anyone holding them could send her a notification) and are never
+// returned to the client. Deleted with the account, and when the browser drops it.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  // Her IANA time zone as the browser reports it ("Asia/Kolkata"), so a 7:00 AM
+  // reminder is sent at 7:00 where she is, not on the server's clock.
+  timezone  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// Remembers that a reminder was sent for a day so a second server tick, a restart or
+// a second server can't send it twice. Holds no content: only which item and when.
+// Rows older than a few days are swept.
+model PushSent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String
+  refId     String
+  day       String
+  slot      String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, kind, refId, day, slot])
+  @@index([createdAt])
 }

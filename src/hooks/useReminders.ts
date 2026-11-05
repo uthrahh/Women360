@@ -3,6 +3,7 @@ import { useApp } from "@/context/AppContext";
 import { useToast } from "@/components/ui/Toast";
 import { habitService, HABITS_CHANGED } from "@/services/habitService";
 import { isNativeApp } from "@/lib/platform";
+import { refreshPush } from "@/lib/push";
 import { localDateISO } from "@/services/mappers";
 import { dueReminders, loadAnnounced, notificationState, saveAnnounced, showSystemNotification, type Announced } from "@/lib/reminders";
 import type { Habit } from "@/types";
@@ -31,6 +32,9 @@ export function useReminders() {
       navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     }
 
+    // If she turned on closed-app reminders on this device, keep its registration current (time zone, a server that forgot it).
+    void refreshPush();
+
     let habits: Habit[] = [];
     let announced: Announced = loadAnnounced();
     let busy = false;
@@ -46,7 +50,7 @@ export function useReminders() {
           announced = { ...announced, [habit.id]: localDateISO() };
           saveAnnounced(announced);
           const detail = habit.target ? `${habit.target.toLocaleString()}${habit.unit ? " " + habit.unit : ""}` : "Tap to open Women360.";
-          const shown = await showSystemNotification(`Time for: ${habit.title}`, detail, habit.activityCode ? "/app/activity" : "/app/habits");
+          const shown = await showSystemNotification(`Time for: ${habit.title}`, detail, habit.activityCode ? "/app/activity" : "/app/habits", `habit-${habit.id}`);
           if (!shown) toastRef.current.show(`Time for: ${habit.title}`);
         }
       } finally {

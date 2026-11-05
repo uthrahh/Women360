@@ -79,12 +79,12 @@ export async function requestNotificationPermission(): Promise<NotificationState
 }
 
 /** Shows a system notification. Goes through the service worker so it also works where `new Notification` doesn't (Android Chrome). */
-export async function showSystemNotification(title: string, body: string, url: string): Promise<boolean> {
+export async function showSystemNotification(title: string, body: string, url: string, tag = url + title): Promise<boolean> {
   if (notificationState() !== "granted") return false;
   try {
     if ("serviceWorker" in navigator) {
       const registration = await navigator.serviceWorker.ready;
-      await registration.showNotification(title, { body, tag: url + title, data: { url }, icon: "/favicon.svg", badge: "/favicon.svg" });
+      await registration.showNotification(title, { body, tag, data: { url }, icon: "/favicon.svg", badge: "/favicon.svg" });
       return true;
     }
     new Notification(title, { body, icon: "/favicon.svg" });

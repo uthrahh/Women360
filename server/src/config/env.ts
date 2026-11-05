@@ -30,6 +30,11 @@ const envSchema = z.object({
   // address makes far more requests than any person would.
   API_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(120),
   AUTH_RATE_LIMIT_PER_15_MIN: z.coerce.number().int().positive().default(20),
+  // Reminders that reach her when the app is closed (web push). Generate the pair once with
+  // `npm run push:keys` and set both on the server; without them the feature is off and the app says
+  // reminders only appear while it is open. The public key is sent to browsers; the private key never leaves the server.
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
   // Optional comma-separated list of IP addresses allowed to reach /admin.
   ADMIN_IP_ALLOWLIST: z.string().optional(),
 });
@@ -52,11 +57,17 @@ if (parsed.data.TWO_FACTOR_ENCRYPTION_KEY) {
   }
 }
 
+if (Boolean(parsed.data.VAPID_PUBLIC_KEY) !== Boolean(parsed.data.VAPID_PRIVATE_KEY)) {
+  console.error("Set both VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY, or neither (npm run push:keys makes a pair).");
+  process.exit(1);
+}
+
 export const env = {
   ...parsed.data,
   twoFactorKey,
   twoFactorAvailable: twoFactorKey !== null,
   adminIpAllowlist: (parsed.data.ADMIN_IP_ALLOWLIST ?? "").split(",").map((ip) => ip.trim()).filter(Boolean),
+  pushConfigured: Boolean(parsed.data.VAPID_PUBLIC_KEY && parsed.data.VAPID_PRIVATE_KEY),
   mailConfigured: Boolean(parsed.data.BREVO_API_KEY || parsed.data.SMTP_URL),
   mailFrom: parsed.data.MAIL_FROM ?? `Women360 <${parsed.data.SUPPORT_EMAIL}>`,
   appUrl: (parsed.data.APP_URL ?? parsed.data.CORS_ORIGINS.split(",")[0].trim()).replace(/\/+$/, ""),

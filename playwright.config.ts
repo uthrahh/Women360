@@ -40,7 +40,14 @@ export default defineConfig({
       url: "http://localhost:4000/health",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
-      env: { CLINICAL_CONTENT: "false", API_RATE_LIMIT_PER_MINUTE: "100000", AUTH_RATE_LIMIT_PER_15_MIN: "1000" },
+      env: {
+        CLINICAL_CONTENT: "false",
+        API_RATE_LIMIT_PER_MINUTE: "100000",
+        AUTH_RATE_LIMIT_PER_15_MIN: "1000",
+        // Throwaway web-push keys (the same ones the server's unit tests use); they protect nothing.
+        VAPID_PUBLIC_KEY: "BHzxe064z8zPFDasUNUkQeyIOQagiphIE2WSa5cWidEsYXm0lXA5GFD9sJmJygBKN6OPaP3kTGLiWgFBtH7JHUc",
+        VAPID_PRIVATE_KEY: "QAf-vYE5oGwyY9V6AUFPfPOhxQC-9pXIdSuBZbAatF8",
+      },
     },
     {
       command: "npm run dev",

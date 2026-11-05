@@ -22,7 +22,8 @@
     "mail:check": "tsx scripts/mailCheck.ts",
     "prisma:studio": "prisma studio",
     "backup": "node scripts/backup/backup.mjs",
-    "backup:verify": "node scripts/backup/verify-restore.mjs"
+    "backup:verify": "node scripts/backup/verify-restore.mjs",
+    "push:keys": "node -e \"const k=require('web-push').generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+k.publicKey);console.log('VAPID_PRIVATE_KEY='+k.privateKey)\""
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",
@@ -36,6 +37,7 @@
     "nodemailer": "^10.2.1",
     "pino": "^9.4.0",
     "pino-http": "^10.3.0",
+    "web-push": "^3.6.7",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -45,6 +47,7 @@
     "@types/node": "^20.14.15",
     "@types/nodemailer": "^8.0.2",
     "@types/supertest": "^6.0.2",
+    "@types/web-push": "^3.6.4",
     "@typescript-eslint/eslint-plugin": "^8.5.0",
     "@typescript-eslint/parser": "^8.5.0",
     "eslint": "^9.10.0",
