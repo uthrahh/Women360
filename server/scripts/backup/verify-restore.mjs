@@ -66,3 +66,27 @@ if (problems > 0) {
   process.exit(1);
 }
 console.log("Restore verified.");
+
+// Tell the API a restore was just verified, so the administrator's status panel can show when. Optional: only
+// when BACKUP_REPORT_URL and BACKUP_REPORT_TOKEN are both set. The free API may be asleep, so be patient and retry.
+// A failure to report is a warning, never a failed backup.
+const reportUrl = process.env.BACKUP_REPORT_URL;
+const reportToken = process.env.BACKUP_REPORT_TOKEN;
+if (reportUrl && reportToken) {
+  let reported = false;
+  for (let attempt = 1; attempt <= 3 && !reported; attempt += 1) {
+    try {
+      const res = await fetch(reportUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${reportToken}` },
+        body: JSON.stringify({ tables: restored.size, rows: total }),
+        signal: AbortSignal.timeout(90_000),
+      });
+      if (res.ok) reported = true;
+      else console.warn(`Reporting the restore to the API failed (HTTP ${res.status}), attempt ${attempt}.`);
+    } catch (err) {
+      console.warn(`Reporting the restore to the API failed (${err instanceof Error ? err.message : "error"}), attempt ${attempt}.`);
+    }
+  }
+  console.log(reported ? "Reported to the API." : "::warning::The restore was verified but could not be reported to the API.");
+}

@@ -9,6 +9,7 @@ import { noContent, ok, paginated } from "@/lib/response";
 import { adminService } from "./admin.service";
 import { feedbackService } from "@/modules/feedback/feedback.service";
 import { summary as usageSummary } from "@/modules/usage/usage.service";
+import { systemStatus } from "@/modules/system/system.service";
 import { z } from "zod";
 import { ForbiddenError } from "@/lib/errors";
 import {
@@ -65,6 +66,12 @@ adminRouter.get(
     const { items, total } = await adminService.listAuditLog(query, req.user!.isDemo);
     return paginated(res, items, { page: query.page, pageSize: query.pageSize, total });
   })
+);
+
+// How the running service is doing: database, email, reminders, backup proof. Read-only; booleans and times, no secrets.
+adminRouter.get(
+  "/system",
+  asyncHandler(async (_req, res) => ok(res, await systemStatus()))
 );
 
 // Anonymous usage counts (what is used, never who). Read-only, so the demonstration administrator may see it too.

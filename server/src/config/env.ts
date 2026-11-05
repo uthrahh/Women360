@@ -35,6 +35,9 @@ const envSchema = z.object({
   // reminders only appear while it is open. The public key is sent to browsers; the private key never leaves the server.
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
+  // Lets the nightly backup job tell the API that a restore was verified (shown in the administrator's status panel).
+  // At least 32 characters; set the same value as the BACKUP_REPORT_TOKEN repository secret. Unset = no reporting.
+  BACKUP_REPORT_TOKEN: z.string().min(32, "BACKUP_REPORT_TOKEN must be at least 32 characters").optional(),
   // Optional comma-separated list of IP addresses allowed to reach /admin.
   ADMIN_IP_ALLOWLIST: z.string().optional(),
 });

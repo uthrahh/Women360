@@ -135,6 +135,12 @@ export async function purgeOldPushRecords(now = new Date()): Promise<number> {
 }
 
 let running = false;
+let lastTickAt: Date | null = null;
+
+/** When the reminder check last completed (for the administrator's status panel), or null if it has not yet. */
+export function lastReminderTick(): Date | null {
+  return lastTickAt;
+}
 
 /** One scheduled tick: never overlaps itself, never throws. */
 export async function scheduledTick(send: Sender): Promise<void> {
@@ -142,6 +148,7 @@ export async function scheduledTick(send: Sender): Promise<void> {
   running = true;
   try {
     const r = await runReminderTick(new Date(), send);
+    lastTickAt = new Date();
     if (r.sent > 0 || r.removedDevices > 0) logger.info(r, "Reminders sent");
   } catch (err) {
     logger.error({ err }, "Reminder tick failed");

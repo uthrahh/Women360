@@ -1,5 +1,9 @@
 # Running Women360
 
+**Fastest route:** open `C:\Users\uthra\Desktop\CC\Women360-launch-secrets.txt` (outside the repository, made for you). It holds the
+production keys and passphrase already generated; you paste them where sections 1, 3 and 4 say, add your Brevo key and Supabase address, and
+then **Administration > Overview > Service status** shows, in plain words, which of these are working. Nothing below needs a dashboard to check.
+
 What only the person running the service can do, in the order that matters. Everything the code can do
 for itself is already done and tested; these steps need your accounts or your secrets. Each one says how to
 check that it worked.
@@ -29,6 +33,8 @@ protocol (SMTP), so Women360 sends through Brevo's web API instead.
 Gmail-address senders can land in spam (Gmail's rules for mail "from" a gmail.com address sent by someone else's servers).
 If reset emails go to spam, the lasting fix is a sender on a domain you own, which needs a domain; until then tell people
 to check spam. This is a limit of using a Gmail address, not a bug.
+
+Until the key is set, the Service status card says "Email: Needs attention".
 
 ## 2. Keep the API awake and get alerted when it is down
 
@@ -63,9 +69,12 @@ you) if the backup cannot be taken or does not restore.
 2. In GitHub, **Settings > Secrets and variables > Actions > New repository secret**:
    `DATABASE_URL` = that string; `BACKUP_PASSPHRASE` = a long random phrase (16+ characters). **Keep the passphrase somewhere
    safe outside GitHub: without it a backup cannot be opened.**
-3. **Actions > Database backup and restore test > Run workflow.** A green run is the proof. Backups are kept 30 days as
+3. Optional but recommended: add `BACKUP_REPORT_TOKEN` as a third secret and the same value on Render. Then every verified restore is reported to the
+   API and **Administration > Overview > Service status** shows "Last verified restore: 9 hours ago, 42 tables, 24,681 rows", and turns to "Needs
+   attention" if more than a day and a half passes without one.
+4. **Actions > Database backup and restore test > Run workflow.** A green run is the proof. Backups are kept 30 days as
    the run's artifact, encrypted.
-4. To restore for real: download the artifact, then with `BACKUP_PASSPHRASE` set and an **empty** target database,
+5. To restore for real: download the artifact, then with `BACKUP_PASSPHRASE` set and an **empty** target database,
    `RESTORE_DATABASE_URL=... node server/scripts/backup/verify-restore.mjs <file>.dump.enc`
    (it refuses a database that already has tables).
 
@@ -78,7 +87,7 @@ Built (web push). Switched on by two keys on the server:
 1. `npm --prefix server run push:keys` prints a `VAPID_PUBLIC_KEY` and a `VAPID_PRIVATE_KEY`.
 2. Add both to Render's environment. Keep the private key secret. Do not regenerate them later: devices subscribed under the
    old key stop getting reminders until they turn them on again.
-3. Check it: on the live site, **Settings > Reminders**, turn it on (the first time can take up to a minute), add a habit with a
+3. Check it: **Administration > Overview > Service status** should say reminders are On. Then on the live site, **Settings > Reminders**, turn it on (the first time can take up to a minute), add a habit with a
    reminder a few minutes ahead, close the tab, and wait.
 
 How it behaves, so you can describe it honestly: the API checks every minute while it is awake (section 2 keeps it awake);
@@ -139,6 +148,7 @@ change once, early, or not at all. A custom domain also lets emails come from yo
 | `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `CORS_ORIGINS` | the API to start | already set |
 | `BREVO_API_KEY` | password-reset email, alerts | section 1 |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | closed-app reminders | section 4 |
+| `BACKUP_REPORT_TOKEN` | showing the last verified restore in Service status | section 3; same value as the GitHub secret |
 | `CLINICAL_CONTENT` | the clinician-gated features | leave `false` |
 | `SUPPORT_EMAIL`, `APP_URL` | contact address, email links | set in `render.yaml` |
 | `SEED_DEMO_ACCOUNTS` | the shared demo logins | `true`; their passwords are public by design |

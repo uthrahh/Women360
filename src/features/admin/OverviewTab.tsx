@@ -3,6 +3,7 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { LoadingState, ErrorState } from "@/components/ui/states";
 import { adminService } from "@/services/adminService";
 import type { AdminOverview } from "@/types";
+import { ServiceStatus } from "./ServiceStatus";
 
 function Stat({ label, value, note }: { label: string; value: number; note?: string }) {
   return (
@@ -30,6 +31,7 @@ export function OverviewTab() {
 
   return (
     <div className="flex flex-col gap-5">
+      <ServiceStatus />
       <section aria-label="Accounts" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Women" value={data.users.women} />
         <Stat label="Wellness coaches" value={data.users.coaches} />

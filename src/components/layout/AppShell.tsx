@@ -9,6 +9,7 @@ import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
 import { SeniorTopBar } from "./SeniorNav";
 import { Banner } from "@/components/ui/Banner";
+import { WakingNotice } from "@/components/WakingNotice";
 import { TipsProvider } from "@/context/TipsContext";
 
 const ROUTE_TITLES = menuTree.flatMap((n) => ("leaf" in n ? [n.leaf] : n.items));
@@ -38,6 +39,7 @@ function Shell() {
       <div className="min-h-screen flex flex-col">
         <SeniorTopBar />
         <main className="flex-1 pb-8">
+          <div className="max-w-xl mx-auto px-5 pt-4 empty:hidden"><WakingNotice /></div>
           {demoNotice && <div className="max-w-xl mx-auto px-5 pt-4">{demoNotice}</div>}
           <Outlet />
         </main>
@@ -51,6 +53,7 @@ function Shell() {
       <div className="flex-1 min-w-0 flex flex-col">
         <TopBar />
         <main className="flex-1 min-w-0 px-4 sm:px-6 py-6 pb-24 lg:pb-10 max-w-content w-full mx-auto">
+          <WakingNotice className="mb-5" />
           {demoNotice}
           <Outlet />
         </main>

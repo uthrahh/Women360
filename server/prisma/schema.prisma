@@ -895,3 +895,17 @@ model UsageSalt {
   day  String @id
   salt String
 }
+
+// ---------------------------------------------------------------------------
+// Service status
+// ---------------------------------------------------------------------------
+
+// One row each time the nightly backup job proves a backup restores (it reports in with a secret token).
+// The administrator's status panel shows the latest, so "has a restore ever been tested, and when" is
+// visible without opening GitHub. Holds counts only, nothing about any person. Only the newest rows are kept.
+model BackupReport {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  tables    Int
+  rows      Int
+}

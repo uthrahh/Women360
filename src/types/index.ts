@@ -481,6 +481,19 @@ export interface AdminOverview {
   scopedToDemo: boolean;
 }
 
+/** How the running service is doing, for the administrator: booleans and times only, never a secret. */
+export interface SystemStatus {
+  checkedAt: string;
+  environment: string;
+  startedAt: string;
+  database: { ok: boolean; ms: number | null };
+  email: { configured: boolean; provider: "brevo" | "smtp" | null; from: string };
+  reminders: { configured: boolean; lastCheckAt: string | null };
+  clinicalContent: boolean;
+  twoFactorAvailable: boolean;
+  backup: { lastVerifiedRestoreAt: string | null; tables: number | null; rows: number | null; reporting: boolean };
+}
+
 /** Anonymous usage counts for the administrator: what is used, never who. */
 export interface UsageSummary {
   days: number;

@@ -494,6 +494,10 @@ the duration out from the two days and times itself (`modules/sleep/duration.ts`
   (WCAG 2.2 AA + best practice, light and dark) on every screen, push (06, local Chrome only: it needs Google's push service) and
   usage (07). CI runs it in the `browser` job. Rate limits are env-configurable (`API_RATE_LIMIT_PER_MINUTE`,
   `AUTH_RATE_LIMIT_PER_15_MIN`) only so the suite can run from one address.
+- *Service status.* Administration > Overview shows the running server's own report (`GET /admin/system`, `modules/system/`):
+  database answering, email configured, reminders on and last check, last verified backup restore (the nightly job reports it to
+  `POST /internal/backup-report` with `BACKUP_REPORT_TOKEN`), clinical switch, server start time. Booleans and times only; never add a
+  secret or an address to it. A slow request (over 4 s) shows "Waking the service up" (`WakingNotice`, `apiClient.timedFetch`).
 - *Backups.* `server/scripts/backup/`: encrypted (AES-256-GCM, scrypt) `pg_dump`, credentials only via PG* environment variables,
   nightly `.github/workflows/backup.yml` restores into a scratch database and checks every table's row count against counts recorded
   before the dump. Needs secrets `DATABASE_URL` and `BACKUP_PASSPHRASE`; it only warns until they exist.

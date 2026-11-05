@@ -61,6 +61,9 @@ services:
         sync: false
       - key: VAPID_PRIVATE_KEY
         sync: false
+      # Lets the nightly backup job report a verified restore (shown in Administration > Service status). 32+ characters.
+      - key: BACKUP_REPORT_TOKEN
+        sync: false
       # Features awaiting clinician review stay off unless this is exactly "true".
       - key: CLINICAL_CONTENT
         value: "false"

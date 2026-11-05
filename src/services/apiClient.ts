@@ -97,9 +97,38 @@ export async function requestPage<T>(path: string, init: RequestInit = {}): Prom
   return { items: body.data ?? [], meta: body.meta ?? { page: 1, pageSize: body.data?.length ?? 0, total: body.data?.length ?? 0 } };
 }
 
+// A request still waiting after this long is probably the free server waking from sleep: say so (WakingNotice).
+const SLOW_AFTER_MS = 4000;
+let slowRequests = 0;
+function announceSlow(active: boolean) {
+  window.dispatchEvent(new CustomEvent("w360:api-slow", { detail: active }));
+}
+
+/** fetch that announces itself as "slow" if it takes longer than SLOW_AFTER_MS, and clears that when it ends. */
+async function timedFetch(url: string, init: RequestInit): Promise<Response> {
+  let flagged = false;
+  const timer = setTimeout(() => {
+    flagged = true;
+    slowRequests += 1;
+    announceSlow(true);
+  }, SLOW_AFTER_MS);
+  try {
+    return await fetch(url, init);
+  } finally {
+    clearTimeout(timer);
+    if (flagged) {
+      slowRequests -= 1;
+      if (slowRequests <= 0) {
+        slowRequests = 0;
+        announceSlow(false);
+      }
+    }
+  }
+}
+
 async function requestEnvelope<T>(path: string, init: RequestInit = {}, isRetry = false): Promise<Envelope<T>> {
   const tokens = getTokens();
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await timedFetch(`${BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",

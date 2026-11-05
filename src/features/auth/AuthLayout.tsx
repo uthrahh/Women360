@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { WakingNotice } from "@/components/WakingNotice";
 
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
@@ -23,6 +24,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
           <Link to="/" className="lg:hidden font-display text-xl font-semibold mb-10 block">Women360</Link>
           <h1 className="font-display text-2xl font-semibold">{title}</h1>
           {subtitle && <p className="text-[var(--w360-text-muted)] text-sm mt-1.5">{subtitle}</p>}
+          <WakingNotice className="mt-6" />
           <div className="mt-8">{children}</div>
         </div>
       </main>
