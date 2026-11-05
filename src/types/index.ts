@@ -481,6 +481,14 @@ export interface AdminOverview {
   scopedToDemo: boolean;
 }
 
+/** Anonymous usage counts for the administrator: what is used, never who. */
+export interface UsageSummary {
+  days: number;
+  daily: { day: string; active: number; signups: number }[];
+  screens: { name: string; count: number }[];
+  actions: { name: string; count: number }[];
+}
+
 export interface AuditEvent {
   id: string;
   actorId: string | null;

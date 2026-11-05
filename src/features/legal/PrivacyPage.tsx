@@ -67,7 +67,14 @@ export default function PrivacyPage() {
           </p>
           <p>
             Women360 doesn't sell your data and doesn't show advertising. The site sets no cookies and uses no
-            analytics or tracking tools. Your sign-in is kept in your browser's own storage on your device.
+            third-party analytics or tracking tools. Your sign-in is kept in your browser's own storage on your device.
+          </p>
+          <p>
+            Women360 does keep simple counts of its own so we can see which parts are used: how often each screen is
+            opened and each action is done, and how many different people used the app on a day. A count never says who. It
+            holds no name, email, account id, address or device, and "different people" is worked out with a one-way code
+            that is thrown away, with the codes, at the end of each day. Staff and demonstration accounts aren't counted,
+            and neither is a browser that asks not to be tracked.
           </p>
         </Section>
 

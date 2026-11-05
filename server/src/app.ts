@@ -7,6 +7,7 @@ import { apiRateLimiter } from "@/middleware/rateLimit";
 import { errorHandler } from "@/middleware/errorHandler";
 import { notFoundHandler } from "@/middleware/notFound";
 import { router } from "@/modules/router";
+import { trackUsage } from "@/modules/usage/usage.middleware";
 import { prisma } from "@/lib/prisma";
 import { alertAdmin } from "@/lib/alerts";
 
@@ -26,6 +27,7 @@ export function createApp() {
   app.use(express.json({ limit: "1mb" }));
   app.use(requestLogger);
   app.use(apiRateLimiter);
+  app.use(trackUsage);
 
   app.get("/health", async (_req, res) => {
     // Unauthenticated probe for the hosting platform and for an uptime monitor. It asks the database a

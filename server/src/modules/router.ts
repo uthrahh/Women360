@@ -22,6 +22,7 @@ import { conditionsRouter } from "./conditions/conditions.routes";
 import { configRouter } from "./config/config.routes";
 import { clientErrorsRouter } from "./clientErrors/clientErrors.routes";
 import { pushRouter } from "./push/push.routes";
+import { usageRouter } from "./usage/usage.routes";
 import { requireClinicalContent } from "@/middleware/clinicalGate";
 
 export const router = Router();
@@ -46,6 +47,7 @@ router.use("/learn", requireClinicalContent, learnRouter);
 router.use("/messages", messagesRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/push", pushRouter);
+router.use("/usage", usageRouter);
 router.use("/coach", coachRouter);
 router.use("/admin", adminRouter);
 router.use("/feedback", feedbackRouter);

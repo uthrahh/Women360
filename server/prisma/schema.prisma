@@ -864,3 +864,34 @@ model PushSent {
   @@unique([userId, kind, refId, day, slot])
   @@index([createdAt])
 }
+
+// ---------------------------------------------------------------------------
+// Anonymous usage counts (what people use, never who)
+// ---------------------------------------------------------------------------
+
+// How many times something happened on a day (UTC): a screen opened ("view:sleep") or an
+// action done ("sleep_logged"), plus "active_users" (how many different people used the app
+// that day). No row says who: there is no user id, address or device here.
+model UsageCount {
+  day   String
+  name  String
+  count Int    @default(0)
+
+  @@id([day, name])
+}
+
+// Today's "different people" counter. Each row is a one-way hash of a person's id mixed with a
+// random salt that exists for one day only. When the day ends the rows are counted into
+// UsageCount("active_users") and deleted together with the salt, so nothing can link a hash back to
+// a person or one day's hash to the next.
+model UsageSeen {
+  day  String
+  hash String
+
+  @@id([day, hash])
+}
+
+model UsageSalt {
+  day  String @id
+  salt String
+}

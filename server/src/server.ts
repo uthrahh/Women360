@@ -7,6 +7,7 @@ import { purgeOldSecurityEvents } from "@/lib/security/events";
 import { purgeStaleThrottles } from "@/lib/security/throttle";
 import { purgeOldPushRecords, scheduledTick } from "@/modules/push/dispatch";
 import { sendPush } from "@/modules/push/sender";
+import { rollUp } from "@/modules/usage/usage.service";
 
 const app = createApp();
 
@@ -26,7 +27,9 @@ async function sweep() {
   }
 }
 void sweep();
+void rollUp();
 setInterval(sweep, 24 * 3_600_000).unref();
+setInterval(() => void rollUp(), 6 * 3_600_000).unref();
 
 // Reminders for people who allowed them on a device. Every minute, while this server is awake. The free
 // hosting tier sleeps when nobody calls it, so an uptime monitor pinging /health every few minutes is what

@@ -5,6 +5,7 @@ import { UsersTab } from "./UsersTab";
 import { AuditTab } from "./AuditTab";
 import { AdminFeedbackTab } from "./AdminFeedbackTab";
 import { ContentTab } from "./ContentTab";
+import { UsageTab } from "./UsageTab";
 
 /** The administrator's working page: accounts and roles, the audit log, feedback and the Learn content. */
 export default function AdminPage() {
@@ -20,6 +21,7 @@ export default function AdminPage() {
       <Tabs
         tabs={[
           { id: "overview", label: "Overview", content: <OverviewTab /> },
+          { id: "usage", label: "Usage", content: <UsageTab /> },
           { id: "users", label: "Users", content: <UsersTab readOnly={readOnly} selfId={user.id} /> },
           { id: "audit", label: "Audit log", content: <AuditTab /> },
           { id: "feedback", label: "Feedback", content: <AdminFeedbackTab /> },

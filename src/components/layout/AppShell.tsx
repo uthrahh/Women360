@@ -3,6 +3,7 @@ import { menuTree } from "@/config/navigation";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useApp } from "@/context/AppContext";
 import { useReminders } from "@/hooks/useReminders";
+import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
@@ -23,6 +24,7 @@ export function AppShell() {
 function Shell() {
   const { senior, auth } = useApp();
   useReminders();
+  useUsageTracking();
   const demoNotice = auth.user?.isDemo ? (
     <Banner tone="info" title="Shared demonstration account" className="mb-5">
       The data here is synthetic. You can add, edit and delete records freely; the password, two-factor and account deletion are switched off for this account.

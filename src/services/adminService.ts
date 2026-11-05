@@ -1,5 +1,5 @@
 import { request, requestPage, type PageMeta } from "./apiClient";
-import type { AdminArticle, AdminOverview, AdminUser, AuditEvent, FeedbackEntry, Role } from "@/types";
+import type { AdminArticle, AdminOverview, AdminUser, AuditEvent, FeedbackEntry, Role, UsageSummary } from "@/types";
 
 type ApiAdminUser = Omit<AdminUser, "role"> & { role: string };
 
@@ -23,6 +23,7 @@ export interface ArticleInput {
 // each of these; the screens only hide what the person cannot do.
 export const adminService = {
   overview: () => request<AdminOverview>("/admin/overview"),
+  usage: (days: number) => request<UsageSummary>(`/admin/usage?days=${days}`),
 
   async users(query: { page: number; pageSize?: number; role?: "WOMAN" | "COACH" | "ADMIN"; search?: string }): Promise<Paged<AdminUser>> {
     const params = new URLSearchParams({ page: String(query.page), pageSize: String(query.pageSize ?? 10) });

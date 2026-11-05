@@ -8,6 +8,9 @@ import { blockDemoWrites } from "@/middleware/demoGuard";
 import { noContent, ok, paginated } from "@/lib/response";
 import { adminService } from "./admin.service";
 import { feedbackService } from "@/modules/feedback/feedback.service";
+import { summary as usageSummary } from "@/modules/usage/usage.service";
+import { z } from "zod";
+import { ForbiddenError } from "@/lib/errors";
 import {
   listAuditLogQuerySchema,
   listUsersQuerySchema,
@@ -61,6 +64,17 @@ adminRouter.get(
     const query = req.query as unknown as { page: number; pageSize: number; action?: string };
     const { items, total } = await adminService.listAuditLog(query, req.user!.isDemo);
     return paginated(res, items, { page: query.page, pageSize: query.pageSize, total });
+  })
+);
+
+// Anonymous usage counts (what is used, never who). Read-only, so the demonstration administrator may see it too.
+adminRouter.get(
+  "/usage",
+  validate({ query: z.object({ days: z.coerce.number().int().min(1).max(365).default(30) }) }),
+  asyncHandler(async (req, res) => {
+    // The shared demonstration administrator never sees real people's activity, even anonymous totals of it.
+    if (req.user!.isDemo) throw new ForbiddenError("Usage figures aren't shown on the shared demonstration account.");
+    return ok(res, await usageSummary((req.query as unknown as { days: number }).days));
   })
 );
 
