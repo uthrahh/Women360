@@ -12,6 +12,10 @@ export default defineConfig({
     fileParallelism: false,
     env: {
       NODE_ENV: "test",
+      // The review-needed features are exercised by their own tests; one test turns this off.
+      CLINICAL_CONTENT: "true",
+      // Pinned so tests never depend on a local .env file.
+      SUPPORT_EMAIL: "admin.women360@gmail.com",
       DATABASE_URL: "postgresql://women360:women360@localhost:5432/women360_test?schema=public",
       JWT_ACCESS_SECRET: "test-access-secret-please-override-0123456789",
       JWT_REFRESH_SECRET: "test-refresh-secret-please-override-0123456789",

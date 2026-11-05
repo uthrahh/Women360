@@ -11,8 +11,10 @@ import { MOOD_LABELS } from "@/services/mappers";
 import { insightsService } from "@/services/insightsService";
 import { ExplainThisCard } from "@/components/ExplainThisCard";
 import { BreathingExercise } from "@/components/BreathingExercise";
+import { useFeatures } from "@/context/FeaturesContext";
 
 export default function WellbeingPage() {
+  const { clinicalContent } = useFeatures();
   const [data, setData] = useState<WellbeingEntry[] | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [showLowMoodHelp, setShowLowMoodHelp] = useState(false);
@@ -89,11 +91,13 @@ export default function WellbeingPage() {
 
       {showLowMoodHelp && (
         <>
-          <ExplainThisCard
-            title="Not feeling great today?"
-            buttonLabel="See possible reasons"
-            fetchReport={() => insightsService.explainLowMood()}
-          />
+          {clinicalContent && (
+            <ExplainThisCard
+              title="Not feeling great today?"
+              buttonLabel="See possible reasons"
+              fetchReport={() => insightsService.explainLowMood()}
+            />
+          )}
           <Card>
             <CardBody className="pt-5 flex items-center justify-between gap-3">
               <div>

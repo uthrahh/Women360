@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { SUPPORT_EMAIL } from "@/config/site";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -82,9 +83,15 @@ export default function TermsPage() {
           <p>If these terms change in a way that matters, we will say so in the app before the change takes effect.</p>
         </Section>
 
+        <Section title="Contact">
+          <p>
+            Questions about these terms, or a problem with the service: <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">{SUPPORT_EMAIL}</a>.
+          </p>
+        </Section>
+
         <Section title="Still to be confirmed">
           <ul className="list-disc pl-5 flex flex-col gap-1.5">
-            <li>The organisation that operates the service and how to contact it.</li>
+            <li>The name of the organisation that operates the service.</li>
             <li>Which country's law applies, and any regional requirements for where it is offered.</li>
             <li>Limits on liability and any paid features, which need a lawyer's review.</li>
           </ul>

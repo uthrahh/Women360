@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { SUPPORT_EMAIL } from "@/config/site";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -87,9 +88,16 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
+        <Section title="Contact">
+          <p>
+            For a copy of your data, a correction, deleting your account, or any question about this page, write to{" "}
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">{SUPPORT_EMAIL}</a>. You can also download or delete your data yourself in Settings.
+          </p>
+        </Section>
+
         <Section title="Still to be confirmed">
           <ul className="list-disc pl-5 flex flex-col gap-1.5">
-            <li>The organisation responsible for the service and a contact address for privacy requests.</li>
+            <li>The name of the organisation responsible for the service.</li>
             <li>How long our hosting providers keep backups after an account is deleted.</li>
             <li>The legal basis and any regional requirements for the countries where it will be offered. The terms of use are a draft awaiting legal review.</li>
           </ul>

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { AppProvider, useApp } from "@/context/AppContext";
 import { ToastProvider } from "@/components/ui/Toast";
+import { FeaturesProvider } from "@/context/FeaturesContext";
 import { AppShell } from "@/components/layout/AppShell";
 import { StaffShell } from "@/components/layout/StaffShell";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
@@ -66,6 +67,7 @@ function RootRoute() {
 export default function App() {
   return (
     <AppProvider>
+      <FeaturesProvider>
       <ToastProvider>
         <BrowserRouter>
           <Routes>
@@ -154,6 +156,7 @@ export default function App() {
           </Routes>
         </BrowserRouter>
       </ToastProvider>
+      </FeaturesProvider>
     </AppProvider>
   );
 }

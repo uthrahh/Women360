@@ -7,6 +7,7 @@ import { buttonClasses } from "@/components/ui/Button";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { warmUpApi } from "@/services/apiClient";
 import { cn } from "@/lib/utils";
+import { SUPPORT_EMAIL } from "@/config/site";
 
 // The public landing page. It has one job: help a woman see what Women360 does that a
 // plain tracker doesn't, and start. So it leads with prevention (check-ups, patterns worth a
@@ -24,30 +25,33 @@ const GRAIN =
 
 // Every line is something the app does today. The check-up and pattern rules are marked as
 // not yet reviewed by a clinician inside the app, and the FAQ below says so.
+// Every line is something the app does today. (The screening schedule, the "worth discussing with a
+// doctor" patterns, condition guidance and activity plans are built but switched off until a clinician
+// has reviewed them, so they are not advertised here. Add them back when the switch is turned on.)
 const POINTS = [
-  {
-    title: "Check-ups, when they're due",
-    body: "See the screenings suggested for your age, with the source named. Record the ones you've had and the next date is worked out for you.",
-  },
-  {
-    title: "Patterns worth a conversation",
-    body: "When your own logs cross a published guideline line, such as long or irregular cycles, you see your numbers beside it and a suggestion to talk to a doctor. Never a diagnosis.",
-  },
   {
     title: "A cycle you can plan around",
     body: "Your next period as a range from your own history, not a false-precision date. Log only the day it starts and the rest follows.",
   },
   {
-    title: "A plan for a goal, when you ask",
-    body: "Pick a goal and get a week-by-week activity plan built from what you already do, your time and your age, with an honest view of how realistic it is.",
+    title: "One list for the day",
+    body: "Habits, medicine doses and appointments in a single to-do list, ticked off in a tap, with reminders at the times you choose.",
   },
   {
-    title: "If you live with a condition",
-    body: "Tell Women360 about PCOS, endometriosis or a thyroid condition and it suggests the symptoms worth noting and prepares a summary for your doctor.",
+    title: "Everything you track, in one place",
+    body: "Cycle, meals and water, movement, sleep, mood and stress, with simple views of how the week went.",
   },
   {
     title: "Quick to log, kind when you don't",
     body: "One tap for a habit or a meal you've had before. Miss a day and nothing happens: there are no streaks to lose.",
+  },
+  {
+    title: "Made for every age",
+    body: "Senior Mode turns the app into a few large, plainly labelled essentials that you choose yourself.",
+  },
+  {
+    title: "Yours to take with you",
+    body: "Download everything you've logged, or erase your account completely, whenever you like.",
   },
 ];
 
@@ -69,11 +73,7 @@ const TRUST = [
 const FAQ = [
   {
     q: "Is Women360 medical advice?",
-    a: "No. It's a wellness and tracking tool. It can show patterns in what you log and remind you about check-ups, but it doesn't diagnose anything and it isn't a substitute for a doctor.",
-  },
-  {
-    q: "What do the check-up reminders follow?",
-    a: "India's national screening programme and WHO guidance, with the source named beside each. They are currently marked as not yet reviewed by a clinician, so treat them as a starting point and confirm them with your doctor.",
+    a: "No. It's a wellness and tracking tool. It can show how what you log changes over time, but it doesn't diagnose anything and it isn't a substitute for a doctor.",
   },
   {
     q: "Do I need a watch or another device?",
@@ -227,7 +227,7 @@ export default function LandingPage() {
                 A calmer way to look after <span className={cn(SIGNATURE_ITALIC, "text-[var(--w360-accent)]")}>your</span> health.
               </h1>
               <p className="text-lg text-[var(--w360-text-muted)] mt-7 max-w-xl mx-auto lg:mx-0">
-                Log your cycle, meals, movement, sleep and mood in a few taps. Women360 turns what you log into early, plain-language nudges: which check-ups are due, and patterns worth taking to a doctor.
+                Log your cycle, meals, movement, sleep and mood in a few taps, and see how they fit together over time, in one calm place that stays private to you.
               </p>
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-3 mt-9">
                 <Link to="/register" className={cn(buttonClasses({ size: "lg" }), SOFT_SHADOW)}>Create your account</Link>
@@ -247,9 +247,9 @@ export default function LandingPage() {
         <section id="what" className="px-4 py-20 border-t border-[var(--w360-border)]">
           <div className="max-w-5xl mx-auto">
             <AnimatedContent {...REVEAL}>
-              <h2 className={cn(H2, "max-w-xl")}>Made to help you act early, not just keep a log.</h2>
+              <h2 className={cn(H2, "max-w-xl")}>Everything about your health, in one calm place.</h2>
               <p className="text-[var(--w360-text-muted)] mt-4 max-w-xl">
-                Cycle, nutrition, activity, sleep, mood, medicines and appointments in one place, and the things below on top of them.
+                Track what matters, with as few taps as possible, and see it all together.
               </p>
             </AnimatedContent>
             <AnimatedContent className="grid sm:grid-cols-2 gap-x-14 gap-y-10 mt-14" {...REVEAL} stagger={0.06}>
@@ -333,6 +333,8 @@ export default function LandingPage() {
         <Link to="/privacy" className="underline underline-offset-2 hover:text-[var(--w360-text)]">Privacy</Link>
         <span className="mx-2">·</span>
         <Link to="/terms" className="underline underline-offset-2 hover:text-[var(--w360-text)]">Terms</Link>
+        <span className="mx-2">·</span>
+        <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2 hover:text-[var(--w360-text)]">Contact</a>
         <span className="mx-2">·</span>
         <span>© 2026 · A wellness and tracking product, not a diagnostic service</span>
       </footer>

@@ -19,6 +19,7 @@ import { Pill, CalendarClock, Plus, Check, X as XIcon } from "lucide-react";
 import { PreventiveCare } from "./PreventiveCare";
 import { ReproductiveHealthTab } from "./ReproductiveHealthTab";
 import { Hint } from "@/components/ui/Hint";
+import { useFeatures } from "@/context/FeaturesContext";
 
 interface MedFormValues {
   name: string;
@@ -68,6 +69,7 @@ function apptToForm(a: Appointment): ApptFormValues {
 
 export default function HealthPage() {
   const { senior } = useApp();
+  const { clinicalContent } = useFeatures();
   const [params] = useSearchParams();
   const [appts, setAppts] = useState<Appointment[] | null>(null);
   const [meds, setMeds] = useState<Medication[] | null>(null);
@@ -552,10 +554,7 @@ export default function HealthPage() {
             id: "mental", label: "Mental wellbeing",
             content: <EmptyState title="Nothing logged yet today" description="Head to Wellbeing to record mood, stress and energy." />,
           },
-          {
-            id: "preventive", label: "Preventive care",
-            content: <PreventiveCare />,
-          },
+          ...(clinicalContent ? [{ id: "preventive", label: "Preventive care", content: <PreventiveCare /> }] : []),
           {
             id: "reproductive", label: "Reproductive health",
             content: <ReproductiveHealthTab />,
@@ -589,6 +588,7 @@ export default function HealthPage() {
 function SeniorHealth({
   appts, meds, focusTab, onAdd,
 }: { appts: Appointment[]; meds: Medication[]; focusTab: string | null; onAdd: () => void }) {
+  const { clinicalContent } = useFeatures();
   return (
     <div className="max-w-xl mx-auto p-5 flex flex-col gap-5">
       {(!focusTab || focusTab === "medicines") && (
@@ -617,7 +617,7 @@ function SeniorHealth({
           </div>
         </section>
       )}
-      {(!focusTab || focusTab === "preventive") && (
+      {clinicalContent && (!focusTab || focusTab === "preventive") && (
         <section>
           <h2 className="font-display text-2xl font-semibold mb-3">My check-ups</h2>
           <PreventiveCare />

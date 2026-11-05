@@ -24,6 +24,7 @@ import { ConditionsCard } from "./ConditionsCard";
 import { conditionService } from "@/services/conditionService";
 import { insightsService } from "@/services/insightsService";
 import { Hint } from "@/components/ui/Hint";
+import { useFeatures } from "@/context/FeaturesContext";
 
 const PHASE_LABEL: Record<string, string> = {
   menstrual: "Menstrual", follicular: "Follicular", ovulation: "Ovulation", luteal: "Luteal",
@@ -162,12 +163,17 @@ export default function CyclePage() {
   // What today looked like just before she tapped "Period started today" (null = no entry), so undo can put it back.
   const beforePeriodTap = useRef<CycleDay | null | undefined>(undefined);
 
+  const { clinicalContent } = useFeatures();
   const [conditions, setConditions] = useState<ConditionList | null>(null);
 
   useEffect(() => {
     cycleService.getSummary().then(setCycle);
-    conditionService.list().then(setConditions).catch(() => setConditions(null));
   }, []);
+
+  // Condition guidance is one of the features that waits for a clinician's review.
+  useEffect(() => {
+    if (clinicalContent) conditionService.list().then(setConditions).catch(() => setConditions(null));
+  }, [clinicalContent]);
 
   if (!cycle) return <LoadingState label="Loading your cycle" />;
 
@@ -638,9 +644,9 @@ export default function CyclePage() {
       <>
         <SeniorCycle cycle={populated} periodStartedToday={cycle.history.find((d) => d.date === localDateISO())?.isPeriod === true} onPeriodToday={togglePeriodStartedToday} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} />
         <div className="max-w-xl mx-auto px-5">
-          <PatternsCard refreshKey={patternsKey} />
+          {clinicalContent && <PatternsCard refreshKey={patternsKey} />}
         </div>
-        {cycle.isLate && (
+        {clinicalContent && cycle.isLate && (
           <div className="max-w-xl mx-auto px-5">
             <ExplainThisCard
               title="Your period looks later than usual"
@@ -664,9 +670,9 @@ export default function CyclePage() {
 
       <CycleRing cycle={populated} periodStartedToday={cycle.history.find((d) => d.date === localDateISO())?.isPeriod === true} onPeriodToday={togglePeriodStartedToday} onLog={() => openLogModal(localDateISO())} onBulkAdd={openBulkAdd} onSettings={() => setSettingsOpen(true)} />
 
-      <PatternsCard refreshKey={patternsKey} />
+      {clinicalContent && <PatternsCard refreshKey={patternsKey} />}
 
-      {cycle.isLate && (
+      {clinicalContent && cycle.isLate && (
         <ExplainThisCard
           title="Your period looks later than usual"
           fetchReport={() => insightsService.explainCycleDelay()}
@@ -678,7 +684,7 @@ export default function CyclePage() {
           { id: "overview", label: "Overview", content: <OverviewTab cycle={cycle} /> },
           { id: "calendar", label: "Calendar", content: <MonthCalendar onSelectDay={openLogModal} /> },
           { id: "trends", label: "Trends", content: <TrendsTab cycle={cycle} /> },
-          { id: "conditions", label: "My conditions", content: <ConditionsCard list={conditions} cycle={cycle} onChanged={setConditions} /> },
+          ...(clinicalContent ? [{ id: "conditions", label: "My conditions", content: <ConditionsCard list={conditions} cycle={cycle} onChanged={setConditions} /> }] : []),
         ]}
       />
       {logModal}

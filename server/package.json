@@ -19,6 +19,7 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "seed:demo": "tsx prisma/seedDemo.ts",
     "create-admin": "tsx prisma/createAdmin.ts",
+    "mail:check": "tsx scripts/mailCheck.ts",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {

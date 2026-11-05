@@ -13,6 +13,7 @@ import { cycleService } from "@/services/cycleService";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { Check } from "lucide-react";
 import clsx from "clsx";
+import { useFeatures } from "@/context/FeaturesContext";
 
 const STEP_COUNT = 4;
 
@@ -66,6 +67,7 @@ export default function OnboardingPage() {
   const { auth, senior } = useApp();
   const nav = useNavigate();
   const toast = useToast();
+  const { clinicalContent } = useFeatures();
   const [step, setStep] = useState(1);
   const [name, setName] = useState(auth.user?.name ?? "");
   const [dob, setDob] = useState(auth.user?.dateOfBirth ?? "");
@@ -162,7 +164,7 @@ export default function OnboardingPage() {
           }
         >
           <Step title="About you">
-            <FormStep title="About you" subtitle="This helps us show what applies to you, such as which check-ups are due at your age.">
+            <FormStep title="About you" subtitle={clinicalContent ? "This helps us show what applies to you, such as which check-ups are due at your age." : "This helps us tailor the app to you."}>
               <Input label="Full name" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
               <Input label="Date of birth" type="date" value={dob} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDob(e.target.value)} />
             </FormStep>

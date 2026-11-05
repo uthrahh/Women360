@@ -1,3 +1,4 @@
+import { clinicalContentOn } from "@/config/features";
 import { prisma } from "@/lib/prisma";
 import { NotFoundError } from "@/lib/errors";
 import type { Prisma } from "@prisma/client";
@@ -425,7 +426,11 @@ export const cycleService = {
       isPerimenopause: user?.lifeStage === "PERIMENOPAUSE",
     });
 
-    return { ...result, history };
+    // Naming conditions as possible causes is clinical wording; with the review-needed features
+    // switched off, keep only the plain statement that the cycles have varied.
+    const irregularityNote =
+      !clinicalContentOn() && result.irregularityNote ? result.irregularityNote.replace(/\s*Conditions like PCOS[^]*$/, "") : result.irregularityNote;
+    return { ...result, irregularityNote, history };
   },
 
   /** Per-day phase for a date range, for the calendar's colour coding. */

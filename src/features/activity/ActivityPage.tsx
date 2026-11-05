@@ -23,6 +23,7 @@ import { ActivityFields } from "./ActivityFields";
 import { ActivityHabits } from "./ActivityHabits";
 import { ActivityPlanSection } from "./plan/ActivityPlanSection";
 import { Hint } from "@/components/ui/Hint";
+import { useFeatures } from "@/context/FeaturesContext";
 
 interface FormValues {
   activityCode: string;
@@ -154,6 +155,7 @@ function QuickLogAdder({
 }
 
 export default function ActivityPage() {
+  const { clinicalContent } = useFeatures();
   const [data, setData] = useState<ActivitySummary | null>(null);
   const [catalog, setCatalog] = useState<ActivityCatalog | null>(null);
   const [failed, setFailed] = useState(false);
@@ -331,7 +333,7 @@ export default function ActivityPage() {
 
       <ActivityHabits habits={habits} onChange={(h) => setHabits((list) => list.map((x) => (x.id === h.id ? h : x)))} />
 
-      <ActivityPlanSection onLogged={() => { reload(); }} />
+      {clinicalContent && <ActivityPlanSection onLogged={() => { reload(); }} />}
 
       <section aria-label="Quick log" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">

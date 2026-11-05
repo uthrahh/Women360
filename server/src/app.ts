@@ -7,6 +7,8 @@ import { apiRateLimiter } from "@/middleware/rateLimit";
 import { errorHandler } from "@/middleware/errorHandler";
 import { notFoundHandler } from "@/middleware/notFound";
 import { router } from "@/modules/router";
+import { prisma } from "@/lib/prisma";
+import { alertAdmin } from "@/lib/alerts";
 
 export function createApp() {
   const app = express();
@@ -25,13 +27,25 @@ export function createApp() {
   app.use(requestLogger);
   app.use(apiRateLimiter);
 
-  app.get("/health", (_req, res) => {
-    // Unauthenticated liveness/readiness probe for the hosting platform —
-    // deliberately reveals nothing about the system beyond "it's up".
+  app.get("/health", async (_req, res) => {
+    // Unauthenticated probe for the hosting platform and for an uptime monitor. It asks the database a
+    // trivial question, so "healthy" means the API AND its database are answering (a paused or
+    // unreachable database is a 503 the monitor can see), and the query also keeps an idle free-tier
+    // database awake. It reveals nothing beyond up or down.
     // Cross-origin on purpose: the web pages call this in the background to wake a sleeping
     // server, and the same-origin default from helmet would make browsers report it as an error.
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    res.status(200).json({ ok: true, data: { status: "healthy" } });
+    res.setHeader("Cache-Control", "no-store");
+    try {
+      await Promise.race([
+        prisma.$queryRaw`SELECT 1`,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("database did not answer within 4 seconds")), 4000).unref()),
+      ]);
+      res.status(200).json({ ok: true, data: { status: "healthy" } });
+    } catch (err) {
+      void alertAdmin("database-down", "The database is not answering", { what: err instanceof Error ? err.message.slice(0, 300) : "unknown" });
+      res.status(503).json({ ok: false, data: { status: "unhealthy" } });
+    }
   });
 
   app.use("/api/v1", router);

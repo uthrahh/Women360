@@ -1,6 +1,7 @@
 import { createApp } from "@/app";
 import { env } from "@/config/env";
 import { logger } from "@/lib/logger";
+import { alertAdmin } from "@/lib/alerts";
 import { prisma } from "@/lib/prisma";
 import { purgeOldSecurityEvents } from "@/lib/security/events";
 import { purgeStaleThrottles } from "@/lib/security/throttle";
@@ -34,6 +35,17 @@ async function shutdown(signal: string) {
   // Force-exit if graceful shutdown hangs.
   setTimeout(() => process.exit(1), 10_000).unref();
 }
+
+// A crash or an unhandled promise rejection is the kind of failure nobody sees until a person complains.
+process.on("unhandledRejection", (reason) => {
+  logger.error({ reason }, "Unhandled promise rejection");
+  void alertAdmin("unhandledRejection", "Unhandled promise rejection", { what: reason instanceof Error ? reason.message.slice(0, 300) : String(reason).slice(0, 300) });
+});
+process.on("uncaughtException", async (err) => {
+  logger.fatal({ err }, "Uncaught exception");
+  await alertAdmin("uncaughtException", "The server crashed", { what: err.message.slice(0, 300) });
+  process.exit(1);
+});
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));

@@ -9,6 +9,7 @@ import { healthService } from "@/services/healthService";
 import { screeningService } from "@/services/screeningService";
 import { localDateISO } from "@/services/mappers";
 import type { Appointment, Habit, MedicationDose, WellbeingEntry } from "@/types";
+import { useFeatures } from "@/context/FeaturesContext";
 
 interface Task {
   id: string;
@@ -43,6 +44,7 @@ export function TodayTasks({
   appointments: Appointment[];
 }) {
   const nav = useNavigate();
+  const { clinicalContent } = useFeatures();
   const toast = useToast();
   const [doses, setDoses] = useState<MedicationDose[] | null>(null);
   // Check-ups whose interval has passed. Never "not recorded yet": that would nag everyone on day one.
@@ -53,7 +55,7 @@ export function TodayTasks({
 
   useEffect(() => {
     healthService.getTodayMedications().then(setDoses).catch(() => setDoses([]));
-    screeningService.list().then((p) => setCheckupsDue(p.items.filter((i) => i.status === "due").length)).catch(() => setCheckupsDue(0));
+    if (clinicalContent) screeningService.list().then((p) => setCheckupsDue(p.items.filter((i) => i.status === "due").length)).catch(() => setCheckupsDue(0));
   }, []);
 
   const todayISO = localDateISO();

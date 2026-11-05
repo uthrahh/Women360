@@ -10,14 +10,18 @@ const envSchema = z.object({
   JWT_ACCESS_TTL: z.string().default("15m"),
   JWT_REFRESH_TTL: z.string().default("30d"),
   CORS_ORIGINS: z.string().default("http://localhost:5173"),
-  SUPPORT_EMAIL: z.string().email().optional(),
+  // Where people write for help, and the address emails are sent from unless MAIL_FROM says otherwise.
+  SUPPORT_EMAIL: z.string().email().default("admin.women360@gmail.com"),
   // Two-factor sign-in is only offered when this is set: a base64-encoded
   // 32-byte key (`openssl rand -base64 32`) that encrypts each person's
   // authenticator secret at rest. Unset = the feature is off, nothing breaks.
   TWO_FACTOR_ENCRYPTION_KEY: z.string().optional(),
-  // Outgoing email. Both must be set for mail to be sent (any SMTP provider works): SMTP_URL is
-  // like smtps://user:password@smtp.example.com:465 and MAIL_FROM like "Women360 <no-reply@example.com>".
-  // Without them no email leaves the server, and the app says so rather than pretending.
+  // Outgoing email, by an HTTPS email API (BREVO_API_KEY: works on hosts such as Render's free tier that
+  // block SMTP) or by SMTP (SMTP_URL, like smtps://user:password@smtp.example.com:465). Either one is
+  // enough. MAIL_FROM like "Women360 <admin.women360@gmail.com>" defaults to the support address,
+  // and the provider must have verified that sender. Without a provider no email leaves the server,
+  // and the app says so rather than pretending.
+  BREVO_API_KEY: z.string().optional(),
   SMTP_URL: z.string().optional(),
   MAIL_FROM: z.string().optional(),
   // Where the web app lives, for links inside emails. Defaults to the first allowed CORS origin.
@@ -49,7 +53,8 @@ export const env = {
   twoFactorKey,
   twoFactorAvailable: twoFactorKey !== null,
   adminIpAllowlist: (parsed.data.ADMIN_IP_ALLOWLIST ?? "").split(",").map((ip) => ip.trim()).filter(Boolean),
-  mailConfigured: Boolean(parsed.data.SMTP_URL && parsed.data.MAIL_FROM),
+  mailConfigured: Boolean(parsed.data.BREVO_API_KEY || parsed.data.SMTP_URL),
+  mailFrom: parsed.data.MAIL_FROM ?? `Women360 <${parsed.data.SUPPORT_EMAIL}>`,
   appUrl: (parsed.data.APP_URL ?? parsed.data.CORS_ORIGINS.split(",")[0].trim()).replace(/\/+$/, ""),
   isProduction: parsed.data.NODE_ENV === "production",
   isTest: parsed.data.NODE_ENV === "test",

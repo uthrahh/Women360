@@ -56,4 +56,4 @@ services:
       - key: APP_URL
         value: https://women-360.vercel.app
       - key: SUPPORT_EMAIL
-        value: support@example.com
+        value: admin.women360@gmail.com

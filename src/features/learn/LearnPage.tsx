@@ -6,8 +6,18 @@ import { LoadingState, EmptyState } from "@/components/ui/states";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { Search } from "lucide-react";
+import { useFeatures } from "@/context/FeaturesContext";
+import { Navigate } from "react-router-dom";
 
+/** Learn is one of the features that wait for a clinician's review: while they are off, send her home. */
 export default function LearnPage() {
+  const { clinicalContent, loaded } = useFeatures();
+  if (!loaded) return null;
+  if (!clinicalContent) return <Navigate to="/app/dashboard" replace />;
+  return <LearnContent />;
+}
+
+function LearnContent() {
   const [articles, setArticles] = useState<LearnArticle[] | null>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
