@@ -1,10 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { healthService } from "@/services/healthService";
 import { localDateISO } from "@/services/mappers";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Tabs } from "@/components/ui/Tabs";
-import { LoadingState, EmptyState } from "@/components/ui/states";
+import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { LogPopover } from "@/components/ui/LogPopover";
@@ -80,8 +80,8 @@ export default function HealthPage() {
   const toast = useToast();
 
   function refreshToday() {
-    healthService.getTodayMedications().then(setTodayDoses);
-    healthService.getAdherence(7).then(setAdherence);
+    healthService.getTodayMedications().then(setTodayDoses).catch(() => undefined);
+    healthService.getAdherence(7).then(setAdherence).catch(() => undefined);
   }
 
   async function markDose(dose: MedicationDose, status: "TAKEN" | "SKIPPED") {
@@ -105,13 +105,19 @@ export default function HealthPage() {
   const [apptSaving, setApptSaving] = useState(false);
   const [apptDeleteTarget, setApptDeleteTarget] = useState<Appointment | null>(null);
 
-  useEffect(() => {
-    healthService.getAppointments().then(setAppts);
-    healthService.getMedications().then(setMeds);
-    healthService.getVitals().then(setVitals);
-    refreshToday();
+  const [failed, setFailed] = useState(false);
+  const load = useCallback(() => {
+    setFailed(false);
+    const fail = () => setFailed(true);
+    healthService.getAppointments().then(setAppts).catch(fail);
+    healthService.getMedications().then(setMeds).catch(fail);
+    healthService.getVitals().then(setVitals).catch(fail);
+    healthService.getTodayMedications().then(setTodayDoses).catch(() => undefined);
+    healthService.getAdherence(7).then(setAdherence).catch(() => undefined);
   }, []);
+  useEffect(load, [load]);
 
+  if (failed) return <ErrorState title="Couldn't load your health records" description="Check your connection and try again." onRetry={load} />;
   if (!appts || !meds || !vitals) return <LoadingState label="Loading your health" />;
 
   function handleAddVital(e: FormEvent<HTMLFormElement>) {

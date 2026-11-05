@@ -20,11 +20,13 @@ import { adminRouter } from "./admin/admin.routes";
 import { feedbackRouter } from "./feedback/feedback.routes";
 import { conditionsRouter } from "./conditions/conditions.routes";
 import { configRouter } from "./config/config.routes";
+import { clientErrorsRouter } from "./clientErrors/clientErrors.routes";
 import { requireClinicalContent } from "@/middleware/clinicalGate";
 
 export const router = Router();
 
 router.use("/config", configRouter);
+router.use("/client-errors", clientErrorsRouter);
 router.use("/auth", authRouter);
 router.use("/conditions", requireClinicalContent, conditionsRouter);
 router.use("/users", usersRouter);

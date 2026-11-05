@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { User } from "@/types";
 import { authService, isTwoFactorChallenge, type TwoFactorChallenge } from "@/services/authService";
 import { isNativeApp } from "@/lib/platform";
+import { ApiError } from "@/services/apiClient";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(() => authService.getCachedUser());
@@ -41,9 +42,13 @@ export function useAuth() {
         .then((u) => {
           if (!cancelled) setUser(u);
         })
-        .catch(() => {
-          authService.logout();
-          if (!cancelled) setUser(null);
+        .catch((err: unknown) => {
+          // Only a rejected session ends the session. A server hiccup or no connection must not sign
+          // her out: she stays in with what we already know, and each screen says what is wrong.
+          if (err instanceof ApiError && err.status === 401) {
+            authService.logout();
+            if (!cancelled) setUser(null);
+          }
         })
         .finally(() => {
           if (!cancelled) setBootstrapping(false);

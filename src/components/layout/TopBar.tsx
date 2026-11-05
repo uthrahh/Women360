@@ -18,7 +18,7 @@ export function TopBar() {
 
   // Something elsewhere can add a notification while she is on a page (a new pattern worth discussing), so refresh when told.
   useEffect(() => {
-    const load = () => notificationService.list().then(setNotifs);
+    const load = () => notificationService.list().then(setNotifs).catch(() => undefined);
     load();
     window.addEventListener("w360:notifications-changed", load);
     return () => window.removeEventListener("w360:notifications-changed", load);
@@ -35,9 +35,12 @@ export function TopBar() {
   const unreadCount = notifs?.filter((n) => !n.read).length ?? 0;
 
   function markRead(id: string) {
-    notificationService.markRead(id).then(() => {
-      setNotifs((list) => (list ? list.map((n) => (n.id === id ? { ...n, read: true } : n)) : list));
-    });
+    notificationService
+      .markRead(id)
+      .then(() => {
+        setNotifs((list) => (list ? list.map((n) => (n.id === id ? { ...n, read: true } : n)) : list));
+      })
+      .catch(() => undefined);
   }
 
   const rows = useMemo(

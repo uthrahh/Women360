@@ -175,7 +175,7 @@ export default function ActivityPage() {
   const [stepsValue, setStepsValue] = useState("");
   const toast = useToast();
 
-  const reload = () => activityService.getSummary().then(setData);
+  const reload = () => activityService.getSummary().then(setData).catch(() => undefined);
   const load = () => {
     setFailed(false);
     Promise.all([reload(), activityService.catalog().then(setCatalog)]).catch(() => setFailed(true));

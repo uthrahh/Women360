@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, useCallback } from "react";
 import { cycleService } from "@/services/cycleService";
 import { localDateISO } from "@/services/mappers";
 import type { ConditionList, CycleDay, CycleDayPhase, CycleSummary } from "@/types";
@@ -166,15 +166,19 @@ export default function CyclePage() {
   const { clinicalContent } = useFeatures();
   const [conditions, setConditions] = useState<ConditionList | null>(null);
 
-  useEffect(() => {
-    cycleService.getSummary().then(setCycle);
+  const [failed, setFailed] = useState(false);
+  const load = useCallback(() => {
+    setFailed(false);
+    cycleService.getSummary().then(setCycle).catch(() => setFailed(true));
   }, []);
+  useEffect(load, [load]);
 
   // Condition guidance is one of the features that waits for a clinician's review.
   useEffect(() => {
     if (clinicalContent) conditionService.list().then(setConditions).catch(() => setConditions(null));
   }, [clinicalContent]);
 
+  if (failed) return <ErrorState title="Couldn't load your cycle" description="Check your connection and try again." onRetry={load} />;
   if (!cycle) return <LoadingState label="Loading your cycle" />;
 
   // Her conditions add the symptoms worth noting to the usual list, without repeating any.
@@ -265,7 +269,7 @@ export default function CyclePage() {
           // Re-fetch rather than hand-patch local state: logging the very
           // first entry changes currentDay/phase/nextPeriodDate too, not
           // just one day's history item.
-          cycleService.getSummary().then(setCycle);
+          cycleService.getSummary().then(setCycle).catch(() => undefined);
           setEditingDate(null);
           toast.show(existingDay ? "Cycle entry updated" : "Cycle entry saved");
         },
@@ -276,7 +280,7 @@ export default function CyclePage() {
   function togglePeriodStartedToday() {
     const today = localDateISO();
     const entry = cycle!.history.find((d) => d.date === today);
-    const refresh = () => cycleService.getSummary().then(setCycle);
+    const refresh = () => cycleService.getSummary().then(setCycle).catch(() => undefined);
     const fail = (err: unknown) => toast.show(err instanceof Error ? err.message : "Couldn't save that. Please try again.", { tone: "error" });
 
     if (entry?.isPeriod !== true) {
@@ -369,7 +373,7 @@ export default function CyclePage() {
     const date = confirmDeleteDate;
     cycleService.deleteEntry(date).then(
       () => {
-        cycleService.getSummary().then(setCycle);
+        cycleService.getSummary().then(setCycle).catch(() => undefined);
         setConfirmDeleteDate(null);
         setEditingDate(null);
         toast.show("Cycle entry deleted");
@@ -614,11 +618,12 @@ export default function CyclePage() {
     />
   );
 
-  const settingsModal = <CycleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} onSaved={() => cycleService.getSummary().then(setCycle)} />;
+  const settingsModal = <CycleSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} onSaved={() => cycleService.getSummary().then(setCycle).catch(() => undefined)} />;
 
   if (!hasData) {
     return (
       <>
+        <h1 className="font-display text-3xl font-semibold">Cycle</h1>
         <EmptyState
           title="Log your first entry to get started"
           description="Once you log a period, flow, or symptom, Women360 will start showing your cycle day, phase, and predictions here."

@@ -1,11 +1,11 @@
 import type { CSSProperties, ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
 import { SeniorTileGrid } from "@/components/layout/SeniorNav";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { LoadingState } from "@/components/ui/states";
+import { LoadingState, ErrorState } from "@/components/ui/states";
 import { ItemList } from "@/components/ui/ItemList";
 import { TodayTasks } from "./TodayTasks";
 import { cycleService } from "@/services/cycleService";
@@ -54,19 +54,26 @@ function StandardDashboard() {
   const [todayMood, setTodayMood] = useState<WellbeingEntry | null>(null);
   const [moodLoaded, setMoodLoaded] = useState(false);
 
-  useEffect(() => {
-    cycleService.getSummary().then(setCycle);
+  const [failed, setFailed] = useState(false);
+  const load = useCallback(() => {
+    setFailed(false);
+    const fail = () => setFailed(true);
+    cycleService.getSummary().then(setCycle).catch(fail);
     cycleService.getProfile().then((p) => setShowOvulation(Boolean(p.showOvulationOnHome))).catch(() => undefined);
-    sleepService.getSummary().then(setSleep);
-    activityService.getSummary().then(setActivity);
-    nutritionService.getToday().then(setNutrition);
-    healthService.getAppointments().then(setAppts);
-    habitService.list().then(setHabits);
-    wellbeingService.getTodayMood().then((m) => {
-      setTodayMood(m);
-      setMoodLoaded(true);
-    });
+    sleepService.getSummary().then(setSleep).catch(fail);
+    activityService.getSummary().then(setActivity).catch(fail);
+    nutritionService.getToday().then(setNutrition).catch(fail);
+    healthService.getAppointments().then(setAppts).catch(fail);
+    habitService.list().then(setHabits).catch(fail);
+    wellbeingService
+      .getTodayMood()
+      .then((m) => {
+        setTodayMood(m);
+        setMoodLoaded(true);
+      })
+      .catch(fail);
   }, []);
+  useEffect(load, [load]);
 
   const loaded = cycle && sleep && activity && nutrition && habits && moodLoaded;
   const now = new Date();
@@ -74,6 +81,7 @@ function StandardDashboard() {
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const firstName = auth.user?.name?.split(" ")[0] ?? "there";
 
+  if (failed) return <ErrorState title="Couldn't load your day" description="Check your connection and try again." onRetry={load} />;
   if (!loaded) return <LoadingState label="Preparing your snapshot" />;
 
   const hydrationPct = Math.round((nutrition.hydrationMl / nutrition.hydrationGoalMl) * 100);

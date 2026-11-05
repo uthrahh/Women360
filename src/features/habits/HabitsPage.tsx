@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, useCallback } from "react";
 import { Pencil, Plus, Check, X } from "lucide-react";
 import clsx from "clsx";
 import { habitService, type HabitInput } from "@/services/habitService";
@@ -15,7 +15,7 @@ import { Modal } from "@/components/ui/Modal";
 import { LogPopover } from "@/components/ui/LogPopover";
 import { NumberField } from "@/components/ui/NumberField";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { LoadingState, EmptyState } from "@/components/ui/states";
+import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import PulseHeart from "@/components/reactbits/PulseHeart";
 import BellToggle from "@/components/reactbits/BellToggle";
@@ -117,11 +117,15 @@ export default function HabitsPage() {
   const [catalog, setCatalog] = useState<ActivityCatalog | null>(null);
   const toast = useToast();
 
-  useEffect(() => {
-    habitService.list().then(setHabits);
+  const [failed, setFailed] = useState(false);
+  const load = useCallback(() => {
+    setFailed(false);
+    habitService.list().then(setHabits).catch(() => setFailed(true));
     activityService.catalog().then(setCatalog).catch(() => setCatalog(null));
   }, []);
+  useEffect(load, [load]);
 
+  if (failed) return <ErrorState title="Couldn't load your habits" description="Check your connection and try again." onRetry={load} />;
   if (!habits) return <LoadingState label="Loading habits" />;
 
   const isNew = editing === "new";
@@ -491,7 +495,7 @@ export default function HabitsPage() {
                           );
                           if (daysAgo === 0) {
                             return (
-                              <span key={i} role="img" aria-label={`Today: ${done ? "done" : "not done yet"}`} className="p-1.5">
+                              <span key={i} role="img" aria-label={`Today: ${done ? "done" : "not done yet"}`} className="p-[7px]">
                                 {dot}
                               </span>
                             );
@@ -506,7 +510,7 @@ export default function HabitsPage() {
                               onClick={() => toggleDay(h, daysAgo, done)}
                               aria-label={`${name}: ${done ? "done" : "not done"}. Tap to change.`}
                               title={`${name}: ${done ? "done" : "not done"}`}
-                              className="p-1.5 rounded-full hover:bg-black/[0.06] dark:hover:bg-white/[0.1]"
+                              className="p-[7px] rounded-full hover:bg-black/[0.06] dark:hover:bg-white/[0.1]"
                             >
                               {dot}
                             </button>

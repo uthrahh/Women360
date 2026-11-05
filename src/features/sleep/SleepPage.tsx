@@ -1,5 +1,5 @@
 import type { FormEvent, ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { sleepService } from "@/services/sleepService";
 import { localDateISO, to24Hour } from "@/services/mappers";
 import { addDaysISO, defaultWakeDate, derivedBedDate, sleepSpanHours } from "@/lib/sleepSpan";
@@ -11,7 +11,7 @@ import { LogPopover } from "@/components/ui/LogPopover";
 import { Input } from "@/components/ui/Input";
 import { ItemList } from "@/components/ui/ItemList";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { LoadingState, EmptyState } from "@/components/ui/states";
+import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { Moon, Sunrise, Plus } from "lucide-react";
@@ -65,10 +65,14 @@ export default function SleepPage() {
   const [deleteTarget, setDeleteTarget] = useState<SleepEntry | null>(null);
   const toast = useToast();
 
-  useEffect(() => {
-    sleepService.getSummary().then(setData);
+  const [failed, setFailed] = useState(false);
+  const load = useCallback(() => {
+    setFailed(false);
+    sleepService.getSummary().then(setData).catch(() => setFailed(true));
   }, []);
+  useEffect(load, [load]);
 
+  if (failed) return <ErrorState title="Couldn't load your sleep" description="Check your connection and try again." onRetry={load} />;
   if (!data) return <LoadingState label="Loading sleep" />;
 
   function openAdd() {

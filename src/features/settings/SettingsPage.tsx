@@ -32,10 +32,13 @@ export default function SettingsPage() {
   const [contactLoaded, setContactLoaded] = useState(false);
 
   useEffect(() => {
-    userService.getEmergencyContact().then((c) => {
-      if (c) setContact({ name: c.name, phone: c.phone, relationship: c.relationship ?? "" });
-      setContactLoaded(true);
-    });
+    userService
+      .getEmergencyContact()
+      .then((c) => {
+        if (c) setContact({ name: c.name, phone: c.phone, relationship: c.relationship ?? "" });
+        setContactLoaded(true);
+      })
+      .catch(() => setContactLoaded(true));
   }, []);
 
   async function handleSaveProfile(e: FormEvent<HTMLFormElement>) {

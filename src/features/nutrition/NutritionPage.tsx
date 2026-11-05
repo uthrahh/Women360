@@ -208,7 +208,7 @@ export default function NutritionPage() {
       // Refetch rather than hand-patch local state: adding/editing a meal
       // changes the protein/fibre totals shown above, not just the list.
       setData(await nutritionService.getToday());
-      nutritionService.getRecentMeals().then(setRecentMeals);
+      nutritionService.getRecentMeals().then(setRecentMeals).catch(() => undefined);
       setEditingMeal(null);
     } catch (err) {
       toast.show(err instanceof Error ? err.message : "Couldn't save that meal. Please try again.", { tone: "error" });

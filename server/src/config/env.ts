@@ -26,6 +26,10 @@ const envSchema = z.object({
   MAIL_FROM: z.string().optional(),
   // Where the web app lives, for links inside emails. Defaults to the first allowed CORS origin.
   APP_URL: z.string().url().optional(),
+  // Request limits per address. The defaults are for production; the browser tests raise them because one
+  // address makes far more requests than any person would.
+  API_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(120),
+  AUTH_RATE_LIMIT_PER_15_MIN: z.coerce.number().int().positive().default(20),
   // Optional comma-separated list of IP addresses allowed to reach /admin.
   ADMIN_IP_ALLOWLIST: z.string().optional(),
 });

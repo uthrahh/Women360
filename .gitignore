@@ -8,3 +8,13 @@ dist
 !.claude/launch.json
 Documentation/report/report.html
 Documentation/report/details.local.json
+
+# Browser test output and the throwaway test account
+e2e/.auth
+playwright-report
+test-results
+
+# Database backups (encrypted, but still never committed)
+server/backups/
+*.dump
+*.dump.enc

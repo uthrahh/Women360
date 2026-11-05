@@ -24,7 +24,7 @@ function LearnContent() {
   const [openArticle, setOpenArticle] = useState<LearnArticle | null>(null);
 
   useEffect(() => {
-    learnService.list().then(setArticles);
+    learnService.list().then(setArticles).catch(() => setArticles([]));
   }, []);
 
   const categories = useMemo(() => {

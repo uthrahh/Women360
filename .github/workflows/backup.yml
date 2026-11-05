@@ -1,0 +1,87 @@
+name: Database backup and restore test
+
+# Every night: take an encrypted backup of the live database, then PROVE it restores by loading it into a
+# fresh database and comparing every table's row count with the live one. The workflow fails (and GitHub
+# emails the repository owner) if the backup can't be taken or can't be restored.
+#
+# Needs two repository secrets (Settings > Secrets and variables > Actions):
+#   DATABASE_URL       the Supabase connection string (use the "Session pooler" one, port 5432, which works over IPv4)
+#   BACKUP_PASSPHRASE  a long random passphrase (16+ characters) that you keep somewhere safe; without it a backup
+#                      can't be opened, and with it anyone holding a backup can read it.
+# Until both exist the job explains what is missing and passes without doing anything.
+
+on:
+  schedule:
+    - cron: "30 21 * * *" # 03:00 India time
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: Back up and verify the restore
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      scratch:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: scratch
+          POSTGRES_DB: restore_check
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Check the secrets exist
+        id: secrets
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::warning::Backups are not running yet. Add the DATABASE_URL and BACKUP_PASSPHRASE repository secrets (see the comment at the top of this workflow)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ready == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          node-version: 20
+      - name: Install the PostgreSQL 17 client tools
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
+          pg_dump --version
+      - name: Take an encrypted backup
+        if: steps.secrets.outputs.ready == 'true'
+        id: backup
+        working-directory: server
+        run: echo "file=$(node scripts/backup/backup.mjs backups | tail -n 1)" >> "$GITHUB_OUTPUT"
+      - name: Prove it restores
+        if: steps.secrets.outputs.ready == 'true'
+        working-directory: server
+        env:
+          RESTORE_DATABASE_URL: postgresql://postgres:scratch@localhost:5432/restore_check
+          SOURCE_DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/backup/verify-restore.mjs "${{ steps.backup.outputs.file }}"
+      - name: Keep the encrypted backup for 30 days
+        if: steps.secrets.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: women360-backup
+          path: |
+            server/backups/*.dump.enc
+            server/backups/*.counts.json
+          retention-days: 30
+          if-no-files-found: error

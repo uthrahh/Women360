@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { wellbeingService } from "@/services/wellbeingService";
 import type { WellbeingEntry } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { LoadingState } from "@/components/ui/states";
+import { LoadingState, ErrorState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { MOOD_LABELS } from "@/services/mappers";
@@ -21,10 +21,14 @@ export default function WellbeingPage() {
   const [breathingOpen, setBreathingOpen] = useState(false);
   const toast = useToast();
 
-  useEffect(() => {
-    wellbeingService.getWeek().then(setData);
+  const [failed, setFailed] = useState(false);
+  const load = useCallback(() => {
+    setFailed(false);
+    wellbeingService.getWeek().then(setData).catch(() => setFailed(true));
   }, []);
+  useEffect(load, [load]);
 
+  if (failed) return <ErrorState title="Couldn't load your wellbeing" description="Check your connection and try again." onRetry={load} />;
   if (!data) return <LoadingState label="Loading wellbeing" />;
 
   return (

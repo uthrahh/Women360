@@ -20,7 +20,9 @@
     "seed:demo": "tsx prisma/seedDemo.ts",
     "create-admin": "tsx prisma/createAdmin.ts",
     "mail:check": "tsx scripts/mailCheck.ts",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "backup": "node scripts/backup/backup.mjs",
+    "backup:verify": "node scripts/backup/verify-restore.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.19.1",

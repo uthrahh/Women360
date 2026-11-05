@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, useCallback } from "react";
 import { goalService } from "@/services/goalService";
 import { goalProgress, localDateISO, to12Hour, to24Hour, type GoalInput } from "@/services/mappers";
 import type { Goal, GoalKind } from "@/types";
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { NumberField } from "@/components/ui/NumberField";
 import BellToggle from "@/components/reactbits/BellToggle";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { LoadingState, EmptyState } from "@/components/ui/states";
+import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { DEFAULT_REMINDER, REMINDER_TIME_OPTIONS, STRICT_12H_TIME } from "@/lib/reminderTimes";
 import { quickStep } from "@/lib/quickStep";
@@ -97,10 +97,14 @@ export default function GoalsPage() {
   const [quickValue, setQuickValue] = useState("");
   const toast = useToast();
 
-  useEffect(() => {
-    goalService.list().then(setGoals);
+  const [failed, setFailed] = useState(false);
+  const load = useCallback(() => {
+    setFailed(false);
+    goalService.list().then(setGoals).catch(() => setFailed(true));
   }, []);
+  useEffect(load, [load]);
 
+  if (failed) return <ErrorState title="Couldn't load your goals" description="Check your connection and try again." onRetry={load} />;
   if (!goals) return <LoadingState label="Loading goals" />;
 
   const isNew = editingGoal === "new";

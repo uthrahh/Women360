@@ -3,6 +3,7 @@ import { Suspense, lazy } from "react";
 import { AppProvider, useApp } from "@/context/AppContext";
 import { ToastProvider } from "@/components/ui/Toast";
 import { FeaturesProvider } from "@/context/FeaturesContext";
+import { ErrorBoundary, ForcedFailure } from "@/components/ErrorBoundary";
 import { AppShell } from "@/components/layout/AppShell";
 import { StaffShell } from "@/components/layout/StaffShell";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
@@ -66,10 +67,12 @@ function RootRoute() {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <AppProvider>
       <FeaturesProvider>
       <ToastProvider>
         <BrowserRouter>
+          <ForcedFailure />
           <Routes>
             <Route path="/" element={<RootRoute />} />
             <Route path="/privacy" element={<Suspense fallback={<LoadingState label="Loading" />}><PrivacyPage /></Suspense>} />
@@ -158,5 +161,6 @@ export default function App() {
       </ToastProvider>
       </FeaturesProvider>
     </AppProvider>
+    </ErrorBoundary>
   );
 }
