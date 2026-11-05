@@ -403,9 +403,8 @@ mapped by the migration and `other` has no estimate. The quick log refuses a rep
 activity, length and effort (unique index, 409, race-safe; the form also stops it). Habits can be
 linked to an activity (`Habit.activityCode`, a catalog code or "any"), and those habits appear as
 today's to-do on the Activity page. Reminders (`lib/reminders.ts`, `hooks/useReminders.ts`, `public/sw.js`)
-fire at the habit's time **only while Women360 is open** (browser tab or window): there is no web push,
-the free-tier API sleeps, and the Capacitor WebView has no notifications. Do not describe it as
-closed-app notification until a push service and a scheduler exist. Durations use `DurationField`
+fire at the habit's time while Women360 is open; when it is closed the server sends the reminder by web
+push (see "Launch readiness" below). The Capacitor WebView has no push, so the installed Android app reminds only while open. Durations use `DurationField`
 (hh:mm). Every number entry has clickable up/down arrows (`StepButtons`, hold to repeat, out of the
 tab order because the field is already a spinbutton that takes the arrow keys) as well as scrub, typing
 and arrow keys: add `NumberField` or `DurationField`, never a bare number input.
@@ -478,7 +477,42 @@ follow each other until she picks one, and the wake day is locked when editing (
 the duration out from the two days and times itself (`modules/sleep/duration.ts`; wake must be after bed and within
 24 hours) rather than trusting the client's number; an older client that sends no `bedDate` still works.
 
-Known concrete defects to fix as part of any related work:
+**Launch readiness (latest pass; the owner-only steps are in `docs/OPERATIONS.md`):**
+- *Clinician switch.* `CLINICAL_CONTENT` (server env, read per call, only the exact word "true" enables) hides every feature
+  that needs clinical review: screening, conditions/"worth discussing" patterns, activity plans, explain-this cards, Learn, and the
+  "conditions like PCOS" note in the cycle summary. Server routes answer 404 (`middleware/clinicalGate.ts`); the web app reads
+  `GET /config` (`FeaturesProvider`, `useFeatures()`) and removes menus, pages, tiles and landing copy. `render.yaml` sets it to
+  false. New clinician-dependent features must use the same gate. Support address: `SUPPORT_EMAIL` (default
+  admin.women360@gmail.com), also in `src/config/site.ts`, the privacy/terms pages and the landing footer.
+- *Failure handling.* `/health` is deep (`SELECT 1`, 4 s limit: 200 healthy / 503 unhealthy) and is the uptime-monitor target
+  (also keeps the free API and database awake). `alertAdmin` emails the support address (1 per problem per 30 min, 20/day, no personal
+  data) on 5xx, unhandled rejection/uncaught exception, database down and client crash reports (`POST /client-errors`, anonymous,
+  route shape + short message). The web app has an `ErrorBoundary`; every data screen has a load-failed state with Try again, and only a
+  rejected session (401) signs her out: a server hiccup never does. Every new screen needs its failed state; the browser suite checks it.
+- *Tests.* Playwright (`npm run e2e`, `e2e/`) drives real Chrome against the real API and database with a fresh account per run and
+  fails on any unexpected console or page error: public pages, journeys, switched-off features, server-failure behaviour, axe-core
+  (WCAG 2.2 AA + best practice, light and dark) on every screen, push (06, local Chrome only: it needs Google's push service) and
+  usage (07). CI runs it in the `browser` job. Rate limits are env-configurable (`API_RATE_LIMIT_PER_MINUTE`,
+  `AUTH_RATE_LIMIT_PER_15_MIN`) only so the suite can run from one address.
+- *Backups.* `server/scripts/backup/`: encrypted (AES-256-GCM, scrypt) `pg_dump`, credentials only via PG* environment variables,
+  nightly `.github/workflows/backup.yml` restores into a scratch database and checks every table's row count against counts recorded
+  before the dump. Needs secrets `DATABASE_URL` and `BACKUP_PASSPHRASE`; it only warns until they exist.
+- *Closed-app reminders (web push).* `server/src/modules/push/`: VAPID keys (`npm --prefix server run push:keys`; off without them),
+  `PushSubscription` and `PushSent` tables, an in-process scheduler (every minute, only while the API is awake: the uptime monitor is what
+  keeps it awake), per-device time zone, claim-then-send so a reminder is sent once, retry on a failed delivery, forget a device the push
+  service reports gone. Habit reminders (not done, week not met) and medicine doses (no dose recorded). **Traps:** the push address comes
+  from the browser, so it must pass `isTrustedPushEndpoint` (SSRF); the text is deliberately generic (it can show on a lock screen):
+  do not put a habit or medicine name in it; demo accounts cannot subscribe; Chrome refuses the Push API in incognito, and the first
+  subscription can take about 30 seconds; iPhone/iPad need the app on the Home Screen (`manifest.webmanifest`); the Android WebView has no
+  push. `Medication.times` doses are still read on the server's clock elsewhere (pre-existing), so only the push reads them on her clock.
+- *Analytics.* `server/src/modules/usage/`: anonymous counts per UTC day (`UsageCount`): screens opened (`POST /usage/view`, fixed list) and
+  actions (matched from successful requests in `usage.middleware.ts`), plus different-women-active from one-way hashes with a salt that
+  exists for one day and is deleted with the hashes (`UsageSeen`, `UsageSalt`). Only signed-in women are counted (not staff, not demo
+  accounts, not browsers sending Do Not Track / Global Privacy Control). Admin > Usage shows it; the demo administrator is refused. The
+  privacy page describes it: if what is counted changes, change the page. Never add a user id, address or device to these tables.
+- *Android.* `android/` builds a signed release (`keystore.properties` or `ANDROID_*` variables; key kept outside git), API 36, backups
+  off, manual `android.yml` workflow. It loads the live website. Not yet verified on a device or emulator.
+
 - No `sitemap.xml` (needs the production domain), no terms of use page, no
   Open Graph image or canonical URLs (same reason). Per-route titles exist for
   the signed-in app and `/privacy`; the landing page uses the static title.
@@ -494,11 +528,12 @@ Known concrete defects to fix as part of any related work:
   still ~430KB (~140KB gzipped) — acceptable since it only loads when a
   user visits Reports, not on initial app load, but worth knowing if
   bundle size becomes a concern later.
-- Email: a provider-agnostic mailer exists (`server/src/lib/mailer.ts`, SMTP via `SMTP_URL` + `MAIL_FROM`,
-  links built from `APP_URL`) and password-reset emails are sent through it. **Until those two variables are
-  set on Render, no email is sent and a forgotten password cannot be recovered.** There is still no email
-  verification at sign-up and no email reminder preference (the Settings switch that pretended otherwise
-  was removed); both build on the same mailer.
+- Email: a provider-agnostic mailer exists (`server/src/lib/mailer.ts`: Brevo's HTTPS API via `BREVO_API_KEY`,
+  or SMTP via `SMTP_URL`; `MAIL_FROM` defaults to `Women360 <SUPPORT_EMAIL>`; links built from `APP_URL`) and
+  password-reset emails and server alerts are sent through it. Render's free tier blocks SMTP, which is why the
+  HTTPS API is preferred. **Until `BREVO_API_KEY` (or `SMTP_URL`) is set on Render, no email is sent and a forgotten
+  password cannot be recovered**; steps are in `docs/OPERATIONS.md`. There is still no email verification at
+  sign-up and no email reminder preference (the Settings switch that pretended otherwise was removed).
 - Messages cannot be replied to (the reply box that only pretended to send was removed). The
   `Message` Prisma model itself has no sender-as-current-user concept
   (just a `senderLabel` display string and a `recipientId`), so this

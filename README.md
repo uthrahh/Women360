@@ -109,6 +109,8 @@ No component or page needs to change.
 
 ## Backend
 
+Running the live service (email, uptime monitoring, backups, reminders, the Android app, what to do before inviting people): [`docs/OPERATIONS.md`](./docs/OPERATIONS.md).
+
 A real API lives in [`server/`](./server/README.md): Node/Express + TypeScript
 + Prisma on PostgreSQL, with JWT auth, server-side role-based access control,
 and one module per domain modeled on the SRS's data requirements. See
