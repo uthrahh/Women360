@@ -92,7 +92,7 @@ export default function LoginPage() {
   return (
     <AuthLayout title="Welcome back" subtitle="Log in to see your latest health snapshot.">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Input label="Email" type="email" name="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <PasswordField label="Password" value={password} onChange={setPassword} error={error || undefined} required />
         <div className="flex justify-end -mt-1">
           <Link to="/forgot-password" className="text-xs font-medium text-maroon-700 dark:text-maroon-200">Forgot password?</Link>

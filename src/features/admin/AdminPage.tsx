@@ -19,6 +19,7 @@ export default function AdminPage() {
         <p className="text-[var(--w360-text-muted)] mt-1">Accounts, roles, content and the record of sensitive actions.</p>
       </div>
       <Tabs
+        urlParam="tab"
         tabs={[
           { id: "overview", label: "Overview", content: <OverviewTab /> },
           { id: "usage", label: "Usage", content: <UsageTab /> },

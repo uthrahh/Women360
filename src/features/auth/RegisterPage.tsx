@@ -44,9 +44,9 @@ export default function RegisterPage() {
   return (
     <AuthLayout title="Create your account" subtitle="Takes about two minutes.">
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <Input label="Full name" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} required />
-        <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} required />
-        <Input label="Date of birth" type="date" value={dob} onChange={(e) => setDob(e.target.value)} error={errors.dob} required />
+        <Input label="Full name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} required />
+        <Input label="Email" type="email" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} required />
+        <Input label="Date of birth" type="date" name="bday" autoComplete="bday" value={dob} onChange={(e) => setDob(e.target.value)} error={errors.dob} required />
         <PasswordField
           label="Password"
           value={password}

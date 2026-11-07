@@ -3,6 +3,7 @@ import { SUPPORT_EMAIL } from "@/config/site";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { analyticsEnabled } from "@/lib/analytics/ga";
 
 // Plain-language account of what the app actually does with data. Every
 // statement here is backed by the code or the hosting setup; anything that
@@ -66,9 +67,20 @@ export default function PrivacyPage() {
             your summary or writes a note, it is recorded in an audit log.
           </p>
           <p>
-            Women360 doesn't sell your data and doesn't show advertising. The site sets no cookies and uses no
-            third-party analytics or tracking tools. Your sign-in is kept in your browser's own storage on your device.
+            Women360 doesn't sell your data and doesn't show advertising. Your sign-in is kept in your browser's own storage on your device.
+            {analyticsEnabled()
+              ? " Inside your account the site sets no cookies and uses no third-party analytics or tracking tools."
+              : " The site sets no cookies and uses no third-party analytics or tracking tools."}
           </p>
+          {analyticsEnabled() && (
+            <p>
+              <span className="text-[var(--w360-text)] font-medium">Google Analytics, only if you say yes.</span> On the public pages (the home page, privacy,
+              terms and release notes) we ask whether you are happy for Google Analytics to count visits and which links are used. Nothing is loaded from Google, and
+              no Google cookie is set, until you accept. It is never used inside your account or on the sign-in pages, and it never receives anything you log, type or
+              copy, only how long a search or copied text was. Advertising features are off. Declining, or a browser that sends Do Not Track, means none of this
+              happens, and you can change your choice from the footer of the home page.
+            </p>
+          )}
           <p>
             Women360 does keep simple counts of its own so we can see which parts are used: how often each screen is
             opened and each action is done, and how many different people used the app on a day. A count never says who. It

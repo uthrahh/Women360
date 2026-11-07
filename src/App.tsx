@@ -7,6 +7,8 @@ import { ErrorBoundary, ForcedFailure } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { LoadingState, ErrorState } from "@/components/ui/states";
 import { isNativeApp } from "@/lib/platform";
+import { RouteFocus, SkipLink } from "@/components/RouteFocus";
+import { AnalyticsRoot } from "@/components/analytics/AnalyticsRoot";
 
 // Everything below is loaded when its route is opened, so the first visit downloads only the
 // shell that decides which screen to show: a visitor on the landing page never fetches the
@@ -23,6 +25,8 @@ const StaffShell = lazy(() => import("@/components/layout/StaffShell").then((m) 
 // phone app, which never shows the landing page) shouldn't download.
 const PrivacyPage = lazy(() => import("@/features/legal/PrivacyPage"));
 const TermsPage = lazy(() => import("@/features/legal/TermsPage"));
+const ReleaseNotesPage = lazy(() => import("@/features/legal/ReleaseNotesPage"));
+const AnalyticsReferencePage = lazy(() => import("@/features/legal/AnalyticsReferencePage"));
 const LandingPage = lazy(() => import("@/features/landing/LandingPage"));
 const DashboardPage = lazy(() => import("@/features/dashboard/DashboardPage"));
 const HealthPage = lazy(() => import("@/features/health/HealthPage"));
@@ -75,12 +79,17 @@ export default function App() {
       <FeaturesProvider>
       <ToastProvider>
         <BrowserRouter>
+          <SkipLink />
+          <RouteFocus />
+          <AnalyticsRoot />
           <ForcedFailure />
           <Suspense fallback={<LoadingState label="Loading" />}>
           <Routes>
             <Route path="/" element={<RootRoute />} />
             <Route path="/privacy" element={<Suspense fallback={<LoadingState label="Loading" />}><PrivacyPage /></Suspense>} />
             <Route path="/terms" element={<Suspense fallback={<LoadingState label="Loading" />}><TermsPage /></Suspense>} />
+            <Route path="/release-notes" element={<ReleaseNotesPage />} />
+            <Route path="/analytics-reference" element={<AnalyticsReferencePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />

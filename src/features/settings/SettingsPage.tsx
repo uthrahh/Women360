@@ -95,6 +95,7 @@ export default function SettingsPage() {
       <ProfileCard />
 
       <Tabs
+        urlParam="tab"
         defaultTab={["essentials", "emergency", "reminders", "security", "data", "feedback"].includes(params.get("tab") ?? "") ? params.get("tab")! : "profile"}
         tabs={[
           {
@@ -107,7 +108,7 @@ export default function SettingsPage() {
                   <Input label="Date of birth" type="date" value={dob ?? ""} onChange={(e) => setDob(e.target.value)} />
                   <div className="flex gap-2">
                     <Button size="sm" type="submit" disabled={savingProfile}>{savingProfile ? "Saving…" : "Save changes"}</Button>
-                    <Button size="sm" variant="danger" type="button" onClick={() => { auth.logout(); nav("/login"); }}>Log out</Button>
+                    <Button size="sm" variant="secondary" type="button" onClick={() => { auth.logout(); nav("/login"); }}>Log out</Button>
                   </div>
                 </form>
               </CardBody></Card>

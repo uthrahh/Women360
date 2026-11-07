@@ -7,6 +7,7 @@ import { buttonClasses } from "@/components/ui/Button";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { warmUpApi } from "@/services/apiClient";
 import { cn } from "@/lib/utils";
+import { AnalyticsChoicesLink } from "@/components/analytics/AnalyticsRoot";
 import { SUPPORT_EMAIL } from "@/config/site";
 
 // The public landing page. It has one job: help a woman see what Women360 does that a
@@ -334,7 +335,10 @@ export default function LandingPage() {
         <span className="mx-2">·</span>
         <Link to="/terms" className="underline underline-offset-2 hover:text-[var(--w360-text)]">Terms</Link>
         <span className="mx-2">·</span>
+        <Link to="/release-notes" className="underline underline-offset-2 hover:text-[var(--w360-text)]">Release notes</Link>
+        <span className="mx-2">·</span>
         <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2 hover:text-[var(--w360-text)]">Contact</a>
+        <AnalyticsChoicesLink />
         <span className="mx-2">·</span>
         <span>© 2026 · A wellness and tracking product, not a diagnostic service</span>
       </footer>

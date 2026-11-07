@@ -685,6 +685,7 @@ export default function CyclePage() {
       )}
 
       <Tabs
+        urlParam="tab"
         tabs={[
           { id: "overview", label: "Overview", content: <OverviewTab cycle={cycle} /> },
           { id: "calendar", label: "Calendar", content: <MonthCalendar onSelectDay={openLogModal} /> },

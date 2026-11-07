@@ -402,6 +402,7 @@ export default function HealthPage() {
       </div>
 
       <Tabs
+        urlParam="tab"
         defaultTab={params.get("tab") ?? "physical"}
         tabs={[
           {

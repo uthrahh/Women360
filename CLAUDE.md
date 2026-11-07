@@ -521,6 +521,20 @@ the duration out from the two days and times itself (`modules/sleep/duration.ts`
   was dropped: it also hid the hero until the library ran). Fonts are self-hosted variable fonts and preloaded; `vercel.json` caches `/assets/*`
   as immutable (hashed names), so a new dependency that is large belongs behind a dynamic import. Check with `npx vite build --sourcemap` and a
   per-package tally of the entry map before and after adding a dependency.
+- *Interaction rules (UX review pass).* `Toast`: errors stay 9 s (4 s for confirmations), pause under the pointer or focus, never stack a repeat, live region always
+  mounted. `Tabs`: real tab pattern (arrow keys, Home/End, roving tabindex, linked panels), fades at the edge when tabs overflow, and `urlParam="tab"` keeps the selected tab
+  in the address: pass it on any new tabbed screen. `Modal`: moves focus in, traps Tab, closes on Escape, locks page scroll, restores focus to the opener; every dialog uses it.
+  `SkipLink` + `RouteFocus` (`components/RouteFocus.tsx`): skip link is the first Tab stop; a change of screen scrolls to top and focuses `<main>` (not on query/hash-only changes);
+  keep exactly one `<main>` per screen. `html { scroll-padding-top }` keeps in-page anchors clear of the sticky header. Auth fields carry autocomplete hints. "Log out" is
+  neutral, not the danger style: red is only for destructive actions. `e2e/09-ux.spec.ts` locks all of this in.
+- *Release notes.* `/release-notes` renders `src/content/releaseNotes.ts` (newest first, grouped by month). Add an entry when a change reaches people; the format and house
+  rules are in `docs/RELEASE_NOTES.md` and enforced by `releaseNotes.test.ts`. Never describe something that is switched off or awaiting a key or a clinician.
+- *Google Analytics 4 (optional).* `src/lib/analytics/`: off unless `VITE_GA_MEASUREMENT_ID` is set; asks first (Google's script is not fetched before Accept; Do Not Track / GPC = no);
+  **public pages only** (`TRACKED_PATHS` in `events.ts`; never the signed-in app, because which health screens someone opens is itself health information) and Google's
+  `ga-disable` flag is set the moment a visit moves off them; no typed or copied content, only lengths; no email or query string in any value. `events.ts` is the single source of
+  truth for event names and parameters and generates `/analytics-reference` (with an on-page sandbox log that never sends). The security policy allows Google's script only on public
+  pages (`vercel.json`). The privacy page's analytics wording is conditional on `analyticsEnabled()`: if you change what is sent, change the page. Event names must pass
+  `isValidEventName` (GA4 rules; no reserved names such as `click`, `scroll`, `search`). The first-party anonymous counts above remain the measure of use inside the app.
 - *Android.* `android/` builds a signed release (`keystore.properties` or `ANDROID_*` variables; key kept outside git), API 36, backups
   off, manual `android.yml` workflow. It loads the live website. Not yet verified on a device or emulator.
 

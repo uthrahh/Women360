@@ -24,7 +24,7 @@ async function audit(page: Page) {
   expect(summary, "accessibility violations").toEqual([]);
 }
 
-const PUBLIC = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms"];
+const PUBLIC = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms", "/release-notes", "/analytics-reference"];
 const SIGNED_IN = ["/app/dashboard", "/app/cycle", "/app/activity", "/app/sleep", "/app/nutrition", "/app/habits", "/app/goals", "/app/health", "/app/wellbeing", "/app/insights", "/app/reports", "/app/messages", "/app/settings", "/app/settings?tab=reminders"];
 
 test.describe("public pages", () => {

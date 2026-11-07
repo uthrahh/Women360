@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
         </div>
       ) : (
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
-          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} error={error || undefined} required />
+          <Input label="Email" type="email" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} error={error || undefined} required />
           <Button type="submit" fullWidth disabled={loading}>{loading ? "Sending…" : "Send reset link"}</Button>
         </form>
       )}

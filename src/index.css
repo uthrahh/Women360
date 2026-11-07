@@ -68,6 +68,11 @@ body {
   border-radius: 4px;
 }
 
+/* In-page links (the landing page's "What it does", "Questions"...) land with the heading clear of the sticky header. */
+html { scroll-padding-top: 6.5rem; }
+/* The main region takes focus after a change of screen; it is not a control, so it gets no ring. */
+main:focus { outline: none; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
