@@ -1,5 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 
+// The subset of React Bits' AnimatedContent that Women360 keeps (see the comment in AnimatedContent.jsx).
 export interface AnimatedContentProps extends Omit<HTMLAttributes<HTMLDivElement>, "onAnimationStart"> {
   children?: ReactNode;
   container?: string | HTMLElement;
@@ -11,23 +12,12 @@ export interface AnimatedContentProps extends Omit<HTMLAttributes<HTMLDivElement
   initialOpacity?: number;
   animateOpacity?: boolean;
   scale?: number;
-  blur?: number;
-  rotate?: number;
-  tilt?: number;
-  wipe?: "none" | "up" | "down" | "left" | "right" | "center";
   threshold?: number;
   delay?: number;
   stagger?: number;
-  staggerFrom?: "start" | "end" | "center" | "edges" | "random";
   trigger?: "scroll" | "mount";
-  once?: boolean;
-  scrub?: boolean | number;
-  disappearAfter?: number;
-  disappearDuration?: number;
-  disappearEase?: string;
   onStart?: () => void;
   onComplete?: () => void;
-  onDisappearanceComplete?: () => void;
   className?: string;
   style?: CSSProperties;
 }

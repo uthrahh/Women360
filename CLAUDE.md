@@ -71,8 +71,9 @@ card. A section can be typography + spacing + a divider.
   etc.) with a real dark-mode block (`.dark`), not an inverted afterthought.
   Add new semantic tokens (success/warning/info) the same way rather than
   hard-coding raw Tailwind colors in components.
-- Type: display = Fraunces (serif, editorial), body/UI = Inter. Loaded via
-  Google Fonts `<link>` in `index.html`.
+- Type: display = Fraunces (serif, editorial), body/UI = Inter. Self-hosted
+  variable fonts from `@fontsource-variable/*`, imported in `main.tsx` (no Google request; do not add a Google Fonts
+  link back: the CSP and privacy page say fonts come from this site).
 - Radius/shadow scale is restrained (`sm`/`DEFAULT`/`md`/`lg`/`xl`,
   `shadow-subtle`/`shadow-card`) — keep it that way, don't add drop-shadow
   soup.
@@ -514,6 +515,12 @@ the duration out from the two days and times itself (`modules/sleep/duration.ts`
   exists for one day and is deleted with the hashes (`UsageSeen`, `UsageSalt`). Only signed-in women are counted (not staff, not demo
   accounts, not browsers sending Do Not Track / Global Privacy Control). Admin > Usage shows it; the demo administrator is refused. The
   privacy page describes it: if what is counted changes, change the page. Never add a user id, address or device to these tables.
+- *Load performance.* Keep the entry chunk small: every route (login, register, onboarding, both shells, every page) is a `lazy()`
+  import in `App.tsx`; do not import a page, the shells or `motion` statically from the entry path. The PDF library loads only when a report is
+  opened (`import()` in `ReportsPage`). The landing page uses a dependency-free `AnimatedContent` (IntersectionObserver + CSS, the GSAP original
+  was dropped: it also hid the hero until the library ran). Fonts are self-hosted variable fonts and preloaded; `vercel.json` caches `/assets/*`
+  as immutable (hashed names), so a new dependency that is large belongs behind a dynamic import. Check with `npx vite build --sourcemap` and a
+  per-package tally of the entry map before and after adding a dependency.
 - *Android.* `android/` builds a signed release (`keystore.properties` or `ANDROID_*` variables; key kept outside git), API 36, backups
   off, manual `android.yml` workflow. It loads the live website. Not yet verified on a device or emulator.
 

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { reportService } from "@/services/reportService";
-import { generateHealthReportPdf } from "@/lib/generateHealthReportPdf";
 import type { ReportRecord } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -45,6 +44,9 @@ export default function ReportsPage() {
   // downloads it, without a second, separate render path for each.
   async function buildPdf(r: ReportRecord) {
     const full = await reportService.getById(r.id);
+    // The PDF library is large and only needed now, when a report is opened: loading it here keeps it out
+    // of the Reports page itself, which is just a list until someone taps View or Download.
+    const { generateHealthReportPdf } = await import("@/lib/generateHealthReportPdf");
     return generateHealthReportPdf(full);
   }
 

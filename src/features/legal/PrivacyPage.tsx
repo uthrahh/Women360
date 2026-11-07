@@ -81,7 +81,7 @@ export default function PrivacyPage() {
         <Section title="Services that handle it for us">
           <p>
             The website is delivered by Vercel, the application server runs on Render, and the database is hosted by
-            Supabase. The fonts are loaded from Google Fonts, which means Google sees your IP address when a page loads. If you turn on reminders for when Women360 is closed, they travel through your browser's own notification service (Google for Chrome, Mozilla for Firefox, Apple for Safari). It sees that a notification was sent to your device, but the message is encrypted so it can't read it.
+            Supabase. The fonts are served from Women360 itself, so no font provider sees your visit. If you turn on reminders for when Women360 is closed, they travel through your browser's own notification service (Google for Chrome, Mozilla for Firefox, Apple for Safari). It sees that a notification was sent to your device, but the message is encrypted so it can't read it.
           </p>
         </Section>
 

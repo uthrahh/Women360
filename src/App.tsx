@@ -4,19 +4,22 @@ import { AppProvider, useApp } from "@/context/AppContext";
 import { ToastProvider } from "@/components/ui/Toast";
 import { FeaturesProvider } from "@/context/FeaturesContext";
 import { ErrorBoundary, ForcedFailure } from "@/components/ErrorBoundary";
-import { AppShell } from "@/components/layout/AppShell";
-import { StaffShell } from "@/components/layout/StaffShell";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
 import { LoadingState, ErrorState } from "@/components/ui/states";
 import { isNativeApp } from "@/lib/platform";
 
-import LoginPage from "@/features/auth/LoginPage";
-import RegisterPage from "@/features/auth/RegisterPage";
-import ForgotPasswordPage from "@/features/auth/ForgotPasswordPage";
-import ResetPasswordPage from "@/features/auth/ResetPasswordPage";
-import OnboardingPage from "@/features/onboarding/OnboardingPage";
+// Everything below is loaded when its route is opened, so the first visit downloads only the
+// shell that decides which screen to show: a visitor on the landing page never fetches the
+// signed-in app, its menus or its animation library, and someone signing in never fetches the landing page.
+const LoginPage = lazy(() => import("@/features/auth/LoginPage"));
+const RegisterPage = lazy(() => import("@/features/auth/RegisterPage"));
+const ForgotPasswordPage = lazy(() => import("@/features/auth/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("@/features/auth/ResetPasswordPage"));
+const OnboardingPage = lazy(() => import("@/features/onboarding/OnboardingPage"));
+const AppShell = lazy(() => import("@/components/layout/AppShell").then((m) => ({ default: m.AppShell })));
+const StaffShell = lazy(() => import("@/components/layout/StaffShell").then((m) => ({ default: m.StaffShell })));
 
-// Lazy: the landing page carries the WebGL hero, which the signed-in app (and the
+// Lazy: the landing page is only for visitors who aren't signed in, which the signed-in app (and the
 // phone app, which never shows the landing page) shouldn't download.
 const PrivacyPage = lazy(() => import("@/features/legal/PrivacyPage"));
 const TermsPage = lazy(() => import("@/features/legal/TermsPage"));
@@ -73,6 +76,7 @@ export default function App() {
       <ToastProvider>
         <BrowserRouter>
           <ForcedFailure />
+          <Suspense fallback={<LoadingState label="Loading" />}>
           <Routes>
             <Route path="/" element={<RootRoute />} />
             <Route path="/privacy" element={<Suspense fallback={<LoadingState label="Loading" />}><PrivacyPage /></Suspense>} />
@@ -157,6 +161,7 @@ export default function App() {
 
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </ToastProvider>
       </FeaturesProvider>

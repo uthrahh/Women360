@@ -44,8 +44,8 @@ export default {
         },
       },
       fontFamily: {
-        display: ["Fraunces", "ui-serif", "Georgia", "serif"],
-        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Fraunces Variable", "Fraunces", "ui-serif", "Georgia", "serif"],
+        sans: ["Inter Variable", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       borderRadius: {
         none: "0",
