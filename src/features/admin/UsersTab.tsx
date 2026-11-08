@@ -95,7 +95,7 @@ export function UsersTab({ readOnly, selfId }: { readOnly: boolean; selfId: stri
       {failed ? (
         <ErrorState title="Couldn't load accounts" onRetry={load} />
       ) : !data ? (
-        <LoadingState />
+        <LoadingState variant="rows" />
       ) : data.items.length === 0 ? (
         <EmptyState title="No accounts match" description="Try a different name, email or filter." />
       ) : (

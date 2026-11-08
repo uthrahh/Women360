@@ -53,6 +53,11 @@ export default function PrivacyPage() {
             removed if you delete your account.
           </p>
           <p>
+            <span className="text-[var(--w360-text)] font-medium">Save receipts:</span> when you save something, the app sends a one-time label with it, and we keep
+            that label and the answer we gave you for 24 hours, so a save that is repeated by a dropped connection or a double tap is not recorded twice. They are
+            then deleted, and sooner if you delete your account.
+          </p>
+          <p>
             <span className="text-[var(--w360-text)] font-medium">Security records:</span> sign-in successes and
             failures, with a shortened IP address and no email or password, kept for 90 days.
           </p>

@@ -9,6 +9,8 @@
   --w360-text: #171310;
   --w360-text-muted: #665A4E;
   --w360-border: #E2D9CF;
+  --w360-skeleton-base: #EDE6DD;
+  --w360-skeleton-shine: #F8F4EE;
   --w360-accent: #6B1D30;
   --w360-accent-strong: #521626;
   --w360-focus: #9A2C45;
@@ -35,6 +37,8 @@
   --w360-text: #F5EFE8;
   --w360-text-muted: #B8AA9C;
   --w360-border: #372E28;
+  --w360-skeleton-base: #2B241F;
+  --w360-skeleton-shine: #382F28;
   --w360-accent: #D0899A;
   --w360-accent-strong: #E6BFC9;
   --w360-focus: #D0899A;
@@ -73,7 +77,50 @@ html { scroll-padding-top: 6.5rem; }
 /* The main region takes focus after a change of screen; it is not a control, so it gets no ring. */
 main:focus { outline: none; }
 
+/* ---- Typography details ---- */
+/* Headings break into even lines instead of leaving one word alone on the last; body copy avoids a single-word last line. */
+h1, h2, h3 { text-wrap: balance; }
+p, li, dd { text-wrap: pretty; }
+/* Numbers that change or line up (times, counts, tables, number fields) use equal-width digits, so they don't jitter or misalign. */
+table, time, input[type="number"], input[inputmode="numeric"], input[inputmode="decimal"], .num { font-variant-numeric: tabular-nums; }
+
+/* ---- Safe areas ---- */
+/* Notches, rounded corners and the phone's gesture bar. The installed app can also supply the insets as variables. */
+:root {
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --safe-right: max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --safe-left: max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+}
+body { padding-left: var(--safe-left); padding-right: var(--safe-right); }
+
+/* ---- Continuous corners ---- */
+/* Browsers that support corner-shape draw rounded corners as smooth "squircles" (the curve doesn't start and stop abruptly),
+   as on phones' own app icons. Elsewhere nothing changes: ordinary rounded corners. */
+@supports (corner-shape: squircle) {
+  [class*="rounded"] { corner-shape: squircle; }
+}
+
+/* ---- Skeleton loading ---- */
+@keyframes w360-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.w360-skeleton {
+  background: linear-gradient(100deg, var(--w360-skeleton-base) 30%, var(--w360-skeleton-shine) 50%, var(--w360-skeleton-base) 70%);
+  background-size: 200% 100%;
+  animation: w360-shimmer 1.6s ease-in-out infinite;
+}
+
+/* ---- Moving between screens ---- */
+/* A short cross-fade instead of a cut, where the browser supports view transitions. Reduced motion turns it off below. */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 160ms; animation-timing-function: ease-out; }
+
+/* ---- Bottom sheets ---- */
+.w360-sheet { transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1); will-change: transform; }
+.w360-sheet[data-dragging="true"] { transition: none; }
+
 @media (prefers-reduced-motion: reduce) {
+  .w360-skeleton { animation: none; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  .w360-sheet { transition: none; }
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;

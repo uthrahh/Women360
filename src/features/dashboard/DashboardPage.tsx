@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback , useRef} from "react";
+import { useStaleState } from "@/lib/stale";
 import { Link, useNavigate } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
 import { SeniorTileGrid } from "@/components/layout/SeniorNav";
@@ -41,23 +42,33 @@ export default function DashboardPage() {
   return <StandardDashboard />;
 }
 
+// A stable "nothing yet" for the appointments list, so it is not mistaken for a changed value on every render.
+const EMPTY_APPOINTMENTS: Appointment[] = [];
+
 function StandardDashboard() {
   const { auth } = useApp();
   const nav = useNavigate();
-  const [cycle, setCycle] = useState<CycleSummary | null>(null);
-  const [showOvulation, setShowOvulation] = useState(false);
-  const [sleep, setSleep] = useState<SleepSummary | null>(null);
-  const [activity, setActivity] = useState<ActivitySummary | null>(null);
-  const [nutrition, setNutrition] = useState<NutritionSummary | null>(null);
-  const [appts, setAppts] = useState<Appointment[]>([]);
-  const [habits, setHabits] = useState<Habit[] | null>(null);
-  const [todayMood, setTodayMood] = useState<WellbeingEntry | null>(null);
-  const [moodLoaded, setMoodLoaded] = useState(false);
+  // Stale-while-revalidate: each part starts from what it showed last time (this session, this account), then refreshes.
+  const uid = auth.user?.id ?? null;
+  const k = (name: string) => (uid ? `dash:${uid}:${name}` : null);
+  const [cycle, setCycle] = useStaleState<CycleSummary | null>(k("cycle"), null);
+  const [showOvulation, setShowOvulation] = useStaleState(k("ovulation"), false);
+  const [sleep, setSleep] = useStaleState<SleepSummary | null>(k("sleep"), null);
+  const [activity, setActivity] = useStaleState<ActivitySummary | null>(k("activity"), null);
+  const [nutrition, setNutrition] = useStaleState<NutritionSummary | null>(k("nutrition"), null);
+  const [appts, setAppts] = useStaleState<Appointment[]>(k("appts"), EMPTY_APPOINTMENTS);
+  const [habits, setHabits] = useStaleState<Habit[] | null>(uid && `habits:${uid}`, null);
+  const [todayMood, setTodayMood] = useStaleState<WellbeingEntry | null>(k("mood"), null);
+  const [moodLoaded, setMoodLoaded] = useStaleState(k("moodLoaded"), false);
+  const hadData = useRef(Boolean(cycle && sleep && activity && nutrition && habits && moodLoaded));
 
   const [failed, setFailed] = useState(false);
   const load = useCallback(() => {
     setFailed(false);
-    const fail = () => setFailed(true);
+    // With the last view already on screen, a failed refresh doesn't replace it with an error.
+    const fail = () => {
+      if (!hadData.current) setFailed(true);
+    };
     cycleService.getSummary().then(setCycle).catch(fail);
     cycleService.getProfile().then((p) => setShowOvulation(Boolean(p.showOvulationOnHome))).catch(() => undefined);
     sleepService.getSummary().then(setSleep).catch(fail);
@@ -72,7 +83,7 @@ function StandardDashboard() {
         setMoodLoaded(true);
       })
       .catch(fail);
-  }, []);
+  }, [setCycle, setShowOvulation, setSleep, setActivity, setNutrition, setAppts, setHabits, setTodayMood, setMoodLoaded]);
   useEffect(load, [load]);
 
   const loaded = cycle && sleep && activity && nutrition && habits && moodLoaded;

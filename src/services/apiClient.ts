@@ -8,6 +8,8 @@
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000/api/v1";
 
+import { clearStaleCache } from "@/lib/stale";
+
 export class ApiError extends Error {
   constructor(message: string, public status = 500, public code?: string) {
     super(message);
@@ -31,6 +33,7 @@ export function setTokens(tokens: Tokens): void {
 }
 
 export function clearTokens(): void {
+  clearStaleCache();
   localStorage.removeItem(TOKENS_KEY);
 }
 
@@ -87,13 +90,32 @@ function getSharedRefresh(): Promise<string> {
   return refreshPromise;
 }
 
+/** A fresh random key (the server accepts 8-100 letters, digits, dashes and underscores). */
+function newIdempotencyKey(): string {
+  const c: Crypto = globalThis.crypto;
+  if (typeof c.randomUUID === "function") return c.randomUUID();
+  const bytes = new Uint8Array(16);
+  c.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Every POST that creates something carries an Idempotency-Key, one per call. The server remembers the answer under that key,
+ * so repeating the same call (see fetchRetrying below, or a refreshed sign-in re-sending it) can never create a second record.
+ * A caller may supply its own key to cover a retry it makes itself, such as a form re-submitted after an error.
+ */
+function withIdempotencyKey(path: string, init: RequestInit): RequestInit {
+  if ((init.method ?? "GET").toUpperCase() !== "POST" || /^\/(auth|usage|client-errors)(\/|$)/.test(path)) return init;
+  return { ...init, headers: { "Idempotency-Key": newIdempotencyKey(), ...(init.headers as Record<string, string> | undefined) } };
+}
+
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  return (await requestEnvelope<T>(path, init)).data as T;
+  return (await requestEnvelope<T>(path, withIdempotencyKey(path, init))).data as T;
 }
 
 /** For list endpoints that return pagination metadata beside the items. */
 export async function requestPage<T>(path: string, init: RequestInit = {}): Promise<{ items: T[]; meta: PageMeta }> {
-  const body = await requestEnvelope<T[]>(path, init);
+  const body = await requestEnvelope<T[]>(path, withIdempotencyKey(path, init));
   return { items: body.data ?? [], meta: body.meta ?? { page: 1, pageSize: body.data?.length ?? 0, total: body.data?.length ?? 0 } };
 }
 
@@ -126,9 +148,24 @@ async function timedFetch(url: string, init: RequestInit): Promise<Response> {
   }
 }
 
+/**
+ * fetch, with one more try for a POST that never got an answer (the connection dropped or the phone changed networks). That is only
+ * safe because of the Idempotency-Key: if the first attempt did reach the server, the retry gets its answer back instead of repeating it.
+ */
+async function fetchRetrying(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await timedFetch(url, init);
+  } catch (err) {
+    const keyed = Boolean((init.headers as Record<string, string> | undefined)?.["Idempotency-Key"]);
+    if (!(err instanceof TypeError) || !keyed) throw err;
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    return timedFetch(url, init);
+  }
+}
+
 async function requestEnvelope<T>(path: string, init: RequestInit = {}, isRetry = false): Promise<Envelope<T>> {
   const tokens = getTokens();
-  const res = await timedFetch(`${BASE_URL}${path}`, {
+  const res = await fetchRetrying(`${BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",

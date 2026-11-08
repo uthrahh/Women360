@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useTransitionNavigate } from "@/hooks/useTransitionNavigate";
 import BranchedMenu from "@/components/reactbits/BranchedMenu";
 import { menuTree, type NavItem } from "@/config/navigation";
 import { useFeatures } from "@/context/FeaturesContext";
@@ -23,7 +24,7 @@ const icon = (item: NavItem) => <item.icon size={16} strokeWidth={1.75} />;
  */
 export function AppMenu({ onNavigate }: { onNavigate?: () => void }) {
   const { pathname } = useLocation();
-  const nav = useNavigate();
+  const nav = useTransitionNavigate();
   const { clinicalContent } = useFeatures();
 
   const items = useMemo(

@@ -20,6 +20,8 @@ export default function LoginPage() {
   // Set once the password was right but a code is still needed.
   const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null);
   const [code, setCode] = useState("");
+  // The authenticator code is six digits (numeric keypad, submits itself); a backup code has letters, so it gets the full keyboard.
+  const [useBackup, setUseBackup] = useState(false);
   useEffect(warmUpApi, []);
 
   const finish = (user: User) => nav(roleHome(user));
@@ -43,36 +45,67 @@ export default function LoginPage() {
     }
   }
 
-  async function onSubmitCode(e: FormEvent) {
-    e.preventDefault();
+  async function verify(value: string) {
     setError("");
-    if (!code.trim()) {
-      setError("Enter the code from your authenticator app.");
+    if (!value.trim()) {
+      setError(useBackup ? "Enter one of your backup codes." : "Enter the code from your authenticator app.");
       return;
     }
     try {
-      finish(await auth.completeTwoFactor(challenge!, code));
+      finish(await auth.completeTwoFactor(challenge!, value));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't verify that code. Please try again.");
     }
   }
 
+  function onSubmitCode(e: FormEvent) {
+    e.preventDefault();
+    void verify(code);
+  }
+
+  // The six-digit code is complete the moment the sixth digit arrives, whether typed, pasted or filled in by the phone's own
+  // one-time-code suggestion, so there is nothing more to press.
+  function onCodeChange(value: string) {
+    setCode(value);
+    if (!useBackup && /^\d{6}$/.test(value.trim()) && !auth.loading) void verify(value.trim());
+  }
+
   if (challenge) {
     return (
       <AuthLayout title="Enter your code" subtitle="Open your authenticator app and type the 6-digit code for Women360.">
-        <form onSubmit={onSubmitCode} className="flex flex-col gap-4">
+        {/* A different key makes this a new form, so its field is created fresh and takes focus (React would otherwise reuse the email field). */}
+        <form key="two-factor" onSubmit={onSubmitCode} className="flex flex-col gap-4">
           <Input
-            label="Authentication code"
+            label={useBackup ? "Backup code" : "Authentication code"}
+            name="otp"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) => onCodeChange(e.target.value)}
             error={error || undefined}
-            hint="Lost your phone? Use one of your backup codes instead." hintAlways
-            inputMode="text"
+            hint={useBackup ? "Each backup code works once." : undefined}
+            hintAlways
+            inputMode={useBackup ? "text" : "numeric"}
+            pattern={useBackup ? undefined : "[0-9]*"}
+            maxLength={useBackup ? 20 : 6}
             autoComplete="one-time-code"
+            enterKeyHint="go"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             autoFocus
             required
           />
           <Button type="submit" fullWidth disabled={auth.loading}>{auth.loading ? "Checking…" : "Verify and log in"}</Button>
+          <button
+            type="button"
+            onClick={() => {
+              setUseBackup((v) => !v);
+              setCode("");
+              setError("");
+            }}
+            className="text-sm font-medium text-maroon-700 dark:text-maroon-200"
+          >
+            {useBackup ? "Use my authenticator app instead" : "Lost your phone? Use a backup code"}
+          </button>
           <button
             type="button"
             onClick={() => {

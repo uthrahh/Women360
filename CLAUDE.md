@@ -527,6 +527,20 @@ the duration out from the two days and times itself (`modules/sleep/duration.ts`
   `SkipLink` + `RouteFocus` (`components/RouteFocus.tsx`): skip link is the first Tab stop; a change of screen scrolls to top and focuses `<main>` (not on query/hash-only changes);
   keep exactly one `<main>` per screen. `html { scroll-padding-top }` keeps in-page anchors clear of the sticky header. Auth fields carry autocomplete hints. "Log out" is
   neutral, not the danger style: red is only for destructive actions. `e2e/09-ux.spec.ts` locks all of this in.
+- *Interaction craft (second UX pass).* Loading shows a skeleton of the screen (`ui/Skeleton.tsx`; `LoadingState` takes `variant="page" | "rows" | "spinner"`: pick rows inside tabs and
+  cards), with the words kept for screen readers. One-tap actions are optimistic with rollback and, where a slip is likely, an Undo toast (`toast.show(msg, { action })`): see `HabitsPage.tap`.
+  Screens she returns to (Dashboard, Habits, Goals) use `useStaleState` (`lib/stale.ts`): last data first, refresh behind it, a failed refresh keeps the old data. **Memory only, never
+  localStorage** (health data), 10-minute limit, keyed by account, cleared by `clearTokens()`. `CommandMenu` (Ctrl/Cmd+K or ?) and G-then-letter shortcuts are defined once in `lib/shortcuts.ts`
+  (the menu draws its hints from the same list); single-letter shortcuts never fire while typing. Navigation that should cross-fade uses `useTransitionNavigate` (BrowserRouter ignores
+  React Router's own `viewTransition` option). `Modal` is a bottom sheet on phones: pull down to dismiss (pointer capture, interruptible), and it owns a history entry so Back (and Android's
+  predictive back, `enableOnBackInvokedCallback`) closes it. Safe-area insets come from `--safe-*` variables (`viewport-fit=cover`); fixed bars must use them. Headings use
+  `text-wrap: balance`, numbers that line up use tabular figures, and rounded corners become continuous where `corner-shape` exists. `index.html` asks Chromium browsers to pre-render only /login
+  and /register (Speculation Rules; the CSP allows exactly that one inline script type): never add pages that count or send anything on load. Not built because the app has no
+  photos or hover submenus: blurred image placeholders and the "safe triangle". `e2e/12-ui.spec.ts` covers all of it.
+- *Idempotency keys.* Every client POST except auth, usage and client-errors sends `Idempotency-Key`; `server/src/middleware/idempotency.ts` runs the first request, stores its successful
+  answer (before sending it) for 24 hours, and replays it for a repeat; a reused key with a different body is 422, a repeat while running is 409, failures are never stored. Rows are per
+  account, cascade on account deletion, swept daily, and disclosed on the privacy page ("Save receipts"). `apiClient.fetchRetrying` retries a POST once after a dropped connection with
+  the same key, which is only safe because of this. Double-tap protection for forms still rests on disabled-while-saving buttons: two taps are two keys.
 - *Release notes.* `/release-notes` renders `src/content/releaseNotes.ts` (newest first, grouped by month). Add an entry when a change reaches people; the format and house
   rules are in `docs/RELEASE_NOTES.md` and enforced by `releaseNotes.test.ts`. Never describe something that is switched off or awaiting a key or a clinician.
 - *Google Analytics 4 (optional).* `src/lib/analytics/`: off unless `VITE_GA_MEASUREMENT_ID` is set; asks first (Google's script is not fetched before Accept; Do Not Track / GPC = no);

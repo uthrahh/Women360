@@ -1,4 +1,6 @@
-import { useEffect, useState, type FormEvent, useCallback } from "react";
+import { useEffect, useState, type FormEvent, useCallback , useRef} from "react";
+import { useApp } from "@/context/AppContext";
+import { useStaleState } from "@/lib/stale";
 import { goalService } from "@/services/goalService";
 import { goalProgress, localDateISO, to12Hour, to24Hour, type GoalInput } from "@/services/mappers";
 import type { Goal, GoalKind } from "@/types";
@@ -87,7 +89,10 @@ function dueText(goal: Goal): string | null {
 }
 
 export default function GoalsPage() {
-  const [goals, setGoals] = useState<Goal[] | null>(null);
+  const { auth } = useApp();
+  const uid = auth.user?.id ?? null;
+  const [goals, setGoals] = useStaleState<Goal[] | null>(uid && `goals:${uid}`, null);
+  const hadData = useRef(goals !== null);
   const [editingGoal, setEditingGoal] = useState<Goal | "new" | null>(null);
   const [form, setForm] = useState<GoalForm>(emptyForm());
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -100,8 +105,10 @@ export default function GoalsPage() {
   const [failed, setFailed] = useState(false);
   const load = useCallback(() => {
     setFailed(false);
-    goalService.list().then(setGoals).catch(() => setFailed(true));
-  }, []);
+    goalService.list().then(setGoals).catch(() => {
+      if (!hadData.current) setFailed(true);
+    });
+  }, [setGoals]);
   useEffect(load, [load]);
 
   if (failed) return <ErrorState title="Couldn't load your goals" description="Check your connection and try again." onRetry={load} />;

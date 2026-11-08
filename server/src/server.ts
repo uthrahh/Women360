@@ -8,6 +8,7 @@ import { purgeStaleThrottles } from "@/lib/security/throttle";
 import { purgeOldPushRecords, scheduledTick } from "@/modules/push/dispatch";
 import { sendPush } from "@/modules/push/sender";
 import { rollUp } from "@/modules/usage/usage.service";
+import { purgeOldIdempotencyKeys } from "@/middleware/idempotency";
 
 const app = createApp();
 
@@ -20,8 +21,8 @@ const server = app.listen(env.PORT, () => {
 // start and then daily. A failed sweep is logged, never fatal.
 async function sweep() {
   try {
-    const [events, throttles, pushRecords] = await Promise.all([purgeOldSecurityEvents(), purgeStaleThrottles(), purgeOldPushRecords()]);
-    if (events + throttles + pushRecords > 0) logger.info({ events, throttles, pushRecords }, "Purged expired security data");
+    const [events, throttles, pushRecords, keys] = await Promise.all([purgeOldSecurityEvents(), purgeStaleThrottles(), purgeOldPushRecords(), purgeOldIdempotencyKeys()]);
+    if (events + throttles + pushRecords + keys > 0) logger.info({ events, throttles, pushRecords, keys }, "Purged expired security data");
   } catch (err) {
     logger.error({ err }, "Security data sweep failed");
   }

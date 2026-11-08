@@ -112,6 +112,7 @@ model User {
   feedback               Feedback[]
   pushSubscriptions      PushSubscription[]
   pushSent               PushSent[]
+  idempotencyKeys        IdempotencyKey[]
   appointments           Appointment[]
   medications            Medication[]
   medicationLogs         MedicationLog[]
@@ -908,4 +909,27 @@ model BackupReport {
   createdAt DateTime @default(now())
   tables    Int
   rows      Int
+}
+
+// ---------------------------------------------------------------------------
+// Idempotency keys
+// ---------------------------------------------------------------------------
+
+// A client may send an Idempotency-Key header with a POST. The first request with that key runs and its successful answer is
+// remembered here for a day; the same key again (a retry after a dropped connection, a double submit) gets that same answer back
+// instead of creating a second record. Holds the answer the client already received (not other people's data), per account.
+model IdempotencyKey {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key         String
+  requestHash String
+  // "PROCESSING" while the first request is still running, "DONE" once its answer is stored.
+  state       String
+  status      Int?
+  response    Json?
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, key])
+  @@index([createdAt])
 }

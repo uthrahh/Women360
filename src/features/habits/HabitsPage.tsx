@@ -1,4 +1,6 @@
-import { useEffect, useState, type FormEvent, useCallback } from "react";
+import { useEffect, useState, type FormEvent, useCallback , useRef} from "react";
+import { useApp } from "@/context/AppContext";
+import { useStaleState } from "@/lib/stale";
 import { Pencil, Plus, Check, X } from "lucide-react";
 import clsx from "clsx";
 import { habitService, type HabitInput } from "@/services/habitService";
@@ -103,7 +105,11 @@ function Segmented<T extends string>({
 }
 
 export default function HabitsPage() {
-  const [habits, setHabits] = useState<Habit[] | null>(null);
+  const { auth } = useApp();
+  const uid = auth.user?.id ?? null;
+  // Stale-while-revalidate: coming back shows the last list at once; the fresh one swaps in.
+  const [habits, setHabits] = useStaleState<Habit[] | null>(uid && `habits:${uid}`, null);
+  const hadData = useRef(habits !== null);
   const [editing, setEditing] = useState<Habit | "new" | null>(null);
   const [form, setForm] = useState<HabitForm>(emptyForm());
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -120,9 +126,12 @@ export default function HabitsPage() {
   const [failed, setFailed] = useState(false);
   const load = useCallback(() => {
     setFailed(false);
-    habitService.list().then(setHabits).catch(() => setFailed(true));
+    habitService.list().then(setHabits).catch(() => {
+      // With the last list already on screen, a failed refresh is not worth replacing it with an error.
+      if (!hadData.current) setFailed(true);
+    });
     activityService.catalog().then(setCatalog).catch(() => setCatalog(null));
-  }, []);
+  }, [setHabits]);
   useEffect(load, [load]);
 
   if (failed) return <ErrorState title="Couldn't load your habits" description="Check your connection and try again." onRetry={load} />;
@@ -157,10 +166,16 @@ export default function HabitsPage() {
     }
   }
 
+  // Optimistic: the screen changes the moment she taps, the server catches up, and if it can't, the screen goes back and says so.
+  // Ticking offers Undo, so a stray tap costs one more tap.
   async function tap(h: Habit, done: boolean) {
+    replace({ ...h, doneToday: done, amountToday: done ? h.target : undefined });
     try {
-      replace(await (done ? habitService.log(h.id) : habitService.unlog(h.id)));
+      const saved = await (done ? habitService.log(h.id) : habitService.unlog(h.id));
+      replace(saved);
+      if (done) toast.show(`Done: ${saved.title}`, { action: { label: "Undo", onClick: () => void tap(saved, false) } });
     } catch (err) {
+      replace(h);
       setHeartEpoch((n) => n + 1);
       fail(err, "Couldn't save that. Please try again.");
     }
@@ -168,9 +183,12 @@ export default function HabitsPage() {
 
   // One tap adds a sensible chunk toward today's target (the exact amount can still be typed).
   async function addAmount(h: Habit, step: number) {
+    const next = (h.amountToday ?? 0) + step;
+    replace({ ...h, amountToday: next, doneToday: h.target ? next >= h.target : h.doneToday });
     try {
-      replace(await habitService.log(h.id, (h.amountToday ?? 0) + step));
+      replace(await habitService.log(h.id, next));
     } catch (err) {
+      replace(h);
       fail(err, "Couldn't save that. Please try again.");
     }
   }
@@ -179,9 +197,12 @@ export default function HabitsPage() {
   async function toggleDay(h: Habit, daysAgo: number, done: boolean) {
     const d = new Date();
     d.setDate(d.getDate() - daysAgo);
+    // The dot flips at once (the last seven days, oldest first, so today is index 6).
+    replace({ ...h, last7: h.last7.map((v, i) => (i === 6 - daysAgo ? !done : v)) });
     try {
       replace(await habitService.logOn(h.id, localDateISO(d), !done));
     } catch (err) {
+      replace(h);
       fail(err, "Couldn't save that. Please try again.");
     }
   }

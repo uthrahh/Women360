@@ -27,7 +27,7 @@ export function OverviewTab() {
   useEffect(load, []);
 
   if (failed) return <ErrorState title="Couldn't load the overview" onRetry={load} />;
-  if (!data) return <LoadingState />;
+  if (!data) return <LoadingState variant="rows" />;
 
   return (
     <div className="flex flex-col gap-5">

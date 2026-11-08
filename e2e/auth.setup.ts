@@ -9,6 +9,8 @@ import fs from "node:fs";
 const API = "http://localhost:4000/api/v1";
 
 setup("create a fresh account and sign in", async ({ page, request }) => {
+  // The first visit to a screen in a freshly started development server waits while Vite compiles it, which can take a minute.
+  setup.setTimeout(150_000);
   const email = `e2e.${Date.now()}.${Math.random().toString(36).slice(2, 8)}@example.com`;
   const password = `${crypto.randomBytes(9).toString("base64url")}-Aa9!`;
   const res = await request.post(`${API}/auth/register`, { data: { name: "Ruth Tester", email, password } });

@@ -80,7 +80,7 @@ export function ReproductiveHealthTab() {
   }
 
   if (failed) return <ErrorState title="Couldn't load this" onRetry={load} />;
-  if (!loaded) return <LoadingState />;
+  if (!loaded) return <LoadingState variant="rows" />;
 
   return (
     <Card>

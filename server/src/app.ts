@@ -8,6 +8,7 @@ import { errorHandler } from "@/middleware/errorHandler";
 import { notFoundHandler } from "@/middleware/notFound";
 import { router } from "@/modules/router";
 import { trackUsage } from "@/modules/usage/usage.middleware";
+import { idempotency } from "@/middleware/idempotency";
 import { prisma } from "@/lib/prisma";
 import { alertAdmin } from "@/lib/alerts";
 
@@ -50,7 +51,7 @@ export function createApp() {
     }
   });
 
-  app.use("/api/v1", router);
+  app.use("/api/v1", idempotency, router);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

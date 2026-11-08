@@ -53,7 +53,7 @@ function RootRoute() {
   const { auth } = useApp();
   if (!isNativeApp())
     return (
-      <Suspense fallback={<LoadingState label="Loading" />}>
+      <Suspense fallback={<PageLoading />}>
         <LandingPage />
       </Suspense>
     );
@@ -72,6 +72,15 @@ function RootRoute() {
   return <Navigate to="/app/dashboard" replace />;
 }
 
+// What a whole page shows while its code arrives, outside the signed-in layouts (which supply their own padding).
+function PageLoading() {
+  return (
+    <div className="px-6 py-8 max-w-3xl mx-auto">
+      <LoadingState label="Loading" />
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -83,11 +92,11 @@ export default function App() {
           <RouteFocus />
           <AnalyticsRoot />
           <ForcedFailure />
-          <Suspense fallback={<LoadingState label="Loading" />}>
+          <Suspense fallback={<PageLoading />}>
           <Routes>
             <Route path="/" element={<RootRoute />} />
-            <Route path="/privacy" element={<Suspense fallback={<LoadingState label="Loading" />}><PrivacyPage /></Suspense>} />
-            <Route path="/terms" element={<Suspense fallback={<LoadingState label="Loading" />}><TermsPage /></Suspense>} />
+            <Route path="/privacy" element={<Suspense fallback={<PageLoading />}><PrivacyPage /></Suspense>} />
+            <Route path="/terms" element={<Suspense fallback={<PageLoading />}><TermsPage /></Suspense>} />
             <Route path="/release-notes" element={<ReleaseNotesPage />} />
             <Route path="/analytics-reference" element={<AnalyticsReferencePage />} />
             <Route path="/login" element={<LoginPage />} />

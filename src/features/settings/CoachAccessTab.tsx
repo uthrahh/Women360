@@ -68,7 +68,7 @@ export function CoachAccessTab() {
   }
 
   if (failed) return <ErrorState title="Couldn't load your sharing settings" onRetry={load} />;
-  if (!coaches) return <LoadingState />;
+  if (!coaches) return <LoadingState variant="rows" />;
 
   return (
     <div className="flex flex-col gap-5">

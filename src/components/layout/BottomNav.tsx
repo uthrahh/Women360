@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useTransitionNavigate } from "@/hooks/useTransitionNavigate";
 import GooeyNav from "@/components/reactbits/GooeyNav";
 import { mobileBottomNav } from "@/config/navigation";
 import { useBrandColors } from "@/hooks/useBrandColors";
@@ -34,14 +35,14 @@ function useNarrow() {
 // The surface is near-opaque; it separates from the content, it isn't decorative glass.
 export function BottomNav() {
   const { pathname } = useLocation();
-  const nav = useNavigate();
+  const nav = useTransitionNavigate();
   const brand = useBrandColors();
   const narrow = useNarrow();
   if (!narrow) return null;
 
   return (
     <nav
-      className="lg:hidden fixed left-3 right-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 p-1.5 rounded-full border border-[var(--w360-border)] bg-[var(--w360-nav-surface)] backdrop-blur-md shadow-float"
+      className="lg:hidden fixed left-3 right-3 bottom-[calc(0.75rem+var(--safe-bottom))] z-40 p-1.5 rounded-full border border-[var(--w360-border)] bg-[var(--w360-nav-surface)] backdrop-blur-md shadow-float"
       aria-label="Primary"
     >
       <GooeyNav

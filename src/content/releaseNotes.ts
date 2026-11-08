@@ -22,6 +22,13 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     date: "2026-11-08",
+    headline: "Quicker, calmer taps and a jump-anywhere menu",
+    details:
+      "Ticking a habit now responds the instant you tap, with an Undo if it was a slip, and screens you have just visited show their last view while fresh data loads. Press Ctrl+K (or ?) to jump to any screen or action, and G then a letter to go straight to one. Sheets on a phone can be pulled down to dismiss, and the Back button closes them instead of leaving the screen.",
+    area: "Design",
+  },
+  {
+    date: "2026-11-08",
     headline: "Clearer messages, tabs and dialogs",
     details:
       "Error messages now stay long enough to read, and the same message no longer stacks up. Tabs work with the arrow keys, fade at the edge when more are hidden on a phone, and remember which one you were on after a reload. Dialogs keep the keyboard inside them, and a skip link lets you jump straight to the page.",

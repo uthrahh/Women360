@@ -1,4 +1,6 @@
-import { Bell, Menu, Moon, Sun, UserCircle2 } from "lucide-react";
+import { Search, Bell, Menu, Moon, Sun, UserCircle2 } from "lucide-react";
+import { Kbd } from "@/components/ui/Kbd";
+import { OPEN_COMMAND_MENU_EVENT, modKeyLabel } from "@/lib/shortcuts";
 import { HelpButton } from "@/components/HelpButton";
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -55,7 +57,7 @@ export function TopBar() {
   );
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-2 sm:gap-3 px-4 sm:px-6 h-16 bg-[var(--w360-bg)]/90 backdrop-blur">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-2 sm:gap-3 px-4 sm:px-6 h-[calc(4rem+var(--safe-top))] pt-[var(--safe-top)] bg-[var(--w360-bg)]/90 backdrop-blur">
       <div className="flex items-center gap-1 shrink-0">
         <button
           onClick={() => setMenuOpen(true)}
@@ -86,6 +88,17 @@ export function TopBar() {
           />
           <span className="sm:hidden">Senior</span>
           <span className="hidden sm:inline">Senior Mode</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_MENU_EVENT))}
+          aria-label="Quick jump: find a screen or an action"
+          aria-keyshortcuts="Control+K Meta+K"
+          className="hidden sm:flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-full border border-[var(--w360-border)] text-xs text-[var(--w360-text-muted)] hover:text-[var(--w360-text)]"
+        >
+          <Search size={14} aria-hidden />
+          <span>Jump to</span>
+          <span aria-hidden className="flex gap-0.5"><Kbd>{modKeyLabel()}</Kbd><Kbd>K</Kbd></span>
         </button>
         <HelpButton className="p-1.5 sm:p-2 rounded" />
         <button

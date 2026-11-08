@@ -50,7 +50,7 @@ function ConsentBanner({ path }: { path: string }) {
   return (
     <section
       aria-label="Analytics choice"
-      className="fixed inset-x-4 bottom-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md z-[70] rounded-lg border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] shadow-card p-4 text-sm"
+      className="fixed inset-x-4 bottom-[calc(1rem+var(--safe-bottom))] sm:left-auto sm:right-6 sm:bottom-[calc(1.5rem+var(--safe-bottom))] sm:max-w-md z-[70] rounded-lg border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] shadow-card p-4 text-sm"
     >
       <p className="font-medium">Help us see what is useful?</p>
       <p className="mt-1.5 text-[var(--w360-text-muted)] leading-relaxed">

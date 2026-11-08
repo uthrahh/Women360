@@ -39,7 +39,7 @@ export function AuditTab() {
       {failed ? (
         <ErrorState title="Couldn't load the audit log" onRetry={load} />
       ) : !data ? (
-        <LoadingState />
+        <LoadingState variant="rows" />
       ) : data.items.length === 0 ? (
         <EmptyState title="Nothing recorded" description="No events match this filter yet." />
       ) : (

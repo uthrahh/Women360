@@ -187,7 +187,7 @@ export function PreventiveCare() {
   }
 
   if (failed) return <ErrorState title="Couldn't load your check-ups" onRetry={load} />;
-  if (!plan) return <LoadingState />;
+  if (!plan) return <LoadingState variant="rows" />;
 
   const items = [...plan.items].sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status));
 

@@ -86,7 +86,7 @@ export function ContentTab({ readOnly }: { readOnly: boolean }) {
   }
 
   if (failed) return <ErrorState title="Couldn't load the articles" onRetry={load} />;
-  if (!items) return <LoadingState />;
+  if (!items) return <LoadingState variant="rows" />;
 
   return (
     <div className="flex flex-col gap-4">

@@ -61,7 +61,7 @@ export function UsageTab() {
   useEffect(load, [load]);
 
   if (failed) return <ErrorState title="Couldn't load usage" description={failed} onRetry={load} />;
-  if (!data) return <LoadingState />;
+  if (!data) return <LoadingState variant="rows" />;
 
   const busiest = Math.max(1, ...data.daily.map((d) => d.active));
   const totalSignups = data.daily.reduce((n, d) => n + d.signups, 0);

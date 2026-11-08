@@ -18,7 +18,7 @@ export function AdminFeedbackTab() {
   useEffect(load, [load]);
 
   if (failed) return <ErrorState title="Couldn't load feedback" onRetry={load} />;
-  if (!data) return <LoadingState />;
+  if (!data) return <LoadingState variant="rows" />;
   if (data.items.length === 0) return <EmptyState title="No feedback yet" description="Ratings and comments from the Settings feedback tab appear here." />;
 
   return (

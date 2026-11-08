@@ -85,7 +85,7 @@ export function PlanWizard({ open, onClose, onStarted }: { open: boolean; onClos
       {failed ? (
         <p className="text-sm text-[var(--w360-text-muted)]">We couldn't load this just now. Close it and try again.</p>
       ) : !options || !form ? (
-        <LoadingState label="Looking at your activity" />
+        <LoadingState label="Looking at your activity" variant="spinner" />
       ) : plan ? (
         <ResultStep plan={plan} busy={busy} onBack={() => setPlan(null)} onStart={startIt} />
       ) : (
