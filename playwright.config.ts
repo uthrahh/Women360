@@ -56,7 +56,7 @@ export default defineConfig({
       timeout: 120_000,
       // A made-up Measurement ID switches the analytics code on so it can be tested. Google's script is never really
       // fetched: the tests answer that request themselves. (If a dev server is already running it is reused as it is.)
-      env: { VITE_GA_MEASUREMENT_ID: "G-E2ETEST01" },
+      env: { VITE_GA_MEASUREMENT_ID: "G-E2ETEST01", VITE_LIFE_FILM: "on" },
     },
   ],
 });

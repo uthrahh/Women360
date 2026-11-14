@@ -8,6 +8,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { warmUpApi } from "@/services/apiClient";
 import { cn } from "@/lib/utils";
 import { AnalyticsChoicesLink } from "@/components/analytics/AnalyticsRoot";
+import { LifeFilm } from "./LifeFilm";
 import { SUPPORT_EMAIL } from "@/config/site";
 
 // The public landing page. It has one job: help a woman see what Women360 does that a
@@ -243,6 +244,9 @@ export default function LandingPage() {
             </AnimatedContent>
           </div>
         </section>
+
+        {/* A lifetime in bloom: the scroll film. Absent unless switched on and its files exist (docs/LIFE_FILM.md). */}
+        <LifeFilm />
 
         {/* What it does */}
         <section id="what" className="px-4 py-20 border-t border-[var(--w360-border)]">

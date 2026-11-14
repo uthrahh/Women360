@@ -541,6 +541,12 @@ the duration out from the two days and times itself (`modules/sleep/duration.ts`
   answer (before sending it) for 24 hours, and replays it for a repeat; a reused key with a different body is 422, a repeat while running is 409, failures are never stored. Rows are per
   account, cascade on account deletion, swept daily, and disclosed on the privacy page ("Save receipts"). `apiClient.fetchRetrying` retries a POST once after a dropped connection with
   the same key, which is only safe because of this. Double-tap protection for forms still rests on disabled-while-saving buttons: two taps are two keys.
+- *Landing film ("A Lifetime in Bloom").* A scroll-driven film under the hero: `features/landing/LifeFilm.tsx`, data in `content/lifeFilm.ts`, maths in
+  `lib/filmScrub.ts`, production brief in `docs/LIFE_FILM.md`. **The footage does not exist yet** (no video tool was available; nothing stands in for it). The section
+  renders only with `VITE_LIFE_FILM=on` and the files in `public/film/`; missing files make it remove itself. Pinning is CSS `sticky` (never scroll-jacking); the rAF loop eases
+  the clock towards the scroll position and stops when it arrives; nothing loads before the page's own `load` event and idle, then only within half a screen. Reduced motion
+  and data saver get a still version with no video. `SCENES` must stay whole frames at 24 fps and match the real edit. Do not add GSAP for it (it was removed for load speed).
+  `e2e/13-film.spec.ts` runs on synthetic test clips (`e2e/fixtures/film/`, test-only) and on the real footage with `FILM_DIR=public/film`.
 - *Release notes.* `/release-notes` renders `src/content/releaseNotes.ts` (newest first, grouped by month). Add an entry when a change reaches people; the format and house
   rules are in `docs/RELEASE_NOTES.md` and enforced by `releaseNotes.test.ts`. Never describe something that is switched off or awaiting a key or a clinician.
 - *Google Analytics 4 (optional).* `src/lib/analytics/`: off unless `VITE_GA_MEASUREMENT_ID` is set; asks first (Google's script is not fetched before Accept; Do Not Track / GPC = no);

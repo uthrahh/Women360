@@ -101,6 +101,16 @@ body { padding-left: var(--safe-left); padding-right: var(--safe-right); }
   [class*="rounded"] { corner-shape: squircle; }
 }
 
+/* ---- The scroll film ---- */
+/* The section is as tall as the film's scroll length; the screen inside it stays pinned (sticky), never taking the scroll bar over.
+   The screen is as tall as the visible window, so it does not jump as a phone's address bar comes and goes. */
+.film-section { height: calc(var(--film-len, 2.2) * 100vh); }
+.film-pin { height: 100vh; }
+@supports (height: 100svh) {
+  .film-section { height: calc(var(--film-len, 2.2) * 100svh); }
+  .film-pin { height: 100svh; }
+}
+
 /* ---- Skeleton loading ---- */
 @keyframes w360-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 .w360-skeleton {
