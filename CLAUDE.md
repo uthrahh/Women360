@@ -460,7 +460,8 @@ closing call to action. It leads with prevention because that is what a plain tr
 line must describe something the app does today (the check-up and pattern features are marked as not yet
 reviewed by a clinician, and the FAQ says so); no testimonials, user counts, ratings, "free" or any pricing
 claim (no business model is decided); the phone is an illustration and says "No real data is shown"; no drifting
-blobs, tilted cards or extra illustrated sections, and add a section only by removing one. The old life-stage tabs,
+blobs, tilted cards or extra illustrated sections (the one illustrated layer is the hand-drawn background, see "Landing
+background" below), and add a section only by removing one. The old life-stage tabs,
 "small moments" scroller, example notes and their animation CSS were removed.
 
 **The signed-in home screen is calm by default, and sleep records the real span (latest pass):** the dashboard
@@ -541,12 +542,15 @@ the duration out from the two days and times itself (`modules/sleep/duration.ts`
   answer (before sending it) for 24 hours, and replays it for a repeat; a reused key with a different body is 422, a repeat while running is 409, failures are never stored. Rows are per
   account, cascade on account deletion, swept daily, and disclosed on the privacy page ("Save receipts"). `apiClient.fetchRetrying` retries a POST once after a dropped connection with
   the same key, which is only safe because of this. Double-tap protection for forms still rests on disabled-while-saving buttons: two taps are two keys.
-- *Landing film ("A Lifetime in Bloom").* A scroll-driven film under the hero: `features/landing/LifeFilm.tsx`, data in `content/lifeFilm.ts`, maths in
-  `lib/filmScrub.ts`, production brief in `docs/LIFE_FILM.md`. **The footage does not exist yet** (no video tool was available; nothing stands in for it). The section
-  renders only with `VITE_LIFE_FILM=on` and the files in `public/film/`; missing files make it remove itself. Pinning is CSS `sticky` (never scroll-jacking); the rAF loop eases
-  the clock towards the scroll position and stops when it arrives; nothing loads before the page's own `load` event and idle, then only within half a screen. Reduced motion
-  and data saver get a still version with no video. `SCENES` must stay whole frames at 24 fps and match the real edit. Do not add GSAP for it (it was removed for load speed).
-  `e2e/13-film.spec.ts` runs on synthetic test clips (`e2e/fixtures/film/`, test-only) and on the real footage with `FILM_DIR=public/film`.
+- *Landing background ("A lifetime in bloom").* The owner asked for a video-like animation behind the whole landing page, as hand-drawn illustration rather than
+  footage; it replaced the earlier footage-based scroll film (removed with its env flag, brief and fixtures). `features/landing/scenes/`: `art.tsx` holds six scenes drawn
+  from the owner's five reference films (opening burgundy wash + a stem that draws itself; young woman by a jali lamp and window; woman slicing tomatoes in a kitchen;
+  older woman in a teal kurta in a garden raising her phone; woman walking a park path at sunrise; closing: the stem flowering), `LifeScenes.tsx` follows the section being
+  read (sections opt in with `data-scene="<id>"`), `scenes.css` holds the palette (light and a re-stepped dark set), draw-on and the stepped "on twos" motion; maths in
+  `lib/sceneScroll.ts` (unit-tested). Rules: it is a lazy chunk (about 9 KB gzipped), fixed, `aria-hidden`, no pointer events, behind a vellum veil so the words stay
+  readable (stronger on phones and in Senior Mode); SVG filters only on the still back layers (moving parts are unfiltered, so nothing re-filters per frame); only the
+  scene in view animates; reduced motion and Senior Mode get still, finished drawings. Figures stand around x = 1250 of the 1600 x 900 stage because phones keep
+  x 1000-1500 in view. Keep it to these scenes; `e2e/13-scenes.spec.ts` covers following the scroll both ways, taps passing through, phones and reduced motion.
 - *Release notes.* `/release-notes` renders `src/content/releaseNotes.ts` (newest first, grouped by month). Add an entry when a change reaches people; the format and house
   rules are in `docs/RELEASE_NOTES.md` and enforced by `releaseNotes.test.ts`. Never describe something that is switched off or awaiting a key or a clinician.
 - *Google Analytics 4 (optional).* `src/lib/analytics/`: off unless `VITE_GA_MEASUREMENT_ID` is set; asks first (Google's script is not fetched before Accept; Do Not Track / GPC = no);

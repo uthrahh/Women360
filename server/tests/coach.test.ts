@@ -62,6 +62,9 @@ describe("coach access control", () => {
       .send({ coachEmail: (await prisma.user.findUniqueOrThrow({ where: { id: coach.id } })).email });
     expect(grant.status).toBe(201);
 
+    // Her wellbeing note is private to her even when she shares wellbeing with a coach.
+    await prisma.wellbeingEntry.create({ data: { userId: woman.id, date: new Date("2026-11-10"), mood: 3, note: "private words" } });
+
     const summary = await request(app)
       .get(`/api/v1/coach/women/${woman.id}/summary`)
       .set("Authorization", `Bearer ${coach.token}`);
@@ -74,6 +77,9 @@ describe("coach access control", () => {
     expect(summary.body.data).toHaveProperty("wellbeing");
     expect(summary.body.data).toHaveProperty("sleep");
     expect(summary.body.data).toHaveProperty("activity");
+    expect(summary.body.data.wellbeing[0]).toMatchObject({ mood: 3 });
+    expect(summary.body.data.wellbeing[0]).not.toHaveProperty("note");
+    expect(JSON.stringify(summary.body.data)).not.toContain("private words");
 
     const revoke = await request(app)
       .delete("/api/v1/coach/sharing")

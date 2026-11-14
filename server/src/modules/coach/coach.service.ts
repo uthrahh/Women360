@@ -78,7 +78,13 @@ export const coachService = {
     // left as-is rather than faked with a fragile name match.
     const [goals, wellbeing, sleep, activity, appointments] = await Promise.all([
       prisma.goal.findMany({ where: { userId: womanId } }),
-      prisma.wellbeingEntry.findMany({ where: { userId: womanId }, orderBy: { date: "desc" }, take: 14 }),
+      // Scores only: her wellbeing note is private to her (the form says so), so it is never part of a coach's summary.
+      prisma.wellbeingEntry.findMany({
+        where: { userId: womanId },
+        orderBy: { date: "desc" },
+        take: 14,
+        select: { id: true, date: true, mood: true, stress: true, energy: true },
+      }),
       prisma.sleepEntry.findMany({ where: { userId: womanId }, orderBy: { date: "desc" }, take: 14 }),
       prisma.activityEntry.findMany({ where: { userId: womanId }, orderBy: { date: "desc" }, take: 14 }),
       prisma.appointment.findMany({ where: { userId: womanId, kind: "COACH" }, orderBy: { date: "asc" } }),

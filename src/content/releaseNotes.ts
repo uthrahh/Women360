@@ -21,6 +21,27 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    date: "2026-11-14",
+    headline: "A hand-drawn welcome page",
+    details:
+      "The welcome page now has a softly animated, hand-drawn picture behind it that changes as you scroll: a quiet moment by a window, cooking, a morning walk and a walk in the garden. It stays behind the words and never gets in the way, and it holds still if your device is set to reduce motion.",
+    area: "Design",
+  },
+  {
+    date: "2026-11-14",
+    headline: "Caffeine, alcohol and digestion, and more cycle details",
+    details:
+      "Nutrition has one-tap counts for caffeine and alcoholic drinks and a quick note of bowel movements, each with Undo. The cycle log can also hold pads or tampons used, cervical mucus, waking temperature and sex, for your own record only. Insights can now show up to three things you log on one time line.",
+    area: "Nutrition",
+  },
+  {
+    date: "2026-11-14",
+    headline: "Stress and energy are now only what you enter",
+    details:
+      "Wellbeing used to fill in stress and energy from your previous day when you only chose a mood. Now both are optional, a skipped question stays blank, and you can add a private note. You can also delete your cycle and reproductive history in Settings without deleting your account.",
+    area: "Privacy",
+  },
+  {
     date: "2026-11-08",
     headline: "Quicker, calmer taps and a jump-anywhere menu",
     details:

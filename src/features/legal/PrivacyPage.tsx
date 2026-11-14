@@ -42,8 +42,11 @@ export default function PrivacyPage() {
           </p>
           <p>
             <span className="text-[var(--w360-text)] font-medium">What you log:</span> cycle, meals and hydration,
-            activity, sleep, mood and wellbeing, goals and check-ins, medicines and doses, appointments, measurements,
+            caffeine and alcoholic drinks and bowel movements, activity, sleep, mood and wellbeing (stress, energy and a note
+            only if you add them), goals and check-ins, medicines and doses, appointments, measurements,
             your emergency contact, contraception and pregnancy status if you choose to record them, notes a coach writes about you, and any feedback you send.
+            On a cycle day you may also record pads or tampons used, cervical mucus, waking temperature and sex. Those are
+            kept for your own record only: Women360 does not use them to predict anything, and they are never part of what a coach sees.
           </p>
           <p>
             <span className="text-[var(--w360-text)] font-medium">Reminder devices:</span> only if you turn on reminders
@@ -106,7 +109,9 @@ export default function PrivacyPage() {
           <p>
             In <span className="text-[var(--w360-text)] font-medium">Settings → Your data</span> you can download a
             complete copy of what Women360 holds about you, and permanently delete your account. Deletion takes effect
-            immediately and removes your data from the app's database. Your cycle history can also be exported as a
+            immediately and removes your data from the app's database. You can also delete only your cycle and
+            reproductive history (cycle days and their details, cycle settings, contraception and pregnancy record and the
+            conditions you told us about) and keep the rest of your account. Your cycle history can also be exported as a
             spreadsheet from the Cycle page.
           </p>
         </Section>
@@ -130,6 +135,7 @@ export default function PrivacyPage() {
           <ul className="list-disc pl-5 flex flex-col gap-1.5">
             <li>The name of the organisation responsible for the service.</li>
             <li>How long our hosting providers keep backups after an account is deleted.</li>
+            <li>How a legal request for someone's data (for example from a court or the police) would be handled and answered.</li>
             <li>The legal basis and any regional requirements for the countries where it will be offered. The terms of use are a draft awaiting legal review.</li>
           </ul>
         </Section>

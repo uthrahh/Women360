@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useId, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import AnimatedContent from "@/components/reactbits/AnimatedContent";
@@ -8,7 +8,6 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { warmUpApi } from "@/services/apiClient";
 import { cn } from "@/lib/utils";
 import { AnalyticsChoicesLink } from "@/components/analytics/AnalyticsRoot";
-import { LifeFilm } from "./LifeFilm";
 import { SUPPORT_EMAIL } from "@/config/site";
 
 // The public landing page. It has one job: help a woman see what Women360 does that a
@@ -16,6 +15,9 @@ import { SUPPORT_EMAIL } from "@/config/site";
 // doctor's time, plans), says plainly who it is for and how her data is treated, answers the
 // four questions people actually ask, and stops. Nothing here is real user data: the phone is
 // an illustration and says so, and there are no testimonials, counts or ratings.
+
+// The hand-drawn background is its own chunk, so the words and buttons never wait for the pictures.
+const LifeScenes = lazy(() => import("./scenes/LifeScenes"));
 
 const REVEAL = { distance: 24, duration: 0.7, ease: "power2.out", threshold: 0.12 } as const;
 const SOFT_SHADOW = "shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]";
@@ -218,11 +220,14 @@ export default function LandingPage() {
   useEffect(warmUpApi, []);
   return (
     <div className="min-h-screen bg-[var(--w360-bg)] text-[var(--w360-text)] overflow-x-clip">
+      <Suspense fallback={null}>
+        <LifeScenes />
+      </Suspense>
       <Grain />
       <Nav />
-      <main>
+      <main className="relative z-10">
         {/* Hero */}
-        <section className="px-4 pt-16 pb-20 sm:pt-24 sm:pb-28">
+        <section data-scene="opening" className="px-4 pt-16 pb-20 sm:pt-24 sm:pb-28">
           <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-14 lg:gap-8 items-center">
             <AnimatedContent {...REVEAL} trigger="mount" stagger={0.1} className="text-center lg:text-left">
               <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-semibold tracking-tight leading-[1.04] [text-wrap:balance]">
@@ -245,11 +250,8 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* A lifetime in bloom: the scroll film. Absent unless switched on and its files exist (docs/LIFE_FILM.md). */}
-        <LifeFilm />
-
         {/* What it does */}
-        <section id="what" className="px-4 py-20 border-t border-[var(--w360-border)]">
+        <section id="what" data-scene="window" className="px-4 py-20 border-t border-[var(--w360-border)]">
           <div className="max-w-5xl mx-auto">
             <AnimatedContent {...REVEAL}>
               <h2 className={cn(H2, "max-w-xl")}>Everything about your health, in one calm place.</h2>
@@ -258,8 +260,8 @@ export default function LandingPage() {
               </p>
             </AnimatedContent>
             <AnimatedContent className="grid sm:grid-cols-2 gap-x-14 gap-y-10 mt-14" {...REVEAL} stagger={0.06}>
-              {POINTS.map((p) => (
-                <div key={p.title} className="border-t border-[var(--w360-border)] pt-5">
+              {POINTS.map((p, i) => (
+                <div key={p.title} data-scene={i === 2 ? "kitchen" : undefined} className="border-t border-[var(--w360-border)] pt-5">
                   <h3 className="font-medium text-lg">{p.title}</h3>
                   <p className="text-[var(--w360-text-muted)] mt-2 max-w-md">{p.body}</p>
                 </div>
@@ -269,7 +271,7 @@ export default function LandingPage() {
         </section>
 
         {/* Every age / Senior Mode */}
-        <section id="every-age" className="px-4 py-20">
+        <section id="every-age" data-scene="park" className="px-4 py-20">
           <AnimatedContent className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-12 items-center rounded-[2.5rem] bg-[var(--w360-bg-warm)] border border-[var(--w360-border)] px-6 sm:px-12 py-14" {...REVEAL} stagger={0.15}>
             <div>
               <h2 className={H2}>Made for every stage, from 18 to 100.</h2>
@@ -292,7 +294,7 @@ export default function LandingPage() {
         </section>
 
         {/* Privacy */}
-        <section id="privacy" className="px-4 py-20">
+        <section id="privacy" data-scene="walk" className="px-4 py-20">
           <div className="max-w-5xl mx-auto grid lg:grid-cols-[0.8fr_1.2fr] gap-12">
             <AnimatedContent {...REVEAL}>
               <h2 className={H2}>Your health information stays yours.</h2>
@@ -312,7 +314,7 @@ export default function LandingPage() {
         </section>
 
         {/* Questions */}
-        <section id="questions" className="px-4 py-20">
+        <section id="questions" data-scene="closing" className="px-4 py-20">
           <AnimatedContent {...REVEAL} className="max-w-2xl mx-auto">
             <h2 className={cn(H2, "mb-8")}>Questions, answered plainly.</h2>
             <div>
@@ -334,7 +336,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="px-4 py-8 text-sm text-[var(--w360-text-muted)] text-center">
+      <footer className="relative z-10 px-4 py-8 text-sm text-[var(--w360-text-muted)] text-center">
         <Link to="/privacy" className="underline underline-offset-2 hover:text-[var(--w360-text)]">Privacy</Link>
         <span className="mx-2">·</span>
         <Link to="/terms" className="underline underline-offset-2 hover:text-[var(--w360-text)]">Terms</Link>
