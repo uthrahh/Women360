@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { sendEmail } from "@/lib/mailer";
-import { passwordResetEmail } from "@/lib/emailTemplates";
+import { passwordResetEmail, verifyEmailEmail } from "@/lib/emailTemplates";
 import { assertPasswordAcceptable } from "@/lib/passwordPolicy";
 import { hashToken } from "@/lib/jwt";
 import { BadRequestError, ConflictError, ForbiddenError, TooManyRequestsError, UnauthorizedError } from "@/lib/errors";
@@ -40,6 +40,25 @@ function getDummyHash(): Promise<string> {
   return dummyHash;
 }
 
+// The phone app's throwaway account has no real inbox.
+function isDeviceAddress(email: string) {
+  return email.endsWith("@women360.local");
+}
+
+const VERIFY_LINK_HOURS = 48;
+
+async function sendVerificationLink(userId: string, email: string) {
+  if (isDeviceAddress(email)) return;
+  const token = crypto.randomBytes(32).toString("hex");
+  const now = new Date();
+  await prisma.$transaction([
+    // A new link replaces any earlier one.
+    prisma.emailVerificationToken.updateMany({ where: { userId, usedAt: null }, data: { usedAt: now } }),
+    prisma.emailVerificationToken.create({ data: { userId, tokenHash: hashToken(token), expiresAt: new Date(now.getTime() + VERIFY_LINK_HOURS * 3_600_000) } }),
+  ]);
+  await sendEmail(verifyEmailEmail(email, token));
+}
+
 export const authService = {
   async register(input: { name: string; email: string; password: string; dateOfBirth?: string; website?: string }, ip?: string) {
     // Honeypot: a field real people never see or fill in. Anything that does
@@ -65,8 +84,36 @@ export const authService = {
       },
     });
 
+    // Ask her to confirm the address. Not awaited, and a mail failure never fails the sign-up.
+    void sendVerificationLink(user.id, user.email).catch((err) => logger.warn({ err }, "Could not send the confirmation email"));
+
     const session = await issueSession(user.id, user.role);
     return { user: publicUser(user), ...session };
+  },
+
+  /** Sends a fresh confirmation link (the older ones stop working). Nothing happens for a confirmed, demo or device-only account. */
+  async resendVerification(userId: string) {
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    if (user.emailVerifiedAt || user.isDemo || isDeviceAddress(user.email)) return { sent: false, alreadyVerified: Boolean(user.emailVerifiedAt) };
+    await sendVerificationLink(user.id, user.email);
+    return { sent: true, alreadyVerified: false };
+  },
+
+  /** Opens a confirmation link. Works signed in or not, since the link may be opened on another device. */
+  async verifyEmail(token: string) {
+    const record = await prisma.emailVerificationToken.findUnique({ where: { tokenHash: hashToken(token) } });
+    if (!record || record.usedAt || record.expiresAt < new Date()) {
+      throw new BadRequestError("That confirmation link is invalid or has expired. Sign in and ask for a new one.");
+    }
+    const now = new Date();
+    await prisma.$transaction([
+      prisma.emailVerificationToken.update({ where: { id: record.id }, data: { usedAt: now } }),
+      // Any other links still out there stop working once one has been used.
+      prisma.emailVerificationToken.updateMany({ where: { userId: record.userId, usedAt: null }, data: { usedAt: now } }),
+      prisma.user.update({ where: { id: record.userId }, data: { emailVerifiedAt: now } }),
+    ]);
+    await recordSecurityEvent({ type: "email_verified", userId: record.userId });
+    return { verified: true };
   },
 
   async login(email: string, password: string, ip = "unknown") {

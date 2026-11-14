@@ -132,6 +132,16 @@ export const authService = {
     });
   },
 
+  /** Opens the confirmation link sent to her address. Works signed in or not. */
+  async verifyEmail(token: string): Promise<void> {
+    await request("/auth/verify-email", { method: "POST", body: JSON.stringify({ token }) });
+  },
+
+  /** Sends a fresh confirmation link to her address. */
+  async resendVerification(): Promise<{ sent: boolean; alreadyVerified: boolean }> {
+    return request("/auth/verify-email/resend", { method: "POST" });
+  },
+
   async resetPassword(token: string, newPassword: string): Promise<void> {
     await request("/auth/password-reset/confirm", {
       method: "POST",

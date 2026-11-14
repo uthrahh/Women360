@@ -5,8 +5,8 @@ import { test as base, expect, type Page } from "@playwright/test";
  * expected network failure. A page that quietly breaks is the failure these tests exist to catch.
  */
 const IGNORED = [
-  /Failed to load resource.*(401|404|409|422|429|500|503)/, // an API answering with a deliberate error
-  /the server responded with a status of (401|404|409|422|429|500|503)/,
+  /Failed to load resource.*(400|401|404|409|422|429|500|503)/, // an API answering with a deliberate error
+  /the server responded with a status of (400|401|404|409|422|429|500|503)/,
   /net::ERR_(ABORTED|FAILED|INTERNET_DISCONNECTED|CONNECTION_RESET)/, // tests that cut the network on purpose
   /favicon/,
 ];

@@ -17,6 +17,7 @@ const LoginPage = lazy(() => import("@/features/auth/LoginPage"));
 const RegisterPage = lazy(() => import("@/features/auth/RegisterPage"));
 const ForgotPasswordPage = lazy(() => import("@/features/auth/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("@/features/auth/ResetPasswordPage"));
+const VerifyEmailPage = lazy(() => import("@/features/auth/VerifyEmailPage"));
 const OnboardingPage = lazy(() => import("@/features/onboarding/OnboardingPage"));
 const AppShell = lazy(() => import("@/components/layout/AppShell").then((m) => ({ default: m.AppShell })));
 const StaffShell = lazy(() => import("@/components/layout/StaffShell").then((m) => ({ default: m.StaffShell })));
@@ -103,6 +104,7 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
 
             <Route element={<ProtectedRoute role="admin" />}>

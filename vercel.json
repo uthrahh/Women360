@@ -86,7 +86,7 @@
       ]
     },
     {
-      "source": "/(app/.*|admin|coach|onboarding|login|register|forgot-password|reset-password)",
+      "source": "/(app/.*|admin|coach|onboarding|login|register|forgot-password|reset-password|verify-email)",
       "headers": [
         {
           "key": "X-Robots-Tag",

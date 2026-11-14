@@ -5,6 +5,7 @@ import { alertAdmin } from "@/lib/alerts";
 import { prisma } from "@/lib/prisma";
 import { purgeOldSecurityEvents } from "@/lib/security/events";
 import { purgeStaleThrottles } from "@/lib/security/throttle";
+import { purgeSpentTokens } from "@/lib/security/tokens";
 import { purgeOldPushRecords, scheduledTick } from "@/modules/push/dispatch";
 import { sendPush } from "@/modules/push/sender";
 import { rollUp } from "@/modules/usage/usage.service";
@@ -15,14 +16,25 @@ const app = createApp();
 const server = app.listen(env.PORT, () => {
   logger.info(`Women360 API listening on port ${env.PORT} (${env.NODE_ENV})`);
 });
+// Timeouts: a connection that never finishes sending (slow-loris) is cut off, and idle keep-alive connections outlive the
+// hosting load balancer's own 60-second idle limit so it never reuses a socket this server has just closed.
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 66_000;
+server.requestTimeout = 120_000;
 
 // Retention: security events are kept 90 days and stale sign-in counters a
 // day. There's no cron on this host, so the long-running process sweeps on
 // start and then daily. A failed sweep is logged, never fatal.
 async function sweep() {
   try {
-    const [events, throttles, pushRecords, keys] = await Promise.all([purgeOldSecurityEvents(), purgeStaleThrottles(), purgeOldPushRecords(), purgeOldIdempotencyKeys()]);
-    if (events + throttles + pushRecords + keys > 0) logger.info({ events, throttles, pushRecords, keys }, "Purged expired security data");
+    const [events, throttles, pushRecords, keys, tokens] = await Promise.all([
+      purgeOldSecurityEvents(),
+      purgeStaleThrottles(),
+      purgeOldPushRecords(),
+      purgeOldIdempotencyKeys(),
+      purgeSpentTokens(),
+    ]);
+    if (events + throttles + pushRecords + keys + tokens > 0) logger.info({ events, throttles, pushRecords, keys, tokens }, "Purged expired security data");
   } catch (err) {
     logger.error({ err }, "Security data sweep failed");
   }

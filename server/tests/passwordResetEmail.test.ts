@@ -19,7 +19,7 @@ const uniqueEmail = () => `reset.${Date.now()}.${Math.random().toString(36).slic
 const waitForMail = async (to: string) => {
   // The send is not awaited by the request, so give it a moment to land.
   for (let i = 0; i < 40; i++) {
-    const mail = outbox.find((m) => m.to === to);
+    const mail = outbox.find((m) => m.to === to && /Reset your Women360 password/.test(m.subject));
     if (mail) return mail;
     await new Promise((r) => setTimeout(r, 25));
   }
@@ -55,7 +55,7 @@ describe("password reset email", () => {
     const res = await api("/auth/password-reset/request").send({ email });
     expect(res.status).toBe(200);
     await new Promise((r) => setTimeout(r, 300));
-    expect(outbox.find((m) => m.to === email)).toBeUndefined();
+    expect(outbox.find((m) => m.to === email && /Reset your Women360 password/.test(m.subject))).toBeUndefined();
     expect(await prisma.passwordResetToken.count({ where: { user: { email } } })).toBe(0);
   });
 
@@ -65,6 +65,6 @@ describe("password reset email", () => {
     await prisma.user.update({ where: { email }, data: { deletedAt: new Date() } });
     expect((await api("/auth/password-reset/request").send({ email })).status).toBe(200);
     await new Promise((r) => setTimeout(r, 300));
-    expect(outbox.find((m) => m.to === email)).toBeUndefined();
+    expect(outbox.find((m) => m.to === email && /Reset your Women360 password/.test(m.subject))).toBeUndefined();
   });
 });

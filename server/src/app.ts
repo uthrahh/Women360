@@ -30,6 +30,13 @@ export function createApp() {
   app.use(apiRateLimiter);
   app.use(trackUsage);
 
+  // Liveness: is this process up at all? No database call, so a slow database never gets a healthy process restarted.
+  // /health below is the readiness check (process AND database) and the uptime-monitor target.
+  app.get("/livez", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.status(200).json({ ok: true, data: { status: "alive" } });
+  });
+
   app.get("/health", async (_req, res) => {
     // Unauthenticated probe for the hosting platform and for an uptime monitor. It asks the database a
     // trivial question, so "healthy" means the API AND its database are answering (a paused or

@@ -37,8 +37,8 @@ export default function PrivacyPage() {
 
         <Section title="What we keep">
           <p>
-            <span className="text-[var(--w360-text)] font-medium">Your account:</span> name, email, date of birth and a
-            one-way hash of your password. We can't read your password.
+            <span className="text-[var(--w360-text)] font-medium">Your account:</span> name, email, date of birth, whether and when you
+            confirmed your email address, and a one-way hash of your password. We can't read your password.
           </p>
           <p>
             <span className="text-[var(--w360-text)] font-medium">What you log:</span> cycle, meals and hydration,
@@ -63,6 +63,30 @@ export default function PrivacyPage() {
           <p>
             <span className="text-[var(--w360-text)] font-medium">Security records:</span> sign-in successes and
             failures, with a shortened IP address and no email or password, kept for 90 days.
+          </p>
+        </Section>
+
+        <Section title="How long it is kept">
+          <ul className="list-disc pl-5 flex flex-col gap-1.5">
+            <li>Your account and everything you log: until you delete it. You can delete your whole account, or only your cycle and reproductive history, in Settings at any time.</li>
+            <li>Security records (sign-in successes and failures): 90 days.</li>
+            <li>Save receipts: 24 hours.</li>
+            <li>Sign-in sessions, password-reset links and email-confirmation links: deleted 7 days after they expire, are used or are signed out.</li>
+            <li>Records of reminders already sent: 3 days. A reminder device: until you turn reminders off on it, the browser reports it gone, or you delete your account.</li>
+            <li>The anonymous usage counts: about 13 months. The one-way codes used to count different people are deleted at the end of each day.</li>
+          </ul>
+        </Section>
+
+        <Section title="How it is protected">
+          <p>
+            Everything travels over an encrypted connection (HTTPS, which browsers are told to always use). Passwords are stored only as an
+            Argon2id hash, two-factor secrets are encrypted, and the links in our emails work once and expire. Only you can reach your
+            records through the app: every request is checked against your account, and the database's automatic public interface is switched off for every table, so records can be reached only through
+            the Women360 server. Sign-in is protected against guessing with limits per account and per network.
+          </p>
+          <p>
+            We don't send marketing or promotional messages. The only emails Women360 sends are the ones you trigger: confirming your
+            address and resetting your password.
           </p>
         </Section>
 
@@ -136,6 +160,7 @@ export default function PrivacyPage() {
             <li>The name of the organisation responsible for the service.</li>
             <li>How long our hosting providers keep backups after an account is deleted.</li>
             <li>How a legal request for someone's data (for example from a court or the police) would be handled and answered.</li>
+            <li>How a data breach would be reported to you and to the authorities (a procedure exists; the regulator and timelines depend on the country, which is not settled yet).</li>
             <li>The legal basis and any regional requirements for the countries where it will be offered. The terms of use are a draft awaiting legal review.</li>
           </ul>
         </Section>

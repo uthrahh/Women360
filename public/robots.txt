@@ -9,5 +9,6 @@ Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
+Disallow: /verify-email
 
 Sitemap: https://women-360.vercel.app/sitemap.xml

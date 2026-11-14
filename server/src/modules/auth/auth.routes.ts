@@ -15,6 +15,7 @@ import {
   registerSchema,
   requestPasswordResetSchema,
   resetPasswordSchema,
+  verifyEmailSchema,
   twoFactorConfirmSchema,
   twoFactorLoginSchema,
   twoFactorReauthSchema,
@@ -128,6 +129,22 @@ authRouter.post(
     // Same response whether or not the account exists (see service layer).
     return ok(res, { requested: true });
   })
+);
+
+// Confirming her address: the link may be opened on another device, so no sign-in is needed; the token is the proof.
+authRouter.post(
+  "/verify-email",
+  authRateLimiter,
+  validate({ body: verifyEmailSchema }),
+  asyncHandler(async (req, res) => ok(res, await authService.verifyEmail(req.body.token)))
+);
+
+authRouter.post(
+  "/verify-email/resend",
+  requireAuth,
+  forbidDemo,
+  authRateLimiter,
+  asyncHandler(async (req, res) => ok(res, await authService.resendVerification(req.user!.id)))
 );
 
 authRouter.post(

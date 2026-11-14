@@ -18,6 +18,19 @@ ${footer ? `<p style="margin:20px 0 0;font-size:13px;color:#6b5a5e;">${escapeHtm
   return { text, html };
 }
 
+export function verifyEmailEmail(to: string, token: string): Email {
+  const url = `${env.appUrl}/verify-email?token=${encodeURIComponent(token)}`;
+  const { text, html } = layout(
+    "Confirm your email address",
+    [
+      "Please confirm that this is your address, so that you can reset your password if you ever forget it.",
+      "This link works once and expires in 48 hours. If you didn't create a Women360 account, you can ignore this message.",
+    ],
+    { label: "Confirm my email", url }
+  );
+  return { to, subject: "Confirm your Women360 email address", text, html };
+}
+
 export function passwordResetEmail(to: string, token: string): Email {
   const url = `${env.appUrl}/reset-password?token=${encodeURIComponent(token)}`;
   const { text, html } = layout(

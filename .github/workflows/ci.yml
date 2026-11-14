@@ -78,6 +78,8 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm install
+      - name: Launch standard (secrets, placeholders, licences, required pages, row-level security)
+        run: npm run check:compliance
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
       - run: npm run lint

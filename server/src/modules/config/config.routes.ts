@@ -17,6 +17,8 @@ configRouter.get(
       // Present only when reminders can reach her while the app is closed.
       pushPublicKey: env.pushConfigured ? env.VAPID_PUBLIC_KEY : null,
       supportEmail: env.SUPPORT_EMAIL ?? null,
+      // Only ask people to confirm their address when an email can actually reach them.
+      emailVerification: env.mailConfigured,
     });
   })
 );

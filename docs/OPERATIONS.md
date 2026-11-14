@@ -161,3 +161,15 @@ change once, early, or not at all. A custom domain also lets emails come from yo
 Section 1 done and a real reset email received; section 2 monitor green; section 3 backup run green; the `.apk` opened on a real phone;
 `/privacy` and `/terms` read by you (they are drafts awaiting review by someone qualified, and name no legal entity yet);
 and the browser tests (`npm run e2e`) and `npm test` in both folders passing.
+
+Also from the launch standard (`docs/LAUNCH_STANDARD.md`, items marked **Owner**):
+
+- **Data processing agreements:** accept the DPA offered by Vercel, Render, Supabase and Brevo (and Google, if Analytics is switched on).
+- **Spend caps:** before upgrading any service from its free tier, set a spending limit or billing alert on it.
+- **Encrypted database connection:** make sure `DATABASE_URL` on Render (and the GitHub backup secret) ends with `sslmode=require`.
+- **React Bits licence:** paste the text of https://github.com/DavidHDev/react-bits/blob/main/LICENSE.md into
+  `src/components/reactbits/NOTICE.md` where it says so.
+- **A second person on call** and the countries you will launch in (they decide GDPR / India DPDP duties): write both into
+  `docs/INCIDENTS.md` and the privacy page.
+- **App stores:** give reviewers a normal account as well as the demo logins (demo accounts can't delete themselves); take
+  screenshots from the real app; an iOS release needs native features first (`docs/LAUNCH_STANDARD.md` §1).

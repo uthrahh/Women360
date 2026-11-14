@@ -25,6 +25,8 @@ export const requestPasswordResetSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email address"),
 });
 
+export const verifyEmailSchema = z.object({ token: z.string().min(1).max(200) });
+
 export const resetPasswordSchema = z.object({
   token: z.string().min(1),
   newPassword: z.string().min(1, "Password is required").max(1024),

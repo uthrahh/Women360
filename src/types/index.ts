@@ -11,6 +11,8 @@ export interface User {
   onboarded: boolean;
   /** A shared demonstration account: it can look around but not change shared settings. */
   isDemo?: boolean;
+  /** She opened the confirmation link sent to her address. */
+  emailVerified?: boolean;
 }
 
 export interface SeniorEssential {

@@ -11,6 +11,7 @@ export function publicUser(user: {
   avatarInitials: string | null;
   onboarded: boolean;
   isDemo?: boolean;
+  emailVerifiedAt?: Date | null;
 }) {
   return {
     id: user.id,
@@ -22,5 +23,6 @@ export function publicUser(user: {
     avatarInitials: user.avatarInitials,
     onboarded: user.onboarded,
     isDemo: user.isDemo ?? false,
+    emailVerified: Boolean(user.emailVerifiedAt),
   };
 }

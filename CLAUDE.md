@@ -581,8 +581,11 @@ the duration out from the two days and times itself (`modules/sleep/duration.ts`
   or SMTP via `SMTP_URL`; `MAIL_FROM` defaults to `Women360 <SUPPORT_EMAIL>`; links built from `APP_URL`) and
   password-reset emails and server alerts are sent through it. Render's free tier blocks SMTP, which is why the
   HTTPS API is preferred. **Until `BREVO_API_KEY` (or `SMTP_URL`) is set on Render, no email is sent and a forgotten
-  password cannot be recovered**; steps are in `docs/OPERATIONS.md`. There is still no email verification at
-  sign-up and no email reminder preference (the Settings switch that pretended otherwise was removed).
+  password cannot be recovered**; steps are in `docs/OPERATIONS.md`. Sign-up sends an email-confirmation
+  link (`EmailVerificationToken`, 48 h, one use; `POST /auth/verify-email` and `/auth/verify-email/resend`; the `/verify-email` page and a
+  dismissible reminder, `VerifyEmailNotice`). It blocks nothing, and it is offered only when `GET /config` says email can be sent
+  (`emailVerification`), never to demo or device-only accounts. There is no email reminder preference (the Settings switch that
+  pretended otherwise was removed).
 - Messages cannot be replied to (the reply box that only pretended to send was removed). The
   `Message` Prisma model itself has no sender-as-current-user concept
   (just a `senderLabel` display string and a `recipientId`), so this
@@ -620,3 +623,27 @@ exists) → UX pass → responsive pass → accessibility pass → security pass
 regression pass → polish. When a requirement is ambiguous and materially
 affects architecture, product behavior, medical claims, or business facts,
 ask rather than assume.
+
+## 7. Launch standard (always followed)
+
+`docs/LAUNCH_STANDARD.md` maps every item of the owner's launch checklists (app-store review, legal, security, UX laws, launch
+basics, the 111 production-engineering topics) to what Women360 does, and it must stay true. A change is not done if it breaks an
+item; if a change alters one (new data, a new third party, a new public page, a new table, a payment, comments, a native iOS build),
+update that document, the privacy page and the guards in the same change. Standing rules:
+
+- **Guards must pass:** `npm run check:compliance` (secrets, public env names, placeholder copy, licences, required pages and routes,
+  RLS on new tables, no SQL built from strings, no raw HTML), the server security tests (`security.*.test.ts`) and
+  `e2e/14-launch-standard.spec.ts`. Never weaken a guard to make a change pass; fix the change.
+- **Every new table** gets `ALTER TABLE "<name>" ENABLE ROW LEVEL SECURITY` in its migration (the API owns the tables, so it is not
+  affected; the hosted database's automatic API is shut out).
+- **Every new screen** fits phones, iPads (768 and 1024 wide) and Senior Mode with no sideways scroll, and has loading, empty and
+  failed states. Add it to the screen lists in `e2e/05` and `e2e/14`.
+- **No placeholders:** never ship "coming soon"; hide what isn't ready.
+- **Data:** anything new that is stored or sent is described on `/privacy` (what, why, how long, who sees it) and covered by export and
+  deletion; retention is enforced by the daily sweep, not just written down.
+- **Nothing sold, no comments, no third-party sign-in today.** Adding a payment needs the stores' in-app purchase on mobile and stated
+  pricing, renewal and cancellation terms; adding content that others see needs report and block; adding Google sign-in needs Sign in
+  with Apple on iOS.
+- **A bad request is never a 500**: input errors answer 4xx and never page the administrator.
+- **Incidents and breaches** follow `docs/INCIDENTS.md` (SLOs, rollback, restore, breach steps, postmortems).
+- **Design reviews** apply the UX-law table in `docs/LAUNCH_STANDARD.md` §4 alongside §1-2 here.

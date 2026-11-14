@@ -81,10 +81,13 @@ model User {
   // settings, delete itself or change its own password, and a demo administrator
   // only ever sees other demo accounts.
   isDemo             Boolean    @default(false)
+  // Set when she opens the link sent to her address. Null = not confirmed yet (nothing is blocked by it).
+  emailVerifiedAt    DateTime?
 
   twoFactorBackupCodes TwoFactorBackupCode[]
   refreshTokens        RefreshToken[]
   passwordResetTokens  PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
   healthProfile        HealthProfile?
   emergencyContact     EmergencyContact?
   seniorEssentials     SeniorEssentialPreference[]
@@ -151,6 +154,19 @@ model TwoFactorBackupCode {
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   codeHash  String    @unique
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// One-time link that confirms she owns the address she signed up with. Only a hash is stored.
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 

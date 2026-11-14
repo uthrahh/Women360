@@ -10,6 +10,7 @@ import { TopBar } from "./TopBar";
 import { SeniorTopBar } from "./SeniorNav";
 import { Banner } from "@/components/ui/Banner";
 import { WakingNotice } from "@/components/WakingNotice";
+import { VerifyEmailNotice } from "@/components/VerifyEmailNotice";
 import { CommandMenu } from "@/components/CommandMenu";
 import { TipsProvider } from "@/context/TipsContext";
 
@@ -44,6 +45,7 @@ function Shell() {
         <main className="flex-1 pb-8">
           <div className="max-w-xl mx-auto px-5 pt-4 empty:hidden"><WakingNotice /></div>
           {demoNotice && <div className="max-w-xl mx-auto px-5 pt-4">{demoNotice}</div>}
+          <div className="max-w-xl mx-auto px-5 pt-4 empty:hidden"><VerifyEmailNotice /></div>
           <Outlet />
         </main>
       </div>
@@ -59,6 +61,7 @@ function Shell() {
         <main className="flex-1 min-w-0 px-4 sm:px-6 py-6 pb-[calc(6rem+var(--safe-bottom))] lg:pb-10 max-w-content w-full mx-auto">
           <WakingNotice className="mb-5" />
           {demoNotice}
+          <VerifyEmailNotice className="mb-5" />
           <Outlet />
         </main>
       </div>

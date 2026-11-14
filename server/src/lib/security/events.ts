@@ -31,6 +31,7 @@ export type SecurityEventType =
   | "backup_code_used"
   | "password_changed"
   | "password_reset"
+  | "email_verified"
   | "sessions_revoked"
   | "account_deleted"
   | "bot_blocked"
