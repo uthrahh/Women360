@@ -56,9 +56,12 @@ export const insightsService = {
 
     if (activityEntries.length > 0) {
       const activeDays = new Set(activityEntries.filter((e) => e.durationMinutes >= 30).map((e) => e.date.toISOString().slice(0, 10)));
-      const energyOnActiveDays = wellbeingEntries.filter((w) => activeDays.has(w.date.toISOString().slice(0, 10)));
+      // Only days she rated her energy.
+      const energyOnActiveDays = wellbeingEntries.flatMap((w) =>
+        w.energy !== null && activeDays.has(w.date.toISOString().slice(0, 10)) ? [w.energy] : []
+      );
       if (energyOnActiveDays.length > 0) {
-        const avgEnergy = energyOnActiveDays.reduce((a, w) => a + w.energy, 0) / energyOnActiveDays.length;
+        const avgEnergy = energyOnActiveDays.reduce((a, e) => a + e, 0) / energyOnActiveDays.length;
         cards.push({
           q: "How does activity relate to energy?",
           a: `On days with 30+ active minutes, your logged energy averaged ${avgEnergy.toFixed(1)} of 4.`,

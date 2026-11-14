@@ -197,6 +197,31 @@ export const authService = {
     await recordSecurityEvent({ type: "account_deleted", userId: null, role: user.role, ip });
   },
 
+  /**
+   * Erases her cycle and reproductive history but keeps the account: every logged cycle day (with its symptoms, notes and details),
+   * her cycle settings, her contraception and pregnancy record, the conditions she declared and the state of any cycle pattern
+   * cards. Asks for her password and shares the sign-in lockout, like deleting the account. Many women want exactly this and no more.
+   */
+  async deleteCycleHistory(userId: string, password: string, ip = "unknown") {
+    const user = await prisma.user.findFirstOrThrow({ where: { id: userId, deletedAt: null } });
+    const keys = [accountKey(user.email), ipKey(ip)];
+    await assertNotLocked(keys);
+    if (!(await verifyPassword(user.passwordHash, password))) {
+      await Promise.all([recordFailure(keys[0], ACCOUNT_FAILURE_LIMIT), recordFailure(keys[1], IP_FAILURE_LIMIT)]);
+      await recordSecurityEvent({ type: "login_failed", userId, ip, detail: { where: "delete_cycle_history" } });
+      throw new UnauthorizedError("That password isn't right.");
+    }
+    const [days] = await prisma.$transaction([
+      prisma.cycleEntry.deleteMany({ where: { userId } }),
+      prisma.cycleProfile.deleteMany({ where: { userId } }),
+      prisma.reproductiveHealth.deleteMany({ where: { userId } }),
+      prisma.userCondition.deleteMany({ where: { userId } }),
+      prisma.healthSignalState.deleteMany({ where: { userId } }),
+    ]);
+    await clearFailures(keys[0]);
+    return { deletedDays: days.count };
+  },
+
   async completeOnboarding(userId: string) {
     const user = await prisma.user.update({ where: { id: userId }, data: { onboarded: true } });
     return publicUser(user);

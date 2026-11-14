@@ -43,7 +43,15 @@ export interface CycleDay {
   // cycle out of predictions. Set on a period's start day.
   contextTags?: string[];
   excludeCycle?: boolean;
+  // Optional details, recorded for her own reference only (nothing predicts from them).
+  cervicalMucus?: CervicalMucus | null;
+  bbtC?: number | null;
+  intercourse?: Intercourse | null;
+  productsUsed?: number | null;
 }
+
+export type CervicalMucus = "dry" | "sticky" | "creamy" | "watery" | "egg_white";
+export type Intercourse = "none" | "protected" | "unprotected";
 
 export interface CycleSummary {
   // null for a brand-new user who hasn't logged any cycle data yet.
@@ -224,9 +232,36 @@ export interface SleepSummary {
 export interface WellbeingEntry {
   date: string;
   mood: number; // 0-4
-  stress: number; // 0-4
-  energy: number; // 0-4
+  // Only when she rated them; null means not answered (never filled in for her).
+  stress: number | null; // 0-4
+  energy: number | null; // 0-4
   note?: string;
+}
+
+/** Caffeine, alcohol and bowel movements: one entry per tap. */
+export type BodyKind = "caffeine" | "alcohol" | "bowel";
+export type BowelDetail = "hard" | "normal" | "loose";
+export interface BodyLogEntry {
+  id: string;
+  kind: BodyKind;
+  detail: BowelDetail | null;
+  loggedAt: string;
+}
+
+/** One day of her logs side by side; null = nothing logged that day. */
+export interface DailyPoint {
+  date: string;
+  sleepHours: number | null;
+  sleepQuality: number | null;
+  mood: number | null;
+  stress: number | null;
+  energy: number | null;
+  steps: number | null;
+  activeMinutes: number | null;
+  waterMl: number | null;
+  caffeine: number | null;
+  alcohol: number | null;
+  period: boolean;
 }
 
 /**

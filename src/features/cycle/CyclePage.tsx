@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, useCallback } from "react";
 import { cycleService } from "@/services/cycleService";
 import { localDateISO } from "@/services/mappers";
-import type { ConditionList, CycleDay, CycleDayPhase, CycleSummary } from "@/types";
+import type { CervicalMucus, ConditionList, CycleDay, CycleDayPhase, CycleSummary, Intercourse } from "@/types";
+import { ChoiceRow } from "@/components/ui/ChoiceRow";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -14,7 +15,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useApp } from "@/context/AppContext";
-import { Check, ChevronLeft, ChevronRight, Copy, Download, Settings, Trash2, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, Download, Droplets, Heart, Settings, Thermometer, Trash2, X } from "lucide-react";
 import { CONTEXT_TAG_OPTIONS } from "@/lib/cycleContext";
 import { buildCycleCsv } from "@/lib/cycleCsv";
 import { saveFile } from "@/lib/saveFile";
@@ -73,7 +74,33 @@ function formatDateRange(startISO: string, endISO: string): string {
 const CONTRACEPTION_DISCLAIMER =
   "Not a birth control method — this is an estimate, not a reliable way to prevent or plan pregnancy.";
 
-const SYMPTOM_OPTIONS = ["Cramps", "Fatigue", "Headache", "Bloating", "Tender breasts", "Backache"];
+const SYMPTOM_OPTIONS = [
+  "Cramps", "Fatigue", "Headache", "Bloating", "Tender breasts", "Backache",
+  "Acne", "Cravings", "Nausea", "Anxiety", "Trouble focusing",
+];
+// Women in the menopause transition said trackers stop at periods; these are the symptoms they asked to record.
+// A list of words to tick, not a claim about cause: nothing is predicted from them.
+const MIDLIFE_SYMPTOMS = [
+  "Hot flushes", "Night sweats", "Brain fog", "Trouble sleeping", "Joint aches",
+  "Palpitations", "Vaginal dryness", "Low mood", "Irritability",
+];
+
+function symptomsForStage(lifeStage: string | null | undefined): string[] {
+  return lifeStage && lifeStage !== "reproductive" ? [...SYMPTOM_OPTIONS, ...MIDLIFE_SYMPTOMS] : SYMPTOM_OPTIONS;
+}
+
+const MUCUS_CHOICES: { value: CervicalMucus; label: string }[] = [
+  { value: "dry", label: "Dry" },
+  { value: "sticky", label: "Sticky" },
+  { value: "creamy", label: "Creamy" },
+  { value: "watery", label: "Watery" },
+  { value: "egg_white", label: "Egg white" },
+];
+const INTERCOURSE_CHOICES: { value: Intercourse; label: string }[] = [
+  { value: "none", label: "None" },
+  { value: "protected", label: "Protected" },
+  { value: "unprotected", label: "Unprotected" },
+];
 const MAX_SYMPTOMS = 30;
 const MAX_SYMPTOM_LENGTH = 60;
 
@@ -96,10 +123,22 @@ interface LogFormState {
   notes: string;
   contextTags: string[];
   excludeCycle: boolean;
+  cervicalMucus: CervicalMucus | null;
+  bbtC: string;
+  intercourse: Intercourse | null;
+  productsUsed: string;
 }
 
 function emptyLogForm(): LogFormState {
-  return { isPeriod: false, flow: "", pain: null, mood: "", energy: null, symptoms: [], notes: "", contextTags: [], excludeCycle: false };
+  return {
+    isPeriod: false, flow: "", pain: null, mood: "", energy: null, symptoms: [], notes: "", contextTags: [], excludeCycle: false,
+    cervicalMucus: null, bbtC: "", intercourse: null, productsUsed: "",
+  };
+}
+
+/** Does this day carry any of the optional body details? */
+function hasBodyDetails(day: CycleDay | undefined) {
+  return Boolean(day && (day.cervicalMucus || day.bbtC != null || day.intercourse || day.productsUsed != null));
 }
 
 function dayToLogForm(day: CycleDay): LogFormState {
@@ -113,13 +152,17 @@ function dayToLogForm(day: CycleDay): LogFormState {
     notes: day.notes ?? "",
     contextTags: day.contextTags ?? [],
     excludeCycle: day.excludeCycle ?? false,
+    cervicalMucus: day.cervicalMucus ?? null,
+    bbtC: day.bbtC != null ? String(day.bbtC) : "",
+    intercourse: day.intercourse ?? null,
+    productsUsed: day.productsUsed != null ? String(day.productsUsed) : "",
   };
 }
 
 /** Anything she wrote on a day beyond the period itself; removing the day would lose it. */
 function entryHasDetails(day: CycleDay) {
   return (
-    day.pain !== undefined || day.energy !== undefined || Boolean(day.mood) || Boolean(day.symptoms?.length) || Boolean(day.notes) || Boolean(day.contextTags?.length) || day.excludeCycle === true
+    day.pain !== undefined || day.energy !== undefined || Boolean(day.mood) || Boolean(day.symptoms?.length) || Boolean(day.notes) || Boolean(day.contextTags?.length) || day.excludeCycle === true || hasBodyDetails(day)
   );
 }
 
@@ -148,7 +191,8 @@ function PeriodTodayButton({ started, onClick, size, fullWidth }: { started: boo
 }
 
 export default function CyclePage() {
-  const { senior } = useApp();
+  const { senior, auth } = useApp();
+  const stageSymptoms = symptomsForStage(auth.user?.lifeStage);
   const [cycle, setCycle] = useState<CycleSummary | null>(null);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [confirmDeleteDate, setConfirmDeleteDate] = useState<string | null>(null);
@@ -184,8 +228,8 @@ export default function CyclePage() {
   // Her conditions add the symptoms worth noting to the usual list, without repeating any.
   const declaredCodes = (conditions?.conditions ?? []).filter((c) => c.declared).map((c) => c.code).join(",");
   const symptomOptions = [
-    ...SYMPTOM_OPTIONS,
-    ...(conditions?.conditions ?? []).filter((c) => c.declared).flatMap((c) => c.trackSymptoms).filter((s, i, all) => !SYMPTOM_OPTIONS.includes(s) && all.indexOf(s) === i),
+    ...stageSymptoms,
+    ...(conditions?.conditions ?? []).filter((c) => c.declared).flatMap((c) => c.trackSymptoms).filter((s, i, all) => !stageSymptoms.includes(s) && all.indexOf(s) === i),
   ];
   const patternsKey = `${cycle.lastCycleLengths.join("-")}|${cycle.history.length}|${declaredCodes}`;
 
@@ -199,7 +243,8 @@ export default function CyclePage() {
   // beyond flow is asked for by default.
   const showDetails =
     detailsExpanded ||
-    Boolean(existingDay?.pain !== undefined || existingDay?.energy !== undefined || existingDay?.mood || existingDay?.symptoms?.length || existingDay?.notes);
+    Boolean(existingDay?.pain !== undefined || existingDay?.energy !== undefined || existingDay?.mood || existingDay?.symptoms?.length || existingDay?.notes) ||
+    hasBodyDetails(existingDay);
 
   function openLogModal(date: string) {
     const day = cycle!.history.find((d) => d.date === date);
@@ -249,6 +294,16 @@ export default function CyclePage() {
   function handleLog(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!editingDate) return;
+    const bbt = logForm.bbtC.trim() === "" ? null : Number(logForm.bbtC);
+    if (bbt !== null && (!Number.isFinite(bbt) || bbt < 35 || bbt > 38.5)) {
+      toast.show("Waking temperature should be between 35 and 38.5 °C.", { tone: "error" });
+      return;
+    }
+    const products = logForm.productsUsed.trim() === "" ? null : Number(logForm.productsUsed);
+    if (products !== null && (!Number.isInteger(products) || products < 0 || products > 40)) {
+      toast.show("Pads, tampons or cups used should be a whole number up to 40.", { tone: "error" });
+      return;
+    }
     cycleService
       .logDay({
         date: editingDate,
@@ -263,6 +318,11 @@ export default function CyclePage() {
         // actually clears what was saved — an omitted field is left alone.
         contextTags: logForm.isPeriod ? logForm.contextTags : [],
         excludeCycle: logForm.isPeriod ? logForm.excludeCycle : false,
+        // Always sent so clearing one removes it (null), like the fields above.
+        cervicalMucus: logForm.cervicalMucus,
+        bbtC: bbt,
+        intercourse: logForm.intercourse,
+        productsUsed: logForm.isPeriod || logForm.flow ? products : null,
       })
       .then(
         () => {
@@ -527,6 +587,38 @@ export default function CyclePage() {
                 <Button type="button" variant="secondary" size="sm" onClick={addCustomSymptom}>Add</Button>
               </div>
             </div>
+            <fieldset className="flex flex-col gap-4 border-t border-[var(--w360-border)] pt-4">
+              <legend className="text-sm font-medium senior:text-lg float-left w-full mb-1">More details</legend>
+              <p className="text-xs text-[var(--w360-text-muted)] senior:text-base clear-both">
+                Recorded for you only. Women360 does not use these to predict fertility or your next period, and none of it is a
+                birth control method.
+              </p>
+              {(logForm.isPeriod || logForm.flow) && (
+                <NumberField
+                  label="Pads, tampons or cups used"
+                  optional
+                  min={0}
+                  max={40}
+                  step={1}
+                  startAt={3}
+                  value={logForm.productsUsed}
+                  onChange={(v) => setLogForm((f) => ({ ...f, productsUsed: v }))}
+                />
+              )}
+              <ChoiceRow label="Cervical mucus" choices={MUCUS_CHOICES} value={logForm.cervicalMucus} onChange={(v) => setLogForm((f) => ({ ...f, cervicalMucus: v }))} />
+              <NumberField
+                label="Waking temperature"
+                suffix="°C"
+                optional
+                min={35}
+                max={38.5}
+                step={0.05}
+                startAt={36.5}
+                value={logForm.bbtC}
+                onChange={(v) => setLogForm((f) => ({ ...f, bbtC: v }))}
+              />
+              <ChoiceRow label="Sex" choices={INTERCOURSE_CHOICES} value={logForm.intercourse} onChange={(v) => setLogForm((f) => ({ ...f, intercourse: v }))} />
+            </fieldset>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="notes" className="text-sm font-medium senior:text-lg">Notes (optional)</label>
               <textarea
@@ -544,7 +636,7 @@ export default function CyclePage() {
             onClick={() => setDetailsExpanded(true)}
             className="text-sm text-maroon-700 dark:text-maroon-300 font-medium text-left hover:underline senior:text-lg"
           >
-            + Add pain, mood, energy, symptoms or a note (optional)
+            + Add pain, mood, symptoms, a note or other details (optional)
           </button>
         )}
         <div className="flex items-center justify-between gap-2">
@@ -1076,7 +1168,7 @@ function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void })
               // from counting as a period) — it's still a real period day.
               const phase = d?.isPeriod ? "menstrual" : dayPhase?.phase ?? null;
               const isEstimated = d?.isPeriod ? false : dayPhase?.estimated !== false;
-              const label = `${isToday ? "Today, " : ""}${new Date(cell.iso).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}${d?.isPeriod ? ", period day" : phase ? `, ${PHASE_LABEL[phase]} phase (estimated)` : ""}${d?.symptoms?.length ? `, symptoms: ${d.symptoms.join(", ")}` : ""}${isFuture ? " — not yet available to log" : " — tap to log or edit"}`;
+              const label = `${isToday ? "Today, " : ""}${new Date(cell.iso).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}${d?.isPeriod ? ", period day" : phase ? `, ${PHASE_LABEL[phase]} phase (estimated)` : ""}${d?.symptoms?.length ? `, symptoms: ${d.symptoms.join(", ")}` : ""}${d?.cervicalMucus ? ", cervical mucus logged" : ""}${d?.bbtC != null ? `, waking temperature ${d.bbtC} °C` : ""}${d?.intercourse && d.intercourse !== "none" ? ", sex logged" : ""}${isFuture ? " — not yet available to log" : " — tap to log or edit"}`;
               return (
                 <button
                   key={cell.iso}
@@ -1094,7 +1186,14 @@ function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void })
                   } ${isToday ? "ring-2 ring-offset-1 ring-maroon-400 dark:ring-offset-ink-900" : ""}`}
                 >
                   <span className="font-medium">{new Date(cell.iso).getDate()}</span>
-                  {d?.symptoms && d.symptoms.length > 0 && <span className="w-1 h-1 rounded-full bg-current opacity-70" />}
+                  {(d?.symptoms?.length || hasBodyDetails(d)) ? (
+                    <span className="flex items-center gap-0.5 opacity-80" aria-hidden>
+                      {d?.symptoms && d.symptoms.length > 0 && <span className="w-1 h-1 rounded-full bg-current" />}
+                      {d?.cervicalMucus && <Droplets size={9} />}
+                      {d?.bbtC != null && <Thermometer size={9} />}
+                      {d?.intercourse && d.intercourse !== "none" && <Heart size={9} />}
+                    </span>
+                  ) : null}
                 </button>
               );
             })}
@@ -1111,6 +1210,14 @@ function MonthCalendar({ onSelectDay }: { onSelectDay: (date: string) => void })
             <span className="w-3 h-3 rounded-sm shrink-0 bg-maroon-600 border border-dashed border-maroon-800 opacity-55" />
             Estimated, not logged
           </span>
+          {(days ?? []).some((x) => x.symptoms?.length || hasBodyDetails(x)) && (
+            <span className="flex items-center gap-3 text-xs text-[var(--w360-text-muted)]">
+              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden /> Symptoms</span>
+              <span className="flex items-center gap-1"><Droplets size={11} aria-hidden /> Mucus</span>
+              <span className="flex items-center gap-1"><Thermometer size={11} aria-hidden /> Temperature</span>
+              <span className="flex items-center gap-1"><Heart size={11} aria-hidden /> Sex</span>
+            </span>
+          )}
         </div>
           </>
         )}

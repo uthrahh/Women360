@@ -13,6 +13,10 @@ export const CONTEXT_TAGS = [
   "sleep_disruption",
 ] as const;
 
+// Optional details she can record. Recorded for her own reference only: nothing predicts from them.
+export const CERVICAL_MUCUS = ["dry", "sticky", "creamy", "watery", "egg_white"] as const;
+export const INTERCOURSE = ["none", "protected", "unprotected"] as const;
+
 export const cycleEntrySchema = z.object({
   date: z.string().date(),
   isPeriod: z.boolean().default(false),
@@ -24,6 +28,12 @@ export const cycleEntrySchema = z.object({
   notes: z.string().trim().max(1000).optional(),
   contextTags: z.array(z.enum(CONTEXT_TAGS)).max(CONTEXT_TAGS.length).optional(),
   excludeCycle: z.boolean().optional(),
+  // null clears a detail recorded earlier.
+  cervicalMucus: z.enum(CERVICAL_MUCUS).nullable().optional(),
+  // Temperature on waking, Celsius; outside this range it is almost certainly a typo or a fever reading, not a baseline.
+  bbtC: z.number().min(35).max(38.5).nullable().optional(),
+  intercourse: z.enum(INTERCOURSE).nullable().optional(),
+  productsUsed: z.number().int().min(0).max(40).nullable().optional(),
 });
 
 export const cycleProfileSchema = z.object({

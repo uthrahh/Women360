@@ -165,6 +165,15 @@ authRouter.post(
 );
 
 authRouter.post(
+  "/delete-cycle-history",
+  requireAuth,
+  forbidDemo,
+  authRateLimiter,
+  validate({ body: deleteAccountSchema }),
+  asyncHandler(async (req, res) => ok(res, await authService.deleteCycleHistory(req.user!.id, req.body.password, req.ip)))
+);
+
+authRouter.post(
   "/logout-all",
   requireAuth,
   forbidDemo,

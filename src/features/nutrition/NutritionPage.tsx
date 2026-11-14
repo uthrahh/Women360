@@ -16,6 +16,7 @@ import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { Droplet, Apple, Plus } from "lucide-react";
 import { Hint } from "@/components/ui/Hint";
+import { BodyLogCard } from "./BodyLogCard";
 
 const HYDRATION_STEP_ML = 250;
 
@@ -369,6 +370,7 @@ export default function NutritionPage() {
         </MetricCard>
         <MetricCard label="Protein" value={`${data.proteinG}g`} goal={`of ${data.proteinGoalG}g`} pct={(data.proteinG / data.proteinGoalG) * 100} />
         <MetricCard label="Fibre" value={`${data.fibreG}g`} goal={`of ${data.fibreGoalG}g`} pct={(data.fibreG / data.fibreGoalG) * 100} />
+        <BodyLogCard />
       </div>
 
       <section>

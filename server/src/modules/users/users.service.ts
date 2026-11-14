@@ -55,6 +55,7 @@ export const usersService = {
         receivedMessages: true,
         feedback: true,
         pushSubscriptions: { select: { createdAt: true, timezone: true, endpoint: true } },
+        bodyLogs: true,
       },
     });
     return {
@@ -92,6 +93,7 @@ export const usersService = {
       messages: u.receivedMessages,
       feedback: u.feedback,
       // Devices she allowed closed-app reminders on. Only the push service's name is listed: the full address and keys are secrets.
+      bodyLogs: u.bodyLogs,
       reminderDevices: u.pushSubscriptions.map((d) => ({ since: d.createdAt, timezone: d.timezone, service: new URL(d.endpoint).hostname })),
     };
   },

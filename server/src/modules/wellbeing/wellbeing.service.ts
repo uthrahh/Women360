@@ -10,7 +10,7 @@ export const wellbeingService = {
   },
 
   async upsertEntry(userId: string, input: {
-    date: string; mood: number; stress: number; energy: number; note?: string;
+    date: string; mood: number; stress?: number | null; energy?: number | null; note?: string;
   }) {
     const { date, ...rest } = input;
     return prisma.wellbeingEntry.upsert({

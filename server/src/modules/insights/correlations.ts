@@ -32,7 +32,9 @@ export type MetricKey =
   | "calories"
   | "proteinG"
   | "fibreG"
-  | "cyclePain";
+  | "cyclePain"
+  | "caffeine"
+  | "alcohol";
 
 export const METRIC_LABELS: Record<MetricKey, string> = {
   sleepHours: "Sleep duration",
@@ -46,6 +48,8 @@ export const METRIC_LABELS: Record<MetricKey, string> = {
   proteinG: "Protein logged",
   fibreG: "Fibre logged",
   cyclePain: "Period pain",
+  caffeine: "Caffeine drinks",
+  alcohol: "Alcoholic drinks",
 };
 
 export interface MetricCorrelation {
@@ -170,13 +174,14 @@ function toDailyMap<T>(rows: T[], getDate: (r: T) => Date, getValue: (r: T) => n
 
 export async function computeUserCorrelations(userId: string): Promise<CorrelationsReport> {
   const since = new Date(Date.now() - LOOKBACK_DAYS * DAY_MS);
-  const [sleepRows, wellbeingRows, activityRows, hydrationRows, mealRows, cycleRows] = await Promise.all([
+  const [sleepRows, wellbeingRows, activityRows, hydrationRows, mealRows, cycleRows, bodyRows] = await Promise.all([
     prisma.sleepEntry.findMany({ where: { userId, date: { gte: since } } }),
     prisma.wellbeingEntry.findMany({ where: { userId, date: { gte: since } } }),
     prisma.activityEntry.findMany({ where: { userId, date: { gte: since } } }),
     prisma.hydrationLog.findMany({ where: { userId, date: { gte: since } } }),
     prisma.mealEntry.findMany({ where: { userId, date: { gte: since } } }),
     prisma.cycleEntry.findMany({ where: { userId, date: { gte: since }, pain: { not: null } } }),
+    prisma.bodyLog.findMany({ where: { userId, date: { gte: since }, kind: { in: ["caffeine", "alcohol"] } } }),
   ]);
 
   const metrics: Partial<Record<MetricKey, Map<string, number>>> = {
@@ -191,6 +196,10 @@ export async function computeUserCorrelations(userId: string): Promise<Correlati
     proteinG: toDailySumMap(mealRows, (r) => r.date, (r) => r.proteinG),
     fibreG: toDailySumMap(mealRows, (r) => r.date, (r) => r.fibreG),
     cyclePain: toDailyMap(cycleRows, (r) => r.date, (r) => r.pain),
+    // A drink is one row; a day's count is the number of rows. Days with none logged are simply absent (not zero): we can't
+    // tell "none" from "didn't log", and pretending otherwise would invent a pattern.
+    caffeine: toDailySumMap(bodyRows.filter((r) => r.kind === "caffeine"), (r) => r.date, () => 1),
+    alcohol: toDailySumMap(bodyRows.filter((r) => r.kind === "alcohol"), (r) => r.date, () => 1),
   };
 
   const totalLoggedDays = new Set([

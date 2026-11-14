@@ -152,6 +152,10 @@ interface ApiCycleEntry {
   // older API response without these must not break the page.
   contextTags?: string[];
   excludeCycle?: boolean;
+  cervicalMucus?: string | null;
+  bbtC?: number | null;
+  intercourse?: string | null;
+  productsUsed?: number | null;
 }
 
 export function toFrontendCycleDay(entry: ApiCycleEntry): CycleDay {
@@ -166,6 +170,10 @@ export function toFrontendCycleDay(entry: ApiCycleEntry): CycleDay {
     notes: entry.notes ?? undefined,
     contextTags: entry.contextTags ?? [],
     excludeCycle: entry.excludeCycle ?? false,
+    cervicalMucus: (entry.cervicalMucus ?? null) as CycleDay["cervicalMucus"],
+    bbtC: entry.bbtC ?? null,
+    intercourse: (entry.intercourse ?? null) as CycleDay["intercourse"],
+    productsUsed: entry.productsUsed ?? null,
   };
 }
 
@@ -230,6 +238,11 @@ export function toBackendCycleEntry(entry: Partial<CycleDay>) {
     notes: entry.notes,
     contextTags: entry.contextTags,
     excludeCycle: entry.excludeCycle,
+    // Sent only when the form knows about them (undefined leaves what is stored; null clears it).
+    cervicalMucus: entry.cervicalMucus,
+    bbtC: entry.bbtC,
+    intercourse: entry.intercourse,
+    productsUsed: entry.productsUsed,
   };
 }
 
@@ -381,8 +394,8 @@ export function toFrontendActivitySummary(apiSummary: ApiActivitySummary): Activ
 interface ApiWellbeingEntry {
   date: string;
   mood: number;
-  stress: number;
-  energy: number;
+  stress: number | null;
+  energy: number | null;
   note: string | null;
 }
 
@@ -390,14 +403,20 @@ export function toFrontendWellbeingEntry(entry: ApiWellbeingEntry): WellbeingEnt
   return {
     date: toWeekdayLabel(entry.date),
     mood: entry.mood,
-    stress: entry.stress,
-    energy: entry.energy,
+    stress: entry.stress ?? null,
+    energy: entry.energy ?? null,
     note: entry.note ?? undefined,
   };
 }
 
-export function toBackendWellbeingEntry(entry: Omit<WellbeingEntry, "date">) {
-  return { mood: entry.mood, stress: entry.stress, energy: entry.energy, note: entry.note };
+/** Only what she answered is sent: a question she skipped stays unanswered, not set to a guess. */
+export function toBackendWellbeingEntry(entry: Partial<Omit<WellbeingEntry, "date">> & { mood: number }) {
+  return {
+    mood: entry.mood,
+    ...(entry.stress !== undefined ? { stress: entry.stress } : {}),
+    ...(entry.energy !== undefined ? { energy: entry.energy } : {}),
+    ...(entry.note !== undefined ? { note: entry.note } : {}),
+  };
 }
 
 // --- Goals ------------------------------------------------------------------

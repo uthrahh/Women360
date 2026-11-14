@@ -14,6 +14,10 @@
   --w360-accent: #6B1D30;
   --w360-accent-strong: #521626;
   --w360-focus: #9A2C45;
+  /* Chart series, in this fixed order (validated for colour-blind separation on the light surface). */
+  --w360-series-1: #8C2A40;
+  --w360-series-2: #1F6FA3;
+  --w360-series-3: #A86E12;
   /* Soft accent wash for hero/tonal blocks — a calm focal surface instead of
      yet another white bordered box. */
   --w360-tint: #F7EAED;
@@ -42,6 +46,10 @@
   --w360-accent: #D0899A;
   --w360-accent-strong: #E6BFC9;
   --w360-focus: #D0899A;
+  /* The same three series, re-stepped for the dark surface (validated there, not flipped). */
+  --w360-series-1: #D0607A;
+  --w360-series-2: #3C93CF;
+  --w360-series-3: #C08A20;
   --w360-tint: #2B1B21;
   --w360-tint-text: #F1D3DB;
   --w360-nav-surface: rgba(37, 30, 25, 0.92);

@@ -108,7 +108,8 @@ export async function explainCycleDelay(userId: string): Promise<FactorReport> {
   }
 
   const stressStat = compareToBaseline(
-    wellbeingRows.map((w) => ({ date: w.date, value: w.stress })),
+    // Only days she actually rated her stress.
+    wellbeingRows.flatMap((w) => (w.stress === null ? [] : [{ date: w.date, value: w.stress }])),
     14
   );
   if (stressStat && stressStat.recentMean - stressStat.baselineMean >= 1) {
@@ -227,8 +228,10 @@ export async function explainLowMood(userId: string): Promise<FactorReport> {
   }
 
   const todayWellbeing = wellbeingRows.find((w) => isSameDate(w.date, today));
-  const earlierStress = wellbeingRows.filter((w) => !isSameDate(w.date, today)).map((w) => w.stress);
-  if (todayWellbeing && earlierStress.length >= MIN_HISTORY_DAYS) {
+  const earlierStress = wellbeingRows
+    .filter((w) => !isSameDate(w.date, today))
+    .flatMap((w) => (w.stress === null ? [] : [w.stress]));
+  if (todayWellbeing && todayWellbeing.stress !== null && earlierStress.length >= MIN_HISTORY_DAYS) {
     const baseline = mean(earlierStress);
     if (todayWellbeing.stress - baseline >= 1) {
       factors.push({

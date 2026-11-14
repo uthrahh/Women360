@@ -90,6 +90,11 @@ export const authService = {
     localStorage.removeItem(USER_CACHE_KEY);
   },
 
+  /** Erases her cycle days, cycle settings, reproductive record and declared conditions; the account and everything else stay. */
+  async deleteCycleHistory(password: string): Promise<{ deletedDays: number }> {
+    return request<{ deletedDays: number }>("/auth/delete-cycle-history", { method: "POST", body: JSON.stringify({ password }) });
+  },
+
   // Ends every session on every device, this one included.
   async logoutEverywhere(): Promise<void> {
     await request("/auth/logout-all", { method: "POST" });

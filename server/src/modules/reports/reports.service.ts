@@ -95,8 +95,8 @@ export const reportsService = {
     const wellbeingSummary = {
       entryCount: wellbeing.length,
       avgMood: avg(wellbeing.map((w) => w.mood)),
-      avgStress: avg(wellbeing.map((w) => w.stress)),
-      avgEnergy: avg(wellbeing.map((w) => w.energy)),
+      avgStress: avg(wellbeing.flatMap((w) => (w.stress === null ? [] : [w.stress]))),
+      avgEnergy: avg(wellbeing.flatMap((w) => (w.energy === null ? [] : [w.energy]))),
     };
 
     // Cycle predictions are always estimates derived from logged period

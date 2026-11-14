@@ -113,6 +113,7 @@ model User {
   pushSubscriptions      PushSubscription[]
   pushSent               PushSent[]
   idempotencyKeys        IdempotencyKey[]
+  bodyLogs               BodyLog[]
   appointments           Appointment[]
   medications            Medication[]
   medicationLogs         MedicationLog[]
@@ -264,28 +265,36 @@ model CycleProfile {
 }
 
 model CycleEntry {
-  id           String     @id @default(cuid())
-  userId       String
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date         DateTime   @db.Date
-  isPeriod     Boolean    @default(false)
-  flow         FlowLevel?
-  pain         Int?
-  energy       Int?
-  mood         String?
-  symptoms     String[]   @default([])
-  notes        String?
+  id            String     @id @default(cuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date          DateTime   @db.Date
+  isPeriod      Boolean    @default(false)
+  flow          FlowLevel?
+  pain          Int?
+  energy        Int?
+  mood          String?
+  symptoms      String[]   @default([])
+  notes         String?
   // Why the cycle this period ended was unusual (stress, illness, travel,
   // a medication or birth-control change...) — set on the period's start
   // day. Lets the person tell the app what happened instead of it silently
   // treating an outlier as her normal. Controlled vocabulary, validated in
   // cycle.validation.ts.
-  contextTags  String[]   @default([])
+  contextTags   String[]   @default([])
   // When true, the cycle that this period's start day ended is left out of
   // cycle-length prediction (it's still shown in history).
-  excludeCycle Boolean    @default(false)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  excludeCycle  Boolean    @default(false)
+  // Optional details, recorded for her own reference only. Nothing predicts from them (no fertility or ovulation estimate
+  // is made from mucus, temperature or sex). Fixed vocabularies are validated in cycle.validation.ts.
+  cervicalMucus String?
+  // Temperature on waking, in degrees Celsius.
+  bbtC          Float?
+  intercourse   String?
+  // Pads, tampons or cups changed that day.
+  productsUsed  Int?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -513,8 +522,9 @@ model WellbeingEntry {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime @db.Date
   mood      Int
-  stress    Int
-  energy    Int
+  // Optional: asked, never assumed. (Before this change the app filled them in from the previous entry.)
+  stress    Int?
+  energy    Int?
   note      String?
   createdAt DateTime @default(now())
 
@@ -932,4 +942,22 @@ model IdempotencyKey {
 
   @@unique([userId, key])
   @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Body log: caffeine, alcohol, bowel movements
+// ---------------------------------------------------------------------------
+
+// One row per thing logged ("a coffee", "a drink", "a bowel movement"), on her own calendar day. Counts are worked out
+// from the rows, so undoing is deleting the last one. `detail` is the bowel movement's consistency (hard, normal, loose).
+model BodyLog {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date     DateTime @db.Date
+  kind     String
+  detail   String?
+  loggedAt DateTime @default(now())
+
+  @@index([userId, date])
 }

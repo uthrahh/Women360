@@ -7,6 +7,7 @@ import type { InsightsSummary, MetricCorrelation } from "@/types";
 import { ScatterChart, Scatter, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Hint } from "@/components/ui/Hint";
+import { SeeItTogether } from "./SeeItTogether";
 
 const STRENGTH_TONE: Record<MetricCorrelation["strength"], "accent" | "neutral"> = {
   strong: "accent",
@@ -70,11 +71,13 @@ export default function InsightsPage() {
         </div>
       </div>
 
+      <SeeItTogether />
+
       <section>
         <div className="mb-3">
           <h2 className="font-display text-lg font-semibold">Patterns across your tracked metrics</h2>
           <Hint id="insights-intro" className="text-sm text-[var(--w360-text-muted)] mt-0.5">
-            Every pair of things you log — sleep, mood, energy, stress, activity, hydration, nutrition, period pain —
+            Every pair of things you log — sleep, mood, energy, stress, activity, hydration, caffeine, alcohol, nutrition, period pain —
             checked against each other over the last 90 days. Only patterns strong enough to matter are shown here;
             weak or noisy ones are left out rather than reported as a false signal.
           </Hint>

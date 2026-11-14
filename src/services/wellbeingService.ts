@@ -16,7 +16,7 @@ export const wellbeingService = {
     const todayEntry = apiEntries.find((e) => e.date.slice(0, 10) === localDateISO());
     return todayEntry ? { ...toFrontendWellbeingEntry(todayEntry), date: "Today" } : null;
   },
-  async logToday(entry: Omit<WellbeingEntry, "date">): Promise<WellbeingEntry> {
+  async logToday(entry: Partial<Omit<WellbeingEntry, "date">> & { mood: number }): Promise<WellbeingEntry> {
     const apiEntry = await request<Parameters<typeof toFrontendWellbeingEntry>[0]>(`/wellbeing/entries/${localDateISO()}`, {
       method: "PUT",
       body: JSON.stringify(toBackendWellbeingEntry(entry)),
