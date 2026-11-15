@@ -59,7 +59,7 @@ export function OtpInput({ value, onChange, onComplete, state = "idle", label, l
   const active = Math.min(value.length, length - 1);
   return (
     <div className={cn("otp", `otp-${state}`)}>
-      <div className="otp-glow relative rounded-3xl p-3 sm:p-4">
+      <div className="otp-glow relative">
         <div className="relative grid gap-2 sm:gap-2.5" style={{ gridTemplateColumns: `repeat(${length}, minmax(0, 1fr))` }}>
           {Array.from({ length }, (_, i) => {
             const digit = value[i];

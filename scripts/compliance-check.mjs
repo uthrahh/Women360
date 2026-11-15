@@ -12,6 +12,7 @@
  *   6. Every table added by a migration switches row-level security on.
  *   7. No SQL built from strings (SQL injection) and no raw HTML written into the page (XSS).
  *   8. No session replay, fonts only from this site, renewal terms beside any subscribe button, the age gate in place.
+ *   9. Motion: no transition-all, and the shared curve and duration tokens stay.
  *
  * Pure Node, no dependencies, reads only files tracked by git.
  */
@@ -142,6 +143,16 @@ for (const f of tracked.filter((f) => /^src\/.*\.tsx$/.test(f))) {
 // The age gate stays on both sides.
 if (!/oldEnough\(/.test(read("src/features/auth/RegisterPage.tsx"))) fail("age-gate", "the sign-up page no longer checks the age gate");
 if (!/assertAdultBirthDate\(/.test(read("server/src/modules/auth/auth.service.ts"))) fail("age-gate", "the server no longer checks the age gate at sign-up");
+
+// 9. Motion craft (docs/CRAFT.md) ------------------------------------------------------------------------
+// transition: all animates properties nobody chose (layout, colour, shadows) and makes interrupted motion jump. Name each property.
+for (const f of tracked.filter((f) => /^src\/.*\.(tsx|jsx|css)$/.test(f))) {
+  if (/transition-all|transition:\s*all\b/.test(read(f))) fail("motion", `${f}: transition-all / transition: all; name the properties that change`);
+}
+// The named curves and durations stay defined.
+for (const token of ["--ease-enter", "--ease-exit", "--ease-move", "--dur-popover", "--dur-exit"]) {
+  if (!read("src/index.css").includes(token + ":")) fail("motion", `src/index.css lost the ${token} token`);
+}
 
 if (problems.length) {
   console.error(`Launch standard: ${problems.length} problem(s)\n  ${problems.join("\n  ")}\n\nSee docs/LAUNCH_STANDARD.md.`);

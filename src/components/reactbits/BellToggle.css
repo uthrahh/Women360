@@ -77,11 +77,11 @@
 
 @media (hover: hover) and (pointer: fine) {
   .bell-toggle__button:enabled:hover {
-    background: color-mix(in srgb, var(--bt-color) 6%, var(--bt-bg));
+    background: color-mix(in oklch, var(--bt-color) 6%, var(--bt-bg));
   }
 
   .bell-toggle[data-on='true'] .bell-toggle__button:enabled:hover {
-    background: color-mix(in srgb, var(--bt-on-color) 6%, var(--bt-on-bg));
+    background: color-mix(in oklch, var(--bt-on-color) 6%, var(--bt-on-bg));
   }
 }
 

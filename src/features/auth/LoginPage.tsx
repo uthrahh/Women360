@@ -1,7 +1,8 @@
 import { FormEvent, useEffect } from "react";
 import { useState } from "react";
 import { warmUpApi } from "@/services/apiClient";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useTransitionNavigate } from "@/hooks/useTransitionNavigate";
 import { AuthLayout } from "./AuthLayout";
 import { Input } from "@/components/ui/Input";
 import { PasswordField } from "@/components/ui/PasswordField";
@@ -14,7 +15,9 @@ import type { User } from "@/types";
 
 export default function LoginPage() {
   const { auth } = useApp();
-  const nav = useNavigate();
+  const nav = useTransitionNavigate();
+  // Set when she is in: the card lifts away, then the app opens with a short cross-fade.
+  const [leaving, setLeaving] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +29,10 @@ export default function LoginPage() {
   const [otpState, setOtpState] = useState<OtpState>("idle");
   useEffect(warmUpApi, []);
 
-  const finish = (user: User) => nav(roleHome(user));
+  const finish = (user: User) => {
+    setLeaving(true);
+    setTimeout(() => nav(roleHome(user)), 220);
+  };
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -79,7 +85,7 @@ export default function LoginPage() {
 
   if (challenge) {
     return (
-      <AuthLayout title="Enter your code" subtitle={useBackup ? "Each backup code works once." : "From your authenticator app."}>
+      <AuthLayout title={useBackup ? "Enter a backup code" : "Enter your code"} leaving={leaving}>
         {/* A different key makes this a new form, so its field is created fresh and takes focus (React would otherwise reuse the email field). */}
         <form key={useBackup ? "backup" : "two-factor"} onSubmit={onSubmitCode} className="flex flex-col gap-4">
           {useBackup ? (
@@ -143,7 +149,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Log in to see your latest health snapshot.">
+    <AuthLayout title="Log in" leaving={leaving}>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <Input label="Email" type="email" name="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <PasswordField label="Password" value={password} onChange={setPassword} error={error || undefined} required />

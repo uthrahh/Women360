@@ -1,4 +1,5 @@
 import { Search, Bell, Menu, Moon, Sun, UserCircle2 } from "lucide-react";
+import { usePresence } from "@/hooks/usePresence";
 import { Kbd } from "@/components/ui/Kbd";
 import { OPEN_COMMAND_MENU_EVENT, modKeyLabel } from "@/lib/shortcuts";
 import { HelpButton } from "@/components/HelpButton";
@@ -14,6 +15,7 @@ import clsx from "clsx";
 export function TopBar() {
   const { theme, senior } = useApp();
   const [notifOpen, setNotifOpen] = useState(false);
+  const panel = usePresence(notifOpen);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifs, setNotifs] = useState<AppNotification[] | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -118,8 +120,8 @@ export function TopBar() {
             <Bell size={18} />
             {unreadCount > 0 && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-maroon-600" />}
           </button>
-          {notifOpen && (
-            <div className="absolute right-0 mt-2 w-80 max-w-[85vw] rounded-lg border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] shadow-card z-40 overflow-hidden">
+          {panel.mounted && (
+            <div data-state={panel.state} style={{ ["--origin" as string]: "top right" }} className="w360-pop absolute right-0 mt-2 w-80 max-w-[85vw] rounded-lg border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] shadow-card z-40 overflow-hidden">
               <div className="px-4 py-3 border-b border-[var(--w360-border)]">
                 <p className="text-sm font-semibold">Notifications</p>
                 {rows.length > 0 && (

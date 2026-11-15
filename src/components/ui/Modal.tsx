@@ -174,7 +174,7 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div ref={scrimRef} className="absolute inset-0 bg-ink-900/50 backdrop-blur-[1px]" onClick={onClose} aria-hidden />
+      <div ref={scrimRef} className="w360-scrim absolute inset-0 bg-ink-900/50 backdrop-blur-[1px]" onClick={onClose} aria-hidden />
       <div
         ref={dialogRef}
         role="dialog"
@@ -182,7 +182,7 @@ export function Modal({
         aria-labelledby={titleId}
         tabIndex={-1}
         className={clsx(
-          "w360-sheet relative bg-[var(--w360-bg-raised)] w-full sm:rounded-[28px] rounded-t-[28px] shadow-card border border-[var(--w360-border)] max-h-[88vh] overflow-y-auto w360-scrollbar outline-none",
+          "w360-sheet w360-dialog relative bg-[var(--w360-bg-raised)] w-full sm:rounded-[28px] rounded-t-[28px] shadow-card border border-[var(--w360-border)] max-h-[88vh] overflow-y-auto w360-scrollbar outline-none",
           size === "sm" && "sm:max-w-sm",
           size === "md" && "sm:max-w-lg",
           size === "lg" && "sm:max-w-2xl"

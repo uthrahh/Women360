@@ -2,31 +2,32 @@ import { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { WakingNotice } from "@/components/WakingNotice";
+import { AuthSky } from "./AuthSky";
+import { cn } from "@/lib/utils";
+import "./auth.css";
 
-export function AuthLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
+/**
+ * Every sign-in screen: one card on a sky, one title, one main action. The card flies up into place when it arrives and, when
+ * `leaving` is set (a successful sign-in), lifts away before the app opens.
+ */
+export function AuthLayout({ title, subtitle, children, leaving }: { title: string; subtitle?: string; children: ReactNode; leaving?: boolean }) {
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      <aside className="hidden lg:flex flex-col justify-between bg-ink-900 text-white p-12 dark:border-r dark:border-[var(--w360-border)]">
-        <Link to="/" className="font-display text-2xl font-semibold">Women360</Link>
-        <div>
-          <p className="font-display text-3xl leading-snug max-w-sm">
-            Your health, understood — across every stage of life.
-          </p>
-          <p className="text-white/75 mt-4 max-w-sm text-sm">
-            One place to track your cycle, nutrition, activity, sleep and wellbeing — built to grow simpler as you need it to.
-          </p>
-        </div>
-        <p className="text-xs text-maroon-300"><span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-maroon-500 mr-2 align-middle" />Women360 · Personal health, not a diagnosis.</p>
-      </aside>
-      <main className="relative flex flex-col justify-center px-6 sm:px-12 py-16">
-        <ThemeToggle className="absolute top-4 right-4 sm:right-6" />
-        <div className="w-full max-w-sm mx-auto">
-          <Link to="/" className="lg:hidden font-display text-xl font-semibold mb-10 block">Women360</Link>
-          <h1 className="font-display text-2xl font-semibold">{title}</h1>
-          {subtitle && <p className="text-[var(--w360-text-muted)] text-sm mt-1.5">{subtitle}</p>}
-          <WakingNotice className="mt-6" />
-          <div className="mt-8">{children}</div>
-        </div>
+    <div className="auth-root">
+      <AuthSky />
+      <ThemeToggle className="fixed top-4 right-4 sm:right-6 z-10" />
+      <main className={cn("auth-card", leaving ? "w360-fly-out" : "w360-fly-in")}>
+        <Link to="/" className="auth-mark" aria-label="Women360 home">
+          <svg className="auth-mark__glyph" viewBox="0 0 64 64" aria-hidden focusable="false">
+            <rect width="64" height="64" rx="14" fill="var(--w360-text)" />
+            <path d="M14 20l8 26 10-20 10 20 8-26" fill="none" stroke="var(--w360-bg)" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="50" cy="50" r="5" fill="var(--w360-pop)" />
+          </svg>
+          Women360
+        </Link>
+        <h1 className="font-display text-2xl font-semibold">{title}</h1>
+        {subtitle && <p className="text-[var(--w360-text-muted)] text-sm mt-1.5">{subtitle}</p>}
+        <WakingNotice className="mt-5" />
+        <div className="mt-6">{children}</div>
       </main>
     </div>
   );

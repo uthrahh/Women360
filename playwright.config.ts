@@ -44,6 +44,9 @@ export default defineConfig({
         CLINICAL_CONTENT: "false",
         API_RATE_LIMIT_PER_MINUTE: "100000",
         AUTH_RATE_LIMIT_PER_15_MIN: "1000",
+        // Every test starts from one saved sign-in, and a refresh token works once. The whole run takes longer than the usual
+        // 15-minute access token, so a short one would sign the later tests out; a longer one only changes the test server.
+        JWT_ACCESS_TTL: "3h",
         // Throwaway web-push keys (the same ones the server's unit tests use); they protect nothing.
         VAPID_PUBLIC_KEY: "BHzxe064z8zPFDasUNUkQeyIOQagiphIE2WSa5cWidEsYXm0lXA5GFD9sJmJygBKN6OPaP3kTGLiWgFBtH7JHUc",
         VAPID_PRIVATE_KEY: "QAf-vYE5oGwyY9V6AUFPfPOhxQC-9pXIdSuBZbAatF8",

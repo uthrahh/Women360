@@ -34,12 +34,12 @@
 }
 
 .scrub-field[data-dirty='true'] {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sf-accent) 55%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--sf-accent) 55%, transparent);
   transition-duration: 0ms;
 }
 
 .scrub-field[data-typing='true'] {
-  background: color-mix(in srgb, currentColor 7%, var(--sf-chip));
+  background: color-mix(in oklch, currentColor 7%, var(--sf-chip));
   cursor: text;
 }
 
@@ -55,7 +55,7 @@
 .scrub-field__fill {
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--sf-accent) 16%, transparent);
+  background: color-mix(in oklch, var(--sf-accent) 16%, transparent);
   transform-origin: left center;
 }
 
@@ -70,7 +70,7 @@
   height: 100%;
   padding: 0 6px;
   border-radius: calc(var(--sf-r) - 2px);
-  color: color-mix(in srgb, currentColor 55%, transparent);
+  color: color-mix(in oklch, currentColor 55%, transparent);
   font-weight: 500;
   white-space: nowrap;
   cursor: inherit;
@@ -81,7 +81,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .scrub-field:not([data-disabled='true']):hover .scrub-field__handle {
-    color: color-mix(in srgb, currentColor 85%, transparent);
+    color: color-mix(in oklch, currentColor 85%, transparent);
   }
 }
 
@@ -114,11 +114,11 @@
 }
 
 .scrub-field[data-over='true'] .scrub-field__input {
-  color: color-mix(in srgb, currentColor 55%, transparent);
+  color: color-mix(in oklch, currentColor 55%, transparent);
 }
 
 .scrub-field__suffix {
-  color: color-mix(in srgb, currentColor 45%, transparent);
+  color: color-mix(in oklch, currentColor 45%, transparent);
   font-weight: 500;
 }
 

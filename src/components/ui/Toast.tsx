@@ -4,7 +4,7 @@ import { CheckCircle2, AlertTriangle, X } from "lucide-react";
 type ToastTone = "success" | "error";
 /** A button on the message, such as "Undo". Pressing it runs onClick and dismisses the message. */
 export interface ToastAction { label: string; onClick: () => void }
-interface ToastItem { id: number; message: string; tone: ToastTone; action?: ToastAction; }
+interface ToastItem { id: number; message: string; tone: ToastTone; action?: ToastAction; leaving?: boolean; }
 interface ToastContextValue { show: (message: string, options?: { tone?: ToastTone; action?: ToastAction }) => void; }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -26,10 +26,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const nextId = useRef(1);
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
 
+  // A message leaves in 180ms (quicker than the 240ms it took to arrive): marked as leaving so it can animate out, then removed.
   const dismiss = useCallback((id: number) => {
     clearTimeout(timers.current.get(id));
     timers.current.delete(id);
-    publish(listRef.current.filter((x) => x.id !== id));
+    if (!listRef.current.some((x) => x.id === id && !x.leaving)) return;
+    publish(listRef.current.map((x) => (x.id === id ? { ...x, leaving: true } : x)));
+    setTimeout(() => publish(listRef.current.filter((x) => x.id !== id)), 180);
   }, []);
 
   const arm = useCallback((id: number, tone: ToastTone) => {
@@ -43,7 +46,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const action = options?.action;
     // The same message again (a double tap, or a repeated reminder) renews the one already shown instead of stacking a copy.
     // (A message with an action is never merged: its action belongs to this particular thing.)
-    const existing = action ? undefined : listRef.current.find((t) => t.message === message && t.tone === tone && !t.action);
+    const existing = action ? undefined : listRef.current.find((t) => t.message === message && t.tone === tone && !t.action && !t.leaving);
     if (existing) {
       arm(existing.id, tone);
       return;
@@ -76,7 +79,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             onMouseLeave={() => arm(t.id, t.tone)}
             onFocus={() => clearTimeout(timers.current.get(t.id))}
             onBlur={() => arm(t.id, t.tone)}
-            className="flex items-center gap-2 bg-ink-900 text-white dark:bg-white dark:text-ink-900 px-4 py-3 rounded shadow-card text-sm"
+            data-state={t.leaving ? "closed" : "open"}
+            className="w360-toast flex items-center gap-2 bg-ink-900 text-white dark:bg-white dark:text-ink-900 px-4 py-3 rounded shadow-card text-sm"
           >
             {t.tone === "error" ? (
               <AlertTriangle size={16} className="shrink-0 text-red-400 dark:text-red-600" />

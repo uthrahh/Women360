@@ -10,7 +10,7 @@
   --bm-draw: 400ms;
   --bm-fold: 300ms;
   --bm-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --bm-muted: color-mix(in srgb, var(--bm-ink) 55%, transparent);
+  --bm-muted: color-mix(in oklch, var(--bm-ink) 55%, transparent);
 
   position: relative;
   display: flex;

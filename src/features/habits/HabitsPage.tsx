@@ -19,7 +19,8 @@ import { NumberField } from "@/components/ui/NumberField";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LoadingState, EmptyState, ErrorState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
-import PulseHeart from "@/components/reactbits/PulseHeart";
+import { HabitTick } from "@/components/ui/HabitTick";
+import { RollingNumber } from "@/components/ui/RollingNumber";
 import BellToggle from "@/components/reactbits/BellToggle";
 import { DEFAULT_REMINDER, REMINDER_TIME_OPTIONS, STRICT_12H_TIME } from "@/lib/reminderTimes";
 import { Hint } from "@/components/ui/Hint";
@@ -119,7 +120,6 @@ export default function HabitsPage() {
   const [quickValue, setQuickValue] = useState("");
   // Bumped when a tap fails, to remount the hearts so a count they already
   // animated up snaps back to what the server holds.
-  const [heartEpoch, setHeartEpoch] = useState(0);
   const [catalog, setCatalog] = useState<ActivityCatalog | null>(null);
   const toast = useToast();
 
@@ -176,7 +176,6 @@ export default function HabitsPage() {
       if (done) toast.show(`Done: ${saved.title}`, { action: { label: "Undo", onClick: () => void tap(saved, false) } });
     } catch (err) {
       replace(h);
-      setHeartEpoch((n) => n + 1);
       fail(err, "Couldn't save that. Please try again.");
     }
   }
@@ -410,7 +409,7 @@ export default function HabitsPage() {
         <div>
           <h1 className="font-display text-3xl font-semibold">Habits</h1>
           <p className="text-[var(--w360-text-muted)] mt-1">
-            {habits.length === 0 ? "Small things you do again and again." : `${doneCount} of ${habits.length} done today`}
+            {habits.length === 0 ? "Small things you do again and again." : <><RollingNumber value={doneCount} /> of {habits.length} done today</>}
           </p>
         </div>
         <LogPopover
@@ -538,26 +537,17 @@ export default function HabitsPage() {
                           );
                         })}
                       </div>
-                      {(h.doneToday || h.streak > 1) && (
-                        <p className="text-xs text-[var(--w360-text-muted)] mt-1.5">
-                          {h.doneToday ? "Done for today" : ""}
-                          {h.streak > 1 ? `${h.doneToday ? " · " : ""}${h.streak} ${h.streakUnit}s in a row` : ""}
-                        </p>
-                      )}
+                      <p className="text-xs text-[var(--w360-text-muted)] mt-1.5 min-h-[1rem]">
+                        {h.doneToday ? "Done for today" : ""}
+                        {h.streak > 1 ? (
+                          <>
+                            {h.doneToday ? " · " : ""}
+                            <RollingNumber value={h.streak} /> {h.streakUnit}s in a row
+                          </>
+                        ) : null}
+                      </p>
                     </div>
-                    <PulseHeart
-                      key={`${h.id}-${heartEpoch}`}
-                      icon="fire"
-                      size={26}
-                      liked={h.doneToday}
-                      count={h.streak}
-                      onChange={(liked) => tap(h, liked)}
-                      label={`${h.title}, ${h.streakUnit} streak`}
-                      likedColor="var(--w360-flame)"
-                      idleColor="var(--w360-text-muted)"
-                      pillColor="var(--w360-tint)"
-                      textColor="var(--w360-text)"
-                    />
+                    <HabitTick done={h.doneToday} onChange={(next) => tap(h, next)} label={`${h.title}, ${h.streakUnit} streak`} />
                   </div>
                 </CardBody>
               </Card>

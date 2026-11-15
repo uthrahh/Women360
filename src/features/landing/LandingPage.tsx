@@ -21,11 +21,8 @@ const LifeScenes = lazy(() => import("./scenes/LifeScenes"));
 
 const REVEAL = { distance: 24, duration: 0.7, ease: "power2.out", threshold: 0.12 } as const;
 const SOFT_SHADOW = "shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]";
-const SIGNATURE_ITALIC = "font-display italic font-normal";
 const H2 = "font-display text-3xl sm:text-4xl font-semibold tracking-tight [text-wrap:balance]";
 
-const GRAIN =
-  "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
 
 // Every line is something the app does today. The check-up and pattern rules are marked as
 // not yet reviewed by a clinician inside the app, and the FAQ below says so.
@@ -88,17 +85,6 @@ const FAQ = [
     a: "Nothing. There's no scolding and no lost-streak message. The count simply starts again when you do.",
   },
 ];
-
-/** The paper texture. Fixed over the page, never catches a tap or a click. */
-function Grain() {
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none fixed inset-0 z-50 opacity-[0.35] dark:opacity-20 mix-blend-overlay"
-      style={{ backgroundImage: GRAIN }}
-    />
-  );
-}
 
 function Nav() {
   return (
@@ -173,8 +159,8 @@ function HeroPhone() {
           <span className="text-xs text-[var(--w360-text-muted)]">In about 5 days, give or take</span>
         </div>
         <div className={ROW}>
-          <span>Blood pressure</span>
-          <span className="text-xs rounded-full bg-[var(--w360-tint)] text-[var(--w360-tint-text)] px-2 py-0.5 border border-[var(--w360-border)]">Check-up due</span>
+          <span>Slept</span>
+          <span className="tabular-nums">7 h 20 min</span>
         </div>
       </Phone>
       <p className="text-xs text-[var(--w360-text-muted)] mt-4">Illustration of the app. No real data is shown.</p>
@@ -223,7 +209,6 @@ export default function LandingPage() {
       <Suspense fallback={null}>
         <LifeScenes />
       </Suspense>
-      <Grain />
       <Nav />
       <main className="relative z-10">
         {/* Hero */}
@@ -231,10 +216,10 @@ export default function LandingPage() {
           <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-14 lg:gap-8 items-center">
             <AnimatedContent {...REVEAL} trigger="mount" stagger={0.1} className="text-center lg:text-left">
               <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-semibold tracking-tight leading-[1.04] [text-wrap:balance]">
-                A calmer way to look after <span className={cn(SIGNATURE_ITALIC, "text-[var(--w360-accent)]")}>your</span> health.
+                See how your sleep, food, mood and cycle fit together.
               </h1>
               <p className="text-lg text-[var(--w360-text-muted)] mt-7 max-w-xl mx-auto lg:mx-0">
-                Log your cycle, meals, movement, sleep and mood in a few taps, and see how they fit together over time, in one calm place that stays private to you.
+                Log your cycle, meals, movement, sleep and mood in a few taps. Everything stays private to you.
               </p>
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-3 mt-9">
                 <Link to="/register" className={cn(buttonClasses({ size: "lg" }), SOFT_SHADOW)}>Create your account</Link>

@@ -6,7 +6,7 @@ test.use({ storageState: { cookies: [], origins: [] } });
 test.describe("landing page", () => {
   test("says what it is, offers sign-up, and only advertises what is live", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("A calmer way to look after your health.");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("See how your sleep, food, mood and cycle fit together.");
     await expect(page.getByRole("link", { name: "Create your account" }).first()).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Get started" })).toBeVisible();
     // While the review-needed features are off, the page must not promise them.

@@ -101,19 +101,19 @@
 .sc-veil {
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--w360-bg) 80%, transparent);
+  background: color-mix(in oklch, var(--w360-bg) 80%, transparent);
 }
 @media (min-width: 1024px) {
   .sc-veil {
     background: linear-gradient(
       90deg,
-      color-mix(in srgb, var(--w360-bg) 88%, transparent) 0%,
-      color-mix(in srgb, var(--w360-bg) 72%, transparent) 48%,
-      color-mix(in srgb, var(--w360-bg) 42%, transparent) 100%
+      color-mix(in oklch, var(--w360-bg) 88%, transparent) 0%,
+      color-mix(in oklch, var(--w360-bg) 72%, transparent) 48%,
+      color-mix(in oklch, var(--w360-bg) 42%, transparent) 100%
     );
   }
 }
-.senior .sc-veil { background: color-mix(in srgb, var(--w360-bg) 86%, transparent); }
+.senior .sc-veil { background: color-mix(in oklch, var(--w360-bg) 86%, transparent); }
 
 /* ---- Ambient motion, "on twos" ---- */
 @keyframes sc-sway { 0%, 100% { transform: rotate(-1.4deg); } 50% { transform: rotate(1.4deg); } }

@@ -54,7 +54,7 @@
 }
 
 .spring-check:focus-visible .spring-check__press {
-  outline: 2px solid color-mix(in srgb, var(--sc-ink) 45%, transparent);
+  outline: 2px solid color-mix(in oklch, var(--sc-ink) 45%, transparent);
   outline-offset: 3px;
 }
 

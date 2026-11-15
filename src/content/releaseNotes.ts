@@ -22,6 +22,13 @@ export interface ReleaseNote {
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
     date: "2026-11-15",
+    headline: "A clearer habit tick, and a sign-in on a sky",
+    details:
+      "A habit is now an empty ring until you do it, then it fills in, with a short pulse to confirm; counts such as how many are done and your streak roll instead of swapping, and nothing is shown for a streak of zero. Signing in is one title and one button on a morning or night sky. The activity picker can be searched by typing, switches stretch as they move, tabs glide between each other, and messages and menus arrive and leave a little more smoothly.",
+    area: "Design",
+  },
+  {
+    date: "2026-11-15",
     headline: "A new look, and calmer sign-up and sign-in",
     details:
       "Women360 is now black and white with a hot-pink accent, in light and dark. Dates of birth and cycle numbers are chosen on wheels you can spin, drag or move with the keyboard. Choosing a password has one calm line instead of a list of rules, can suggest a strong one for you, and hides itself again when you leave the tab; codes from your authenticator app go into tiles and are checked as soon as the last digit is in.",

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 
@@ -21,13 +22,22 @@ export function Tabs({ tabs, defaultTab, urlParam }: { tabs: Tab[]; defaultTab?:
   const fromUrl = urlParam ? params.get(urlParam) : null;
   const active = fromUrl && tabs.some((t) => t.id === fromUrl) ? fromUrl : local;
 
-  const select = (id: string) => {
+  const apply = (id: string) => {
     setLocal(id);
     if (urlParam) {
       const next = new URLSearchParams(params);
       next.set(urlParam, id);
       setParams(next, { replace: true });
     }
+  };
+  // The selected pill carries a view-transition-name, so the browser glides it from the old tab to the new one. Without browser
+  // support, or for someone who prefers reduced motion, the pill simply moves.
+  const pillName = `tabpill-${base.replace(/[^a-zA-Z0-9]/g, "")}`;
+  const select = (id: string) => {
+    if (id === active) return;
+    const doc = document as Document & { startViewTransition?: (update: () => void) => unknown };
+    if (!doc.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return apply(id);
+    doc.startViewTransition(() => flushSync(() => apply(id)));
   };
 
   const listRef = useRef<HTMLDivElement>(null);
@@ -86,13 +96,14 @@ export function Tabs({ tabs, defaultTab, urlParam }: { tabs: Tab[]; defaultTab?:
             tabIndex={active === t.id ? 0 : -1}
             onClick={() => select(t.id)}
             className={clsx(
-              "px-4 py-2 text-sm senior:text-lg font-medium whitespace-nowrap rounded-full transition-colors",
-              active === t.id
-                ? "bg-[var(--w360-bg-raised)] text-maroon-800 dark:text-maroon-200 shadow-subtle"
-                : "text-[var(--w360-text-muted)] hover:text-[var(--w360-text)]"
+              "relative px-4 py-2 text-sm senior:text-lg font-medium whitespace-nowrap rounded-full transition-colors duration-hover",
+              active === t.id ? "text-[var(--w360-text)]" : "text-[var(--w360-text-muted)] hover:text-[var(--w360-text)]"
             )}
           >
-            {t.label}
+            {active === t.id && (
+              <span aria-hidden className="absolute inset-0 rounded-full bg-[var(--w360-bg-raised)] shadow-subtle" style={{ viewTransitionName: pillName }} />
+            )}
+            <span className="relative">{t.label}</span>
           </button>
         ))}
       </div>

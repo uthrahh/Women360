@@ -66,7 +66,8 @@ test.describe("dialogs and forms", () => {
     await page.goto("/app/activity");
     await waitForApp(page);
     await page.getByRole("button", { name: "Add activity" }).click();
-    await page.getByLabel("Activity", { exact: true }).selectOption({ label: "Walking" });
+    await page.getByRole("combobox", { name: "Activity" }).fill("Walking");
+    await page.getByRole("option", { name: "Walking", exact: true }).click();
     await audit(page);
   });
   test("the cycle log", async ({ page }) => {

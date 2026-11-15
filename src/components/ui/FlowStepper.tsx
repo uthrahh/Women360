@@ -21,7 +21,7 @@ const THEME: CSSProperties = {
   ["--stepper-solid" as string]: "var(--w360-accent)",
   ["--stepper-solid-ink" as string]: "var(--w360-bg)",
   ["--stepper-hover" as string]: "none",
-  ["--stepper-hover-fill" as string]: "color-mix(in srgb, var(--w360-text) 4%, transparent)",
+  ["--stepper-hover-fill" as string]: "color-mix(in oklch, var(--w360-text) 4%, transparent)",
   ["--stepper-solid-hover" as string]: "brightness(0.92)",
   ["--stepper-press" as string]: "brightness(0.9)",
 };

@@ -70,7 +70,7 @@ export function FeedbackTab() {
                 size={34}
                 ariaLabel="Overall rating"
                 activeColor="var(--w360-accent)"
-                idleColor="color-mix(in srgb, var(--w360-text-muted) 40%, transparent)"
+                idleColor="color-mix(in oklch, var(--w360-text-muted) 40%, transparent)"
                 tipColor="var(--w360-text)"
                 tipTextColor="var(--w360-bg)"
               />

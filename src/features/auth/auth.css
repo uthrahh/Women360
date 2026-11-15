@@ -1,0 +1,83 @@
+/* The sign-in screens: a sky, and one card on it. */
+
+.auth-root {
+  /* The sky's own colours, used for the card's shadow as well, so the card is lit by the sky it sits in. */
+  --sky-top: oklch(0.985 0.008 350);
+  --sky-mid: oklch(0.955 0.035 350);
+  --sky-horizon: oklch(0.93 0.055 20);
+  --sky-glow: oklch(0.9 0.09 350);
+  --sky-cloud: #fff;
+  --sky-shadow: 214 0 111;           /* the accent, as r g b, for the layered shadows */
+  --sky-shadow-strength: 1;
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: max(1.5rem, var(--safe-top)) 1rem max(1.5rem, var(--safe-bottom));
+  background: linear-gradient(to bottom, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-horizon) 100%);
+}
+.dark .auth-root {
+  --sky-top: #000;
+  --sky-mid: oklch(0.12 0.02 350);
+  --sky-horizon: oklch(0.19 0.07 350);
+  --sky-glow: oklch(0.36 0.15 350);
+  --sky-cloud: oklch(0.3 0.04 350);
+  --sky-shadow: 255 62 165;
+  --sky-shadow-strength: 0.9;
+}
+
+/* ---- The sky ---- */
+.auth-sky { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.auth-sky__glow { position: absolute; left: -20%; right: -20%; bottom: -35%; height: 80%; background: radial-gradient(closest-side, color-mix(in oklch, var(--sky-glow) 70%, transparent), transparent); }
+.auth-sky__sun {
+  position: absolute; left: 50%; bottom: -9rem; width: 24rem; height: 24rem; margin-left: -12rem; border-radius: 50%;
+  background: radial-gradient(closest-side, oklch(0.985 0.035 85) 0 38%, color-mix(in oklch, oklch(0.95 0.06 60) 55%, transparent) 62%, transparent 100%);
+}
+.auth-sky__moon, .auth-sky__stars { display: none; }
+.dark .auth-sky__sun { display: none; }
+.dark .auth-sky__stars { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+.dark .auth-sky__moon {
+  display: block; position: absolute; top: 12%; right: 14%; width: 3.2rem; height: 3.2rem; border-radius: 50%;
+  background: oklch(0.96 0.01 350);
+  box-shadow: 0 0 2.5rem 0.6rem color-mix(in oklch, oklch(0.9 0.05 350) 35%, transparent);
+}
+.auth-sky__cloud { position: absolute; opacity: 0.9; will-change: transform; }
+.dark .auth-sky__cloud { opacity: 0.55; }
+.auth-sky__cloud--a { top: 14%; left: 8%; width: 11rem; animation: sky-drift 46s ease-in-out infinite alternate; }
+.auth-sky__cloud--b { top: 30%; right: 6%; width: 15rem; animation: sky-drift 62s ease-in-out infinite alternate-reverse; }
+.auth-sky__cloud--c { bottom: 24%; left: 14%; width: 9rem; opacity: 0.7; animation: sky-drift 54s ease-in-out infinite alternate; }
+@keyframes sky-drift { from { transform: translateX(-28px); } to { transform: translateX(28px); } }
+.senior .auth-sky__cloud { animation: none; }
+
+/* ---- The card ---- */
+.auth-card {
+  /* Concentric corners: a field inside the card has the card's radius minus the card's padding (32 - 20 = 12). */
+  --auth-radius: 32px;
+  --auth-pad: 20px;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 24rem;
+  padding: var(--auth-pad);
+  border-radius: var(--auth-radius);
+  background: var(--w360-bg-raised);
+  /* Layered shadows in the sky's colour: a tight contact shadow, then wider, softer ones, and a hairline ring instead of a border. */
+  box-shadow:
+    0 0 0 1px rgb(var(--sky-shadow) / calc(0.07 * var(--sky-shadow-strength))),
+    0 1px 1px rgb(var(--sky-shadow) / calc(0.06 * var(--sky-shadow-strength))),
+    0 3px 6px rgb(var(--sky-shadow) / calc(0.06 * var(--sky-shadow-strength))),
+    0 12px 24px rgb(var(--sky-shadow) / calc(0.08 * var(--sky-shadow-strength))),
+    0 32px 64px rgb(var(--sky-shadow) / calc(0.1 * var(--sky-shadow-strength)));
+}
+@media (min-width: 640px) { .auth-card { --auth-pad: 24px; padding: 28px 24px 24px; } }
+/* Everything inside takes the inner radius; buttons are squared to match instead of being pills (a pill inside a rounded card is not concentric). */
+.auth-card :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea, button[type="submit"], a[class*="rounded-full"]) {
+  border-radius: calc(var(--auth-radius) - var(--auth-pad));
+}
+.auth-card .npf { border-radius: calc(var(--auth-radius) - var(--auth-pad)); }
+.auth-card .npf-input { border-radius: calc(var(--auth-radius) - var(--auth-pad)); }
+.auth-card .otp-glow { border-radius: calc(var(--auth-radius) - var(--auth-pad)); }
+
+.auth-mark { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.5rem; font-family: "Fraunces Variable", Fraunces, ui-serif, Georgia, serif; font-weight: 600; font-size: 1.15rem; }
+.auth-mark__glyph { width: 2rem; height: 2rem; border-radius: calc(var(--auth-radius) - var(--auth-pad) - 4px); }

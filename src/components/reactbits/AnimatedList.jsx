@@ -454,7 +454,7 @@ const AnimatedList = ({
         '--al-width': size(width),
         '--al-accent': accentColor || 'var(--al-ink)',
         ...(accentColor
-          ? { '--al-ring': accentColor, '--al-ring-fill': `color-mix(in srgb, ${accentColor} 8%, transparent)` }
+          ? { '--al-ring': accentColor, '--al-ring-fill': `color-mix(in oklch, ${accentColor} 8%, transparent)` }
           : {}),
         ...style
       }}

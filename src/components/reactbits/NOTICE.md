@@ -17,3 +17,5 @@ Changes made for Women360 are marked in each file with a "Women360 change" comme
 The full licence text is the project's `LICENSE.md`:
 https://github.com/DavidHDev/react-bits/blob/main/LICENSE.md
 **Owner action:** paste that file's text here verbatim before the first public release, so the full notice ships with the code.
+
+Colour mixing in these files was moved from sRGB to OKLCH (`color-mix(in oklch, ...)`), like the rest of the app, on 2026-11-15. The vendored heart-and-count component (`PulseHeart`) was removed on the same date because the app no longer uses it.

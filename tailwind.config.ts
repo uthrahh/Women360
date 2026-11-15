@@ -65,6 +65,21 @@ export default {
         // sits above content and needs separating from it.
         float: "0 8px 28px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.08)",
       },
+      transitionTimingFunction: {
+        // The named curves in src/index.css. ease-enter for arriving, ease-exit for leaving, ease-move for moving in place.
+        enter: "var(--ease-enter)",
+        exit: "var(--ease-exit)",
+        move: "var(--ease-move)",
+        overshoot: "var(--ease-overshoot)",
+      },
+      transitionDuration: {
+        press: "120ms",
+        hover: "150ms",
+        popover: "200ms",
+        exit: "160ms",
+        sheet: "260ms",
+        move: "320ms",
+      },
       maxWidth: {
         content: "1180px",
       },

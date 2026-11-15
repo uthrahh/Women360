@@ -14,7 +14,7 @@ const THEME: CSSProperties = {
   ["--al-muted" as string]: "var(--w360-text-muted)",
   ["--al-thumb" as string]: "var(--w360-border)",
   ["--al-ring" as string]: "var(--w360-accent)",
-  ["--al-ring-fill" as string]: "color-mix(in srgb, var(--w360-accent) 6%, transparent)",
+  ["--al-ring-fill" as string]: "color-mix(in oklch, var(--w360-accent) 6%, transparent)",
   ["--al-accent" as string]: "var(--w360-focus)",
   ["--al-hover" as string]: "none",
   ["--al-press" as string]: "none",

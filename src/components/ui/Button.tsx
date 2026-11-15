@@ -28,7 +28,9 @@ type Size = NonNullable<ButtonProps["size"]>;
 /** The Button's look as a class string, for elements that must be a button but aren't <Button> (e.g. a popover trigger). */
 export function buttonClasses({ variant = "primary", size = "md", fullWidth }: { variant?: Variant; size?: Size; fullWidth?: boolean } = {}) {
   return clsx(
-    "inline-flex items-center justify-center rounded-full font-medium transition-[background-color,transform] duration-150 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed",
+    "inline-flex items-center justify-center rounded-full font-medium transition-[background-color,border-color,color,transform] duration-hover ease-enter active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed",
+    // Optical centring: an icon at either end sits 2px closer to the edge, because its shape is lighter than the text beside it.
+    "[&>svg:first-child:not(:only-child)]:-ml-0.5 [&>svg:last-child:not(:only-child)]:-mr-0.5",
     "senior:font-semibold",
     variants[variant],
     sizes[size],

@@ -1,0 +1,19 @@
+.w360-roll { display: inline-flex; vertical-align: baseline; font-variant-numeric: tabular-nums; }
+.w360-roll__col {
+  display: inline-block;
+  width: 1ch;
+  height: 1.2em;
+  overflow: hidden;
+  line-height: 1.2;
+  /* Digits fade at the top and bottom as they pass, so the roll reads as a drum, not a clip. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+}
+.w360-roll__strip {
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--dur-move) var(--ease-move);
+  will-change: transform;
+}
+.w360-roll__strip[data-snap] { transition: none; }
+.w360-roll__strip > span { display: block; height: 1.2em; text-align: center; }

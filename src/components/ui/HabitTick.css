@@ -1,0 +1,51 @@
+.w360-tick {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 999px;
+  color: var(--w360-text-muted);
+  background: transparent;
+  /* The quiet state is an outline only. A shadow ring (not a border) so it doesn't change the size. */
+  box-shadow: inset 0 0 0 1.5px color-mix(in oklch, var(--w360-text-muted) 55%, transparent);
+  transition: transform var(--dur-press) var(--ease-enter), box-shadow var(--dur-hover) ease, color var(--dur-hover) ease;
+}
+.w360-tick:active { transform: scale(0.95); }
+.w360-tick:focus-visible { outline-offset: 3px; border-radius: 999px; }
+@media (hover: hover) and (pointer: fine) {
+  .w360-tick:not(.w360-tick--done):hover { box-shadow: inset 0 0 0 1.5px var(--w360-accent); color: var(--w360-accent); }
+}
+
+/* The fill grows from the middle. It overshoots on the way in (let go and it springs past full size) and doesn't on the way out. */
+.w360-tick__fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--w360-accent);
+  transform: scale(0);
+  transition: transform 200ms var(--ease-exit);
+}
+.w360-tick--done .w360-tick__fill { transform: scale(1); transition: transform 380ms var(--ease-overshoot); }
+.w360-tick--done { color: var(--w360-bg); box-shadow: none; }
+
+/* Flame and check share one spot and cross-fade with scale and blur. */
+.w360-tick__icon { position: absolute; transition: opacity 200ms ease, transform 280ms var(--ease-enter), filter 200ms ease; }
+.w360-tick__flame { opacity: 1; transform: scale(1); filter: blur(0); }
+.w360-tick__check { opacity: 0; transform: scale(0.3); filter: blur(3px); }
+.w360-tick--done .w360-tick__flame { opacity: 0; transform: scale(0.3); filter: blur(3px); }
+.w360-tick--done .w360-tick__check { opacity: 1; transform: scale(1); filter: blur(0); transition-delay: 60ms; }
+
+/* A ring of light pulses out once to confirm. */
+.w360-tick__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px var(--w360-accent);
+  animation: w360-tick-pulse 520ms var(--ease-enter) both;
+  pointer-events: none;
+}
+@keyframes w360-tick-pulse { from { opacity: 0.55; transform: scale(1); } to { opacity: 0; transform: scale(1.55); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .w360-tick__pulse { display: none; }
+}

@@ -6,14 +6,18 @@
   initial-value: 0deg;
 }
 .otp-glow {
+  --otp-radius: 12px;
+  --otp-pad: 10px;
+  border-radius: var(--otp-radius);
+  padding: var(--otp-pad);
   background:
-    radial-gradient(120% 140% at 50% 0%, color-mix(in srgb, var(--w360-bg-raised) 55%, transparent), transparent 70%),
+    radial-gradient(120% 140% at 50% 0%, color-mix(in oklch, var(--w360-bg-raised) 55%, transparent), transparent 70%),
     conic-gradient(from var(--otp-angle) at 50% 50%, #ffd9ec, #fff7fb, #e7ecff, #fff1e4, #ffe0f0, #f3e8ff, #ffd9ec);
   animation: otp-turn 14s linear infinite;
 }
 .dark .otp-glow {
   background:
-    radial-gradient(120% 140% at 50% 0%, color-mix(in srgb, #000 45%, transparent), transparent 70%),
+    radial-gradient(120% 140% at 50% 0%, color-mix(in oklch, #000 45%, transparent), transparent 70%),
     conic-gradient(from var(--otp-angle) at 50% 50%, #3d0f26, #120a10, #10162a, #22140a, #2c0a1d, #1a1028, #3d0f26);
 }
 @keyframes otp-turn { to { --otp-angle: 360deg; } }
@@ -24,7 +28,7 @@
   display: grid;
   place-items: center;
   aspect-ratio: 4 / 5;
-  border-radius: 14px;
+  border-radius: max(4px, calc(var(--otp-radius, 12px) - var(--otp-pad, 10px)));
   background: var(--w360-bg-raised);
   color: var(--w360-text);
   font-size: 1.6rem;

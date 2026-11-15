@@ -1,13 +1,11 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
+import { ComboBox } from "@/components/ui/ComboBox";
 import { DurationField } from "@/components/ui/DurationField";
 import { NumberField } from "@/components/ui/NumberField";
 import { effortOf, estimateCalories, type FieldsValue } from "@/lib/activity";
 import type { ActivityCatalog, CatalogActivity } from "@/types";
-
-const selectClass =
-  "px-3.5 py-3 rounded-xl border border-[var(--w360-border)] bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm senior:text-lg senior:py-3.5";
 
 /**
  * The activity, how hard, how long, and (only where the activity has them) distance or
@@ -57,17 +55,14 @@ export function ActivityFields({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor={`${idPrefix}-activity`} className="text-sm font-medium">Activity</label>
-        <select id={`${idPrefix}-activity`} value={value.code} onChange={(e) => pickActivity(e.target.value)} className={selectClass} required>
-          <option value="">Choose an activity</option>
-          {groups.map(([group, items]) => (
-            <optgroup key={group} label={group}>
-              {items.map((a) => <option key={a.code} value={a.code}>{a.label}</option>)}
-            </optgroup>
-          ))}
-        </select>
-      </div>
+      <ComboBox
+        id={`${idPrefix}-activity`}
+        label="Activity"
+        placeholder="Search activities"
+        value={value.code}
+        onChange={pickActivity}
+        items={groups.flatMap(([group, list]) => list.map((a) => ({ value: a.code, label: a.label, group })))}
+      />
 
       {activity && (
         <fieldset>

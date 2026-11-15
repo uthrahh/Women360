@@ -293,11 +293,11 @@ upload scanning (there are no uploads), and the `react-router` v7 upgrade the
 audit flags (a deliberate separate project).
 
 **React Bits components (latest pass):** the landing page (`AnimatedContent` scroll
-reveals; its floating pill nav, grain and soft blobs are plain CSS; `SpecularButton` is
+reveals; its floating pill nav and soft blobs are plain CSS (the paper-grain overlay was removed); `SpecularButton` is
 vendored but no longer used by it), the signed-in menu (`BranchedMenu`)
 and mobile bottom bar (`GooeyNav`), multi-step flows (`Stepper` via `FlowStepper`,
 used by onboarding), daily-goal check-in
-(`PulseHeart` with the fire glyph), reminders (`BellToggle`), Settings feedback
+(replaced by `HabitTick`; PulseHeart was removed), reminders (`BellToggle`), Settings feedback
 (`PeekRating`), number entry (`ScrubField`), the dashboard's "To do today"
 (`SpringCheck`) and every list (`AnimatedList`) are vendored, unmodified apart
 from commented "Women360 change" edits, in `src/components/reactbits/` as
@@ -668,3 +668,20 @@ update that document, the privacy page and the guards in the same change. Standi
   `MAIL_POSTAL_ADDRESS` in its text (`marketingProblem` in `mailer.ts`, tested), and carries List-Unsubscribe headers.
 - **Never** add session replay or screen recording, third-party fonts, or a subscribe/trial/upgrade button without its price,
   renewal and cancellation terms beside it (all guarded by `check:compliance`). DMCA agent registration: `docs/DMCA.md`.
+
+## 8. Craft standard (always followed)
+
+`docs/CRAFT.md` maps the owner's craft lists (motion, typography, touch targets, the sign-in screens, the habit tick, the unslop pass) to what
+the app does, and it must stay true. Standing rules:
+
+- **One set of motion numbers:** use the tokens in `src/index.css` (`--ease-enter|exit|move|overshoot`, `--dur-*`; Tailwind `ease-enter`, `duration-popover`...), never
+  ad-hoc curves. Entrances ease out, exits are about 20% shorter, popovers and menus start at 95% and grow from the thing that opened them
+  (set `--origin`, use `.w360-pop` and `usePresence`), buttons press to 0.97. Never `transition: all` (guarded). Interactive state is a CSS
+  transition so it can be interrupted; frequent or keyboard-driven actions don't animate; reduced motion shows the same end state.
+- **Done is filled, not-done is an outline** (`HabitTick`); counts that change roll (`RollingNumber`); one-tap actions are optimistic with Undo and no spinner.
+- **Numbers** are tabular (set on the page), headings balance and body text uses `text-wrap: pretty`; running text has a measure (`.measure`, 45 to 75 characters).
+- **Touch:** controls get a 44px hit zone on touch screens automatically; don't defeat it, and don't put two small controls closer than their zones allow (`data-no-hit` for a dense row).
+- **Pickers:** a long list is a `ComboBox`; a bounded range is a wheel; a short list is a plain select; typed numbers stay `NumberField`.
+- **Sign-in screens** share `AuthLayout` (one title, one main action, a sky, a concentric card); a new auth screen uses it.
+- **No filler:** a badge, subtitle, divider, icon or caption that carries no information is cut; copy uses this product's own nouns and describes only what is live.
+- **Chat / AI assistant:** there is none. Building one is a product decision first (see `docs/CRAFT.md` §7).

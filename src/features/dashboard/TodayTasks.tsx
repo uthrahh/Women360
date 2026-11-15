@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { CalendarClock, ClipboardCheck } from "lucide-react";
 import SpringCheck from "@/components/reactbits/SpringCheck";
 import { Card, CardBody } from "@/components/ui/Card";
+import { RollingNumber } from "@/components/ui/RollingNumber";
 import { useToast } from "@/components/ui/Toast";
 import { habitService } from "@/services/habitService";
 import { healthService } from "@/services/healthService";
@@ -139,7 +140,7 @@ export function TodayTasks({
       <CardBody className="p-0">
         <div className="px-5 pt-4 pb-1 flex items-baseline justify-between gap-3">
           <p className="text-sm text-[var(--w360-text-muted)]" aria-live="polite">
-            {loading ? "Loading today's list" : open === 0 ? "All done for today" : `${open} left today`}
+            {loading ? "Loading today's list" : open === 0 ? "All done for today" : <><RollingNumber value={open} /> left today</>}
           </p>
         </div>
         <ul className="px-5 pb-3 divide-y divide-[var(--w360-border)]">

@@ -91,7 +91,8 @@ test.describe("activity", () => {
     await page.goto("/app/activity");
     await waitForApp(page);
     await page.getByRole("button", { name: "Add activity" }).click();
-    await page.getByLabel("Activity", { exact: true }).selectOption({ label: "Walking" });
+    await page.getByRole("combobox", { name: "Activity" }).fill("Walking");
+    await page.getByRole("option", { name: "Walking", exact: true }).click();
     await expect(page.getByRole("radio").first()).toBeVisible();
     await page.getByRole("spinbutton", { name: "Duration, minutes" }).fill("45");
     await page.getByRole("button", { name: /Save activity/ }).click();
@@ -102,7 +103,8 @@ test.describe("activity", () => {
     await page.goto("/app/activity");
     await waitForApp(page);
     await page.getByRole("button", { name: "Add activity" }).click();
-    await page.getByLabel("Activity", { exact: true }).selectOption({ label: "Walking" });
+    await page.getByRole("combobox", { name: "Activity" }).fill("Walking");
+    await page.getByRole("option", { name: "Walking", exact: true }).click();
     const minutes = page.getByRole("spinbutton", { name: "Duration, minutes" });
     await page.getByRole("button", { name: "Increase duration, minutes" }).click();
     await page.getByRole("button", { name: "Increase duration, minutes" }).click();
