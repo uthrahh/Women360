@@ -33,7 +33,9 @@ test.describe("habit tick", () => {
     });
     await tick.click();
     await expect(tick).toHaveAttribute("aria-pressed", "true", { timeout: 300 });
-    await expect(page.getByRole("progressbar")).toHaveCount(0);
+    // No spinner: nothing inside the tick, and no "saving" message, while the slow save is still out.
+    await expect(tick.locator("[role=progressbar], [aria-busy=true]")).toHaveCount(0);
+    await expect(page.getByText(/Saving/)).toHaveCount(0);
     // Done: the fill grows to full size (it overshoots on the way, then settles).
     await expect.poll(() => fill.evaluate((el) => getComputedStyle(el).transform), { timeout: 3000 }).toBe("matrix(1, 0, 0, 1, 0, 0)");
     await expect(page.getByText("Done for today")).toBeVisible();
@@ -123,21 +125,22 @@ test.describe("combo box", () => {
     await expect(page.getByRole("main")).toBeVisible();
     await page.getByRole("button", { name: "Add activity" }).click();
     const box = page.getByRole("combobox", { name: "Activity" });
+    const list = page.getByRole("listbox", { name: "Activity", exact: true });
     await box.focus();
-    await expect(page.getByRole("listbox")).toBeVisible();
-    const all = await page.getByRole("option").count();
+    await expect(list).toBeVisible();
+    const all = await list.getByRole("option").count();
     await box.fill("run");
-    const narrowed = await page.getByRole("option").count();
+    const narrowed = await list.getByRole("option").count();
     expect(narrowed).toBeGreaterThan(0);
     expect(narrowed).toBeLessThan(all);
     await page.keyboard.press("ArrowDown");
     await expect(box).toHaveAttribute("aria-activedescendant", /opt-1$/);
     await page.keyboard.press("Enter");
-    await expect(page.getByRole("listbox")).toHaveCount(0);
+    await expect(list).toHaveCount(0);
     await expect(box).not.toHaveValue("run");
     await box.focus();
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("listbox")).toHaveCount(0);
+    await expect(list).toHaveCount(0);
     // Nothing matching says so, in words.
     await box.fill("zzzz");
     await expect(page.getByText(/Nothing matches/)).toBeVisible();
