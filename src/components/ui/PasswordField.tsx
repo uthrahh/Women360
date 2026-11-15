@@ -1,7 +1,6 @@
 import { useId, useState } from "react";
-import { Check, Circle, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import clsx from "clsx";
-import { checkPassword, type PasswordContext } from "@/lib/passwordPolicy";
 
 interface PasswordFieldProps {
   label: string;
@@ -10,10 +9,8 @@ interface PasswordFieldProps {
   error?: string;
   hint?: string;
   required?: boolean;
-  // "new-password" lets password managers offer to generate one.
-  autoComplete?: "new-password" | "current-password";
-  // Live checklist of the rules, for choosing a new password. Omit for sign-in.
-  policyContext?: PasswordContext;
+  // Entering an existing password. Choosing a new one uses NewPasswordField.
+  autoComplete?: "current-password";
 }
 
 export function PasswordField({
@@ -24,11 +21,9 @@ export function PasswordField({
   hint,
   required,
   autoComplete = "current-password",
-  policyContext,
 }: PasswordFieldProps) {
   const id = useId();
   const [visible, setVisible] = useState(false);
-  const checks = policyContext ? checkPassword(value, policyContext) : null;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -44,11 +39,11 @@ export function PasswordField({
           autoCapitalize="none"
           spellCheck={false}
           aria-invalid={!!error}
-          aria-describedby={error ? `${id}-error` : checks ? `${id}-rules` : hint ? `${id}-hint` : undefined}
+          aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
           className={clsx(
             "w-full pl-4 pr-12 py-3 rounded-xl border bg-[var(--w360-bg-raised)] text-[var(--w360-text)] text-sm",
             "senior:text-lg senior:py-3.5 senior:rounded-2xl",
-            error ? "border-red-400" : "border-[var(--w360-border)]"
+            error ? "border-[var(--w360-danger-border)]" : "border-[var(--w360-border)]"
           )}
         />
         <button
@@ -61,27 +56,8 @@ export function PasswordField({
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
       </div>
-      {error && <p id={`${id}-error`} className="text-xs text-red-600 dark:text-red-400">{error}</p>}
-      {checks && (
-        <ul id={`${id}-rules`} className="flex flex-col gap-1 mt-0.5" aria-live="polite">
-          {checks.map((c) => (
-            <li
-              key={c.id}
-              className={clsx(
-                "flex items-center gap-2 text-xs senior:text-base",
-                c.ok && value ? "text-emerald-700 dark:text-emerald-400" : "text-[var(--w360-text-muted)]"
-              )}
-            >
-              {c.ok && value ? <Check size={13} aria-hidden /> : <Circle size={13} aria-hidden />}
-              <span>
-                {c.label}
-                <span className="sr-only">{c.ok && value ? " — met" : " — not yet met"}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {!error && !checks && hint && <p id={`${id}-hint`} className="text-xs text-[var(--w360-text-muted)]">{hint}</p>}
+      {error && <p id={`${id}-error`} className="text-xs text-[var(--w360-danger-text)]">{error}</p>}
+      {!error && hint && <p id={`${id}-hint`} className="text-xs text-[var(--w360-text-muted)]">{hint}</p>}
     </div>
   );
 }

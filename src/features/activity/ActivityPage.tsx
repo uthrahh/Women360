@@ -477,7 +477,7 @@ export default function ActivityPage() {
               <BarChart data={data.weeklyMinutes}>
                 <XAxis dataKey="day" stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={{ background: "var(--w360-bg-raised)", border: "1px solid var(--w360-border)", borderRadius: 8, fontSize: 13 }} />
-                <Bar dataKey="minutes" fill="#6B1D30" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="minutes" fill="var(--w360-series-1)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

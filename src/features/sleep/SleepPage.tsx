@@ -283,7 +283,7 @@ export default function SleepPage() {
                 <XAxis dataKey="day" stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                 <YAxis stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} domain={[0, 9]} />
                 <Tooltip contentStyle={{ background: "var(--w360-bg-raised)", border: "1px solid var(--w360-border)", borderRadius: 8, fontSize: 13 }} />
-                <Line type="monotone" dataKey="hours" stroke="#6B1D30" strokeWidth={2.5} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="hours" stroke="var(--w360-series-1)" strokeWidth={2.5} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>

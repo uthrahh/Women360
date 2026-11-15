@@ -3,25 +3,28 @@
 @tailwind utilities;
 
 :root {
-  --w360-bg: #FBF8F4;
+  /* Black and white, with hot pink as the one accent. */
+  --w360-bg: #FFFFFF;
   --w360-bg-raised: #FFFFFF;
-  --w360-bg-warm: #F5EFE8;
-  --w360-text: #171310;
-  --w360-text-muted: #665A4E;
-  --w360-border: #E2D9CF;
-  --w360-skeleton-base: #EDE6DD;
-  --w360-skeleton-shine: #F8F4EE;
-  --w360-accent: #6B1D30;
-  --w360-accent-strong: #521626;
-  --w360-focus: #9A2C45;
+  --w360-bg-warm: #F6F6F6;
+  --w360-text: #0A0A0A;
+  --w360-text-muted: #5C5C5C;
+  --w360-border: #E6E6E6;
+  --w360-skeleton-base: #EFEFEF;
+  --w360-skeleton-shine: #F8F8F8;
+  /* Hot pink deep enough to read as text on white (5.1:1) and to carry white text. */
+  --w360-accent: #D6006F;
+  --w360-accent-strong: #B8005F;
+  /* The pure hot pink, for decoration only (never as text or behind text). */
+  --w360-pop: #FF1493;
+  --w360-focus: #D6006F;
   /* Chart series, in this fixed order (validated for colour-blind separation on the light surface). */
-  --w360-series-1: #8C2A40;
+  --w360-series-1: #D6006F;
   --w360-series-2: #1F6FA3;
   --w360-series-3: #A86E12;
-  /* Soft accent wash for hero/tonal blocks — a calm focal surface instead of
-     yet another white bordered box. */
-  --w360-tint: #F7EAED;
-  --w360-tint-text: #521626;
+  /* Soft accent wash for tonal blocks. */
+  --w360-tint: #FFF2F8;
+  --w360-tint-text: #8A0047;
   --w360-nav-surface: rgba(255, 255, 255, 0.92);
   --w360-radius-card: 22px;
   /* Streak flame: the one warm accent, used only for the daily check-in. */
@@ -35,24 +38,26 @@
 }
 
 .dark {
-  --w360-bg: #15100E;
-  --w360-bg-raised: #1E1815;
-  --w360-bg-warm: #251E19;
-  --w360-text: #F5EFE8;
-  --w360-text-muted: #B8AA9C;
-  --w360-border: #372E28;
-  --w360-skeleton-base: #2B241F;
-  --w360-skeleton-shine: #382F28;
-  --w360-accent: #D0899A;
-  --w360-accent-strong: #E6BFC9;
-  --w360-focus: #D0899A;
+  /* Mostly black, with white and hot pink as the pops. */
+  --w360-bg: #000000;
+  --w360-bg-raised: #0D0D0D;
+  --w360-bg-warm: #141414;
+  --w360-text: #FFFFFF;
+  --w360-text-muted: #A3A3A3;
+  --w360-border: #262626;
+  --w360-skeleton-base: #1A1A1A;
+  --w360-skeleton-shine: #262626;
+  --w360-accent: #FF3EA5;
+  --w360-accent-strong: #FF7CBB;
+  --w360-pop: #FF1493;
+  --w360-focus: #FF3EA5;
   /* The same three series, re-stepped for the dark surface (validated there, not flipped). */
-  --w360-series-1: #D0607A;
+  --w360-series-1: #F2338F;
   --w360-series-2: #3C93CF;
   --w360-series-3: #C08A20;
-  --w360-tint: #2B1B21;
-  --w360-tint-text: #F1D3DB;
-  --w360-nav-surface: rgba(37, 30, 25, 0.92);
+  --w360-tint: #1F0712;
+  --w360-tint-text: #FFB8DA;
+  --w360-nav-surface: rgba(13, 13, 13, 0.92);
   --w360-flame: #FF8A4C;
   --w360-success-bg: #18261A; --w360-success-border: #345A38; --w360-success-text: #BFE0BA;
   --w360-warning-bg: #2B2210; --w360-warning-border: #6B5420; --w360-warning-text: #F0D9A0;

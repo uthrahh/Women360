@@ -13,7 +13,7 @@ setup("create a fresh account and sign in", async ({ page, request }) => {
   setup.setTimeout(150_000);
   const email = `e2e.${Date.now()}.${Math.random().toString(36).slice(2, 8)}@example.com`;
   const password = `${crypto.randomBytes(9).toString("base64url")}-Aa9!`;
-  const res = await request.post(`${API}/auth/register`, { data: { name: "Ruth Tester", email, password } });
+  const res = await request.post(`${API}/auth/register`, { data: { name: "Ruth Tester", email, password, dateOfBirth: "1990-05-15" } });
   expect(res.status(), "sign-up").toBe(201);
 
   await page.goto("/login");

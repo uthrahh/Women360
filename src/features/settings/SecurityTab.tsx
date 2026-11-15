@@ -1,4 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { OtpInput } from "@/components/ui/OtpInput";
+import { NewPasswordField } from "@/components/ui/NewPasswordField";
 import { useNavigate } from "react-router-dom";
 import { Copy, ShieldCheck } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -48,7 +50,6 @@ function ChangePasswordCard() {
   const toast = useToast();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
-  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const ctx = { email: auth.user?.email, name: auth.user?.name };
@@ -57,14 +58,12 @@ function ChangePasswordCard() {
     e.preventDefault();
     setError("");
     if (!current) return setError("Enter your current password.");
-    if (!passwordAcceptable(next, ctx)) return setError("Choose a new password that meets every rule below.");
-    if (next !== confirm) return setError("The new passwords don't match.");
+    if (!passwordAcceptable(next, ctx)) return setError("Choose a new password the line under the field is happy with, or tap Suggest one.");
     setSaving(true);
     try {
       auth.refreshUser(await authService.changePassword(current, next));
       setCurrent("");
       setNext("");
-      setConfirm("");
       toast.show("Password changed. Other devices have been signed out.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't change your password. Please try again.");
@@ -82,8 +81,7 @@ function ChangePasswordCard() {
         </p>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <PasswordField label="Current password" value={current} onChange={setCurrent} autoComplete="current-password" required />
-          <PasswordField label="New password" value={next} onChange={setNext} autoComplete="new-password" policyContext={ctx} required />
-          <PasswordField label="Confirm new password" value={confirm} onChange={setConfirm} autoComplete="new-password" error={error || undefined} required />
+          <NewPasswordField label="New password" value={next} onChange={setNext} context={ctx} error={error || undefined} />
           <div>
             <Button type="submit" size="sm" disabled={saving}>{saving ? "Saving…" : "Change password"}</Button>
           </div>
@@ -134,6 +132,12 @@ function TwoFactorCard() {
     setView({ step: "setup", secret, uri: otpauthUri });
   }, "Couldn't start setup. Please try again.");
 
+  const confirmSetupWith = (value: string) => void run(async () => {
+    const { backupCodes } = await authService.confirmTwoFactorSetup(value);
+    setCode("");
+    setView({ step: "codes", codes: backupCodes });
+    await refresh();
+  }, "Couldn't verify that code.");
   const confirmSetup = (e: FormEvent) => { e.preventDefault(); void run(async () => {
     const { backupCodes } = await authService.confirmTwoFactorSetup(code);
     setCode("");
@@ -209,14 +213,13 @@ function TwoFactorCard() {
                 </li>
                 <li>Type the 6-digit code it shows to finish.</li>
               </ol>
-              <Input
+              <OtpInput
                 label="6-digit code"
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(v) => { setCode(v); if (v) setError(""); }}
+                onComplete={(c) => confirmSetupWith(c)}
+                state={busy ? "verifying" : error ? "error" : "idle"}
                 error={error || undefined}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                required
               />
               <div className="flex gap-2">
                 <Button type="submit" size="sm" disabled={busy}>{busy ? "Checking…" : "Turn on"}</Button>

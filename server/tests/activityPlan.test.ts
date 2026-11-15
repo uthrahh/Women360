@@ -211,7 +211,9 @@ describe("activity plan safety, from her own record", () => {
   });
 
   it("refuses to build a plan for someone under 18", async () => {
-    const { token } = await signUp("plan-minor", { dateOfBirth: `${new Date().getUTCFullYear() - 16}-01-01` });
+    // Sign-up now refuses a minor (the age gate), so this stands for an older account whose record says 16: the plan keeps its own guard.
+    const { token, id } = await signUp("plan-minor");
+    await prisma.user.update({ where: { id }, data: { dateOfBirth: new Date(`${new Date().getUTCFullYear() - 16}-01-01`) } });
     const res = await preview(token);
     expect(res.status).toBe(400);
     expect(res.body.error.message).toMatch(/18/);

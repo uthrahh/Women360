@@ -42,7 +42,10 @@ test.describe("legal and error pages", () => {
     test(`${path} loads and gives a way to write to us`, async ({ page }) => {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toContainText(heading);
-      await expect(page.getByRole("link", { name: "admin.women360@gmail.com" })).toHaveAttribute("href", "mailto:admin.women360@gmail.com");
+      // Every way to write to us on the page goes to the support address (terms has two: contact and copyright complaints).
+      const links = page.getByRole("link", { name: "admin.women360@gmail.com" });
+      await expect(links.first()).toBeVisible();
+      for (const link of await links.all()) await expect(link).toHaveAttribute("href", "mailto:admin.women360@gmail.com");
     });
   }
 

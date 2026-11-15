@@ -1,4 +1,5 @@
 import { useSearchParams } from "react-router-dom";
+import { useSounds } from "@/hooks/useSounds";
 import { useEffect, useState, type FormEvent } from "react";
 import { useApp } from "@/context/AppContext";
 import { userService, type EmergencyContact as EmergencyContactData } from "@/services/userService";
@@ -18,6 +19,7 @@ import { ToggleRow } from "@/components/ui/ToggleRow";
 import { RemindersTab } from "./RemindersTab";
 
 export default function SettingsPage() {
+  const sounds = useSounds();
   const { auth, theme, senior } = useApp();
   const [params] = useSearchParams();
   const nav = useNavigate();
@@ -136,6 +138,12 @@ export default function SettingsPage() {
                   checked={theme.followingDevice}
                   onChange={() => (theme.followingDevice ? theme.setTheme(theme.theme) : theme.followDevice())}
                 />
+                <ToggleRow
+                  title="Interface sounds"
+                  description="Quiet clicks and tones when you spin a picker, type a new password or enter a code. Nothing depends on hearing them."
+                  checked={sounds.on}
+                  onChange={sounds.toggle}
+                />
               </CardBody></Card>
             ),
           },
@@ -151,7 +159,7 @@ export default function SettingsPage() {
                         type="checkbox"
                         checked={e.enabled}
                         onChange={() => senior.toggleEssential(e.key)}
-                        className="w-5 h-5 accent-[#6B1D30]"
+                        className="w-5 h-5 accent-[var(--w360-accent)]"
                       />
                       <span className="text-sm senior:text-lg">{e.label}</span>
                     </label>

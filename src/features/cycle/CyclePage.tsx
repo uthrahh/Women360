@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { NumberField } from "@/components/ui/NumberField";
+import { WheelPicker, type WheelItem } from "@/components/ui/WheelPicker";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
@@ -102,6 +103,10 @@ const INTERCOURSE_CHOICES: { value: Intercourse; label: string }[] = [
   { value: "unprotected", label: "Unprotected" },
 ];
 const MAX_SYMPTOMS = 30;
+
+const daysItems = (from: number, to: number): WheelItem<string>[] => Array.from({ length: to - from + 1 }, (_, i) => ({ value: String(from + i), label: `${from + i} days` }));
+const CYCLE_LENGTH_ITEMS = daysItems(15, 90);
+const PERIOD_LENGTH_ITEMS = daysItems(1, 15);
 const MAX_SYMPTOM_LENGTH = 60;
 
 // Once a woman has logged at least one entry, the backend fills in
@@ -461,7 +466,7 @@ export default function CyclePage() {
             type="checkbox"
             checked={logForm.isPeriod}
             onChange={(e) => setLogForm((f) => ({ ...f, isPeriod: e.target.checked }))}
-            className="w-5 h-5 accent-[#6B1D30]"
+            className="w-5 h-5 accent-[var(--w360-accent)]"
           />
           Period day
         </label>
@@ -498,7 +503,7 @@ export default function CyclePage() {
                 type="checkbox"
                 checked={logForm.excludeCycle}
                 onChange={(e) => setLogForm((f) => ({ ...f, excludeCycle: e.target.checked }))}
-                className="w-4 h-4 mt-0.5 accent-[#6B1D30]"
+                className="w-4 h-4 mt-0.5 accent-[var(--w360-accent)]"
               />
               <span>Don't use the cycle before this period when predicting my next one</span>
             </label>
@@ -544,7 +549,7 @@ export default function CyclePage() {
                       type="checkbox"
                       checked={logForm.symptoms.includes(s)}
                       onChange={() => toggleSymptom(s)}
-                      className="w-4 h-4 accent-[#6B1D30]"
+                      className="w-4 h-4 accent-[var(--w360-accent)]"
                     />
                     {s}
                   </label>
@@ -1261,7 +1266,7 @@ function TrendsTab({ cycle }: { cycle: CycleSummary }) {
                   <XAxis dataKey="cycle" stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} domain={[20, 35]} />
                   <Tooltip contentStyle={{ background: "var(--w360-bg-raised)", border: "1px solid var(--w360-border)", borderRadius: 8, fontSize: 13 }} />
-                  <Line type="monotone" dataKey="length" stroke="#6B1D30" strokeWidth={2.5} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="length" stroke="var(--w360-series-1)" strokeWidth={2.5} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -1373,28 +1378,13 @@ function CycleSettingsModal({ open, onClose, onSaved }: { open: boolean; onClose
           Used as a starting estimate until you've logged a few cycles of your own — after that, your own logged
           pattern takes over the prediction.
         </Hint>
-        <NumberField
-          label="Cycle length"
-          suffix="days"
-          min={15}
-          max={90}
-          startAt={28}
-          value={averageCycleLength}
-          onChange={setAverageCycleLength}
-          error={errors.cycleLen}
-        />
-        <NumberField
-          label="Period length"
-          suffix="days"
-          min={1}
-          max={15}
-          startAt={5}
-          value={averagePeriodLength}
-          onChange={setAveragePeriodLength}
-          error={errors.periodLen}
-        />
+        <div className="grid grid-cols-2 gap-3">
+          <WheelPicker label="Cycle length" items={CYCLE_LENGTH_ITEMS} value={averageCycleLength || "28"} onChange={setAverageCycleLength} />
+          <WheelPicker label="Period length" items={PERIOD_LENGTH_ITEMS} value={averagePeriodLength || "5"} onChange={setAveragePeriodLength} />
+        </div>
+        {(errors.cycleLen || errors.periodLen) && <p className="text-sm text-[var(--w360-danger-text)]">{errors.cycleLen || errors.periodLen}</p>}
         <label className="flex items-start gap-3 cursor-pointer">
-          <input type="checkbox" className="mt-1 w-4 h-4 accent-[#6B1D30]" checked={showOvulation} onChange={(e) => setShowOvulation(e.target.checked)} />
+          <input type="checkbox" className="mt-1 w-4 h-4 accent-[var(--w360-accent)]" checked={showOvulation} onChange={(e) => setShowOvulation(e.target.checked)} />
           <span>
             <span className="block text-sm senior:text-base font-medium">Show ovulation on my home screen</span>
             <span className="block text-xs senior:text-sm text-[var(--w360-text-muted)]">The home screen shows your cycle only while you are menstruating. Turn this on to see it during the ovulation phase too. It is an estimate.</span>

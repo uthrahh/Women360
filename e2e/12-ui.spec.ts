@@ -350,13 +350,19 @@ test.describe("one-time codes", () => {
     await expect(code).toBeVisible();
     await expect(code).toHaveAttribute("autocomplete", "one-time-code");
     await expect(code).toHaveAttribute("inputmode", "numeric");
-    await expect(code).toHaveAttribute("maxlength", "6");
     await expect(code).toBeFocused();
     await page.keyboard.type("12345");
     expect(submitted).toBeNull(); // five digits is not a code yet
     await page.keyboard.type("6");
     await expect(page.getByText("That code didn't work.")).toBeVisible();
     expect(submitted).toMatchObject({ code: "123456", challengeToken: "challenge-token" });
+    // A wrong code is cleared, ready for the next try.
+    await expect(code).toHaveValue("");
+    // A pasted code with spaces still fills the tiles and submits itself.
+    submitted = null;
+    await code.focus();
+    await code.fill("654 321");
+    await expect.poll(() => submitted).toMatchObject({ code: "654321" });
 
     // A backup code has letters, so it gets the full keyboard and is not cut at six.
     await page.getByRole("button", { name: /backup code/ }).click();

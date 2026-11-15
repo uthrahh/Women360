@@ -3,13 +3,13 @@
    so the page repaints a few times a second rather than sixty. Everything is decoration: aria-hidden, no pointer events. */
 
 .sc-root {
-  /* Ink and washes, light paper. Muted on purpose: this sits behind reading text. */
-  --sc-ink: #6e2a3a;
-  --sc-ink-soft: #9a6b73;
-  --sc-maroon: #8e2f45;
-  --sc-maroon-deep: #5b1a2b;
-  --sc-cream: #efe2cf;
-  --sc-light: #f6e7c8;
+  /* Black ink and hot-pink washes on white. Muted on purpose: this sits behind reading text. */
+  --sc-ink: #1a1a1a;
+  --sc-ink-soft: #7a7a7a;
+  --sc-maroon: #ff5ca8;
+  --sc-maroon-deep: #d6006f;
+  --sc-cream: #f1f1f1;
+  --sc-light: #fff6fa;
   --sc-wood: #8a5a3c;
   --sc-hair-dark: #3b2622;
   --sc-hair-blonde: #d9b98a;
@@ -18,7 +18,7 @@
   --sc-skin-2: #ebc6a6;
   --sc-skin-3: #b98260;
   --sc-skin-4: #7a4a36;
-  --sc-kurta: #eed7d0;
+  --sc-kurta: #ffe0ef;
   --sc-sweater: #e3d3bc;
   --sc-teal: #5e9a92;
   --sc-sage: #a9b48e;
@@ -28,20 +28,20 @@
   --sc-avocado: #8c9a4e;
   --sc-slate: #8fa2b3;
   --sc-slate-deep: #6e8294;
-  --sc-marble: #f1ece6;
+  --sc-marble: #f7f7f7;
   --sc-steel: #c9c6c2;
-  --sc-rose: #d99aa5;
+  --sc-rose: #ffa3cf;
   --sc-strength: 0.62;
 }
 
-/* Dark: the same world at dusk. Re-stepped colours, not an inverted image. */
+/* Dark: white ink on black with deep pink washes. Re-stepped colours, not an inverted image. */
 .dark .sc-root {
-  --sc-ink: #e2bcc3;
-  --sc-ink-soft: #b48d94;
-  --sc-maroon: #7a2a3d;
-  --sc-maroon-deep: #4a1624;
-  --sc-cream: #3a2f29;
-  --sc-light: #5a4a36;
+  --sc-ink: #ededed;
+  --sc-ink-soft: #9a9a9a;
+  --sc-maroon: #8a0047;
+  --sc-maroon-deep: #5c002f;
+  --sc-cream: #1c1c1c;
+  --sc-light: #2a1420;
   --sc-wood: #6a4630;
   --sc-hair-dark: #1c1210;
   --sc-hair-blonde: #9c8260;
@@ -50,7 +50,7 @@
   --sc-skin-2: #b8937a;
   --sc-skin-3: #946548;
   --sc-skin-4: #61392a;
-  --sc-kurta: #5d4446;
+  --sc-kurta: #4a2236;
   --sc-sweater: #54493c;
   --sc-teal: #3f6f69;
   --sc-sage: #4f5a3f;
@@ -60,9 +60,9 @@
   --sc-avocado: #5d6834;
   --sc-slate: #546676;
   --sc-slate-deep: #43525f;
-  --sc-marble: #2f2825;
+  --sc-marble: #141414;
   --sc-steel: #77736f;
-  --sc-rose: #8a5560;
+  --sc-rose: #7a2a52;
   --sc-strength: 0.5;
 }
 

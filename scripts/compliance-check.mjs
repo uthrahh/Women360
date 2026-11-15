@@ -11,6 +11,7 @@
  *      account deletion, support contact.
  *   6. Every table added by a migration switches row-level security on.
  *   7. No SQL built from strings (SQL injection) and no raw HTML written into the page (XSS).
+ *   8. No session replay, fonts only from this site, renewal terms beside any subscribe button, the age gate in place.
  *
  * Pure Node, no dependencies, reads only files tracked by git.
  */
@@ -118,6 +119,29 @@ for (const f of tracked.filter((f) => /^src\/.*\.(tsx|ts|jsx)$/.test(f))) {
     fail("xss", `${f}: writes raw HTML; render text through React so it is escaped`);
   }
 }
+
+// 8. Legal risks that stay fixed ---------------------------------------------------------------------------
+const webFiles = tracked.filter((f) => /^(src\/.*\.(tsx|ts|jsx|css)|index\.html|public\/.*\.(html|js))$/.test(f));
+// Session replay records what people type and see; on a health app that is health data. None, ever, without a decision.
+const REPLAY = /hotjar|fullstory|logrocket|clarity\.ms|mouseflow|smartlook|openreplay|rrweb|session_recording|replayIntegration|@sentry\/replay|heapanalytics|inspectlet|luckyorange/i;
+for (const f of webFiles) if (REPLAY.test(read(f))) fail("no-session-replay", `${f}: session replay / screen recording is not allowed (it would capture health data)`);
+for (const lock of ["package.json", "server/package.json"]) {
+  const deps = Object.keys({ ...JSON.parse(read(lock)).dependencies });
+  for (const d of deps) if (REPLAY.test(d)) fail("no-session-replay", `${lock}: ${d}`);
+}
+// Fonts come from this site (the privacy page and the security policy say so).
+const FONT_CDN = /fonts\.googleapis\.com|fonts\.gstatic\.com|use\.typekit\.net|fonts\.bunny\.net|use\.fontawesome\.com/;
+for (const f of webFiles) if (FONT_CDN.test(read(f))) fail("self-hosted-fonts", `${f}: loads fonts from a third party; self-host them (@fontsource)`);
+// A subscribe / trial / upgrade button must have its renewal terms beside it.
+for (const f of tracked.filter((f) => /^src\/.*\.tsx$/.test(f))) {
+  const text = read(f);
+  if (/>\s*(Subscribe|Start (your )?(free )?trial|Upgrade( to \w+)?|Go premium)\s*</i.test(text) && !/renew/i.test(text)) {
+    fail("renewal-terms", `${f}: a subscribe/trial/upgrade button needs the price, renewal period and how to cancel shown next to it`);
+  }
+}
+// The age gate stays on both sides.
+if (!/oldEnough\(/.test(read("src/features/auth/RegisterPage.tsx"))) fail("age-gate", "the sign-up page no longer checks the age gate");
+if (!/assertAdultBirthDate\(/.test(read("server/src/modules/auth/auth.service.ts"))) fail("age-gate", "the server no longer checks the age gate at sign-up");
 
 if (problems.length) {
   console.error(`Launch standard: ${problems.length} problem(s)\n  ${problems.join("\n  ")}\n\nSee docs/LAUNCH_STANDARD.md.`);

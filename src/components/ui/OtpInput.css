@@ -1,0 +1,75 @@
+/* OtpInput: borderless tiles on a soft iridescent panel. The iridescence stays in the brand's family (pink, pearl,
+   a cool hint) and moves slowly; it is the one place the owner asked for it (CLAUDE.md §7 notes the exception). */
+@property --otp-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.otp-glow {
+  background:
+    radial-gradient(120% 140% at 50% 0%, color-mix(in srgb, var(--w360-bg-raised) 55%, transparent), transparent 70%),
+    conic-gradient(from var(--otp-angle) at 50% 50%, #ffd9ec, #fff7fb, #e7ecff, #fff1e4, #ffe0f0, #f3e8ff, #ffd9ec);
+  animation: otp-turn 14s linear infinite;
+}
+.dark .otp-glow {
+  background:
+    radial-gradient(120% 140% at 50% 0%, color-mix(in srgb, #000 45%, transparent), transparent 70%),
+    conic-gradient(from var(--otp-angle) at 50% 50%, #3d0f26, #120a10, #10162a, #22140a, #2c0a1d, #1a1028, #3d0f26);
+}
+@keyframes otp-turn { to { --otp-angle: 360deg; } }
+
+/* Tiles: solid, high-contrast, no borders. */
+.otp-tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 5;
+  border-radius: 14px;
+  background: var(--w360-bg-raised);
+  color: var(--w360-text);
+  font-size: 1.6rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: transform 180ms ease, background-color 200ms ease, color 200ms ease, box-shadow 200ms ease;
+}
+.senior .otp-tile { font-size: 2rem; }
+.otp-active { box-shadow: 0 0 0 2px var(--w360-accent); }
+.otp-filled { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+
+/* The real input covers the tiles, invisible: it receives typing, pasting and autofill. */
+.otp-input {
+  opacity: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px; /* stops iOS zooming in */
+  letter-spacing: 2em;
+}
+.otp-input:focus-visible { outline: none; }
+.otp:has(.otp-input:focus-visible) .otp-glow { box-shadow: 0 0 0 2px var(--w360-focus); }
+
+/* Typing: each digit pops in. */
+.otp-digit { animation: otp-pop 220ms cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+@keyframes otp-pop { from { transform: translateY(6px) scale(0.6); opacity: 0; filter: blur(2px); } }
+.otp-caret { width: 2px; height: 1.1em; border-radius: 2px; background: var(--w360-accent); animation: otp-blink 1s steps(2, start) infinite; }
+@keyframes otp-blink { to { visibility: hidden; } }
+
+/* Checking: a wave runs across the tiles. */
+.otp-verifying .otp-tile { animation: otp-wave 900ms ease-in-out infinite; animation-delay: calc(var(--i) * 80ms); }
+@keyframes otp-wave { 50% { transform: translateY(-4px); background: var(--w360-tint); } }
+
+/* Wrong: a short shake, tinted. */
+.otp-error .otp-glow { animation: otp-turn 14s linear infinite, otp-shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+.otp-error .otp-tile { background: var(--w360-danger-bg); color: var(--w360-danger-text); }
+@keyframes otp-shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+
+/* Accepted: tiles fill in turn. */
+.otp-success .otp-tile { background: var(--w360-text); color: var(--w360-bg); transition-delay: calc(var(--i) * 50ms); }
+.otp-tick { animation: otp-pop 260ms cubic-bezier(0.2, 0.9, 0.3, 1.4); }
+
+@media (prefers-reduced-motion: reduce) {
+  .otp-glow, .otp-digit, .otp-caret, .otp-tick, .otp-verifying .otp-tile, .otp-error .otp-glow { animation: none !important; }
+  .otp-tile { transition: none; }
+}

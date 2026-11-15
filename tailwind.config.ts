@@ -7,40 +7,43 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Brand accent: hot pink. The key keeps its historical name "maroon" so existing classes keep working;
+        // 600 is the light-mode accent (5.1:1 on white), 400 the dark-mode accent (6:1 on black), 500 the pure hot pink
+        // for decoration only (it does not reach 4.5:1 with white text).
         maroon: {
-          950: "#2A0910",
-          900: "#3D0F1A",
-          800: "#521626",
-          700: "#6B1D30",
-          600: "#82233A",
-          500: "#9A2C45",
-          400: "#B85468",
-          300: "#D0899A",
-          200: "#E6BFC9",
-          100: "#F3E1E6",
-          50: "#FAF1F3",
+          950: "#3D001F",
+          900: "#5C002F",
+          800: "#8A0047",
+          700: "#B8005F",
+          600: "#D6006F",
+          500: "#FF1493",
+          400: "#FF3EA5",
+          300: "#FF7CBB",
+          200: "#FFB8DA",
+          100: "#FFE0EF",
+          50: "#FFF2F8",
         },
         ink: {
-          900: "#171310",
-          800: "#241E1A",
-          700: "#372E28",
+          900: "#0A0A0A",
+          800: "#171717",
+          700: "#262626",
         },
         paper: {
-          DEFAULT: "#FBF8F4",
-          warm: "#F5EFE8",
+          DEFAULT: "#FFFFFF",
+          warm: "#F6F6F6",
         },
         warmgrey: {
-          100: "#EFE9E2",
-          200: "#E2D9CF",
-          300: "#C9BCAF",
-          400: "#A79A8B",
-          500: "#8A7C6D",
-          600: "#665A4E",
+          100: "#F2F2F2",
+          200: "#E6E6E6",
+          300: "#CFCFCF",
+          400: "#A3A3A3",
+          500: "#858585",
+          600: "#5C5C5C",
         },
         surface: {
-          darkbg: "#15100E",
-          dark: "#1E1815",
-          darkraised: "#251E19",
+          darkbg: "#000000",
+          dark: "#0D0D0D",
+          darkraised: "#161616",
         },
       },
       fontFamily: {
@@ -56,11 +59,11 @@ export default {
         xl: "16px",
       },
       boxShadow: {
-        subtle: "0 1px 2px rgba(23, 19, 16, 0.06)",
-        card: "0 1px 3px rgba(23, 19, 16, 0.08), 0 1px 2px rgba(23,19,16,0.04)",
+        subtle: "0 1px 2px rgba(0, 0, 0, 0.06)",
+        card: "0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0,0,0,0.04)",
         // Only for the floating bottom nav — the one element that genuinely
         // sits above content and needs separating from it.
-        float: "0 8px 28px rgba(23, 19, 16, 0.14), 0 2px 6px rgba(23, 19, 16, 0.08)",
+        float: "0 8px 28px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.08)",
       },
       maxWidth: {
         content: "1180px",

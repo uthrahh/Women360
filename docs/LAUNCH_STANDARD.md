@@ -187,3 +187,14 @@ versions follow semver; bump on each release with a release note.
 **Delivery (104-111).** 104 Infrastructure as code: `render.yaml`, `vercel.json`, GitHub workflows. 105 Terraform, 106 Helm: N/A.
 107 Build caching: npm cache in CI, immutable assets. 108 Dependency hell: lockfiles, grouped monthly Dependabot, `npm audit` in CI.
 109 Production incidents, 110 On-call, 111 Postmortems: `docs/INCIDENTS.md`.
+
+## 7. Six common legal risks (audit of 2026-11-15)
+
+| Risk | Status |
+| --- | --- |
+| No age gate at sign-up | Done: date of birth on a wheel at sign-up; a minor is refused neutrally and the refusal is remembered on the device; the server refuses an under-18 date anywhere and won't finish onboarding without an adult date of birth (covers the phone's device account). *(guarded: both sides must keep calling the check; server tests in `ageGate.test.ts`, browser test in `e2e/15`.)* Accounts already onboarded before this were not re-checked. |
+| Fonts loaded from Google | Done (already): Fraunces and Inter are self-hosted from `@fontsource-variable`. *(guarded: any third-party font host fails CI.)* |
+| Session replay without consent or masking | N/A: there is no session replay or screen recording at all (Google Analytics, if switched on, is consent-gated, public pages only, and records no input). *(guarded: replay tools fail CI.)* Adding one would capture health data and needs a legal decision first. |
+| Marketing email without unsubscribe link and postal address | N/A today: only transactional email is sent (confirm address, reset password, staff alerts). *(guarded: `sendEmail` refuses a marketing email without an https unsubscribe link and `MAIL_POSTAL_ADDRESS` in its text, and adds List-Unsubscribe headers; tested.)* **Owner**: set `MAIL_POSTAL_ADDRESS` (a real address; never invented) before any newsletter, and build the unsubscribe endpoint with it. |
+| Renewal terms not next to the subscribe button | N/A: nothing is sold. *(guarded: a Subscribe/Start trial/Upgrade button fails CI unless renewal terms are in the same component.)* |
+| No DMCA designated agent | Owner: step-by-step in `docs/DMCA.md` ($6, three years, needs the operating entity's legal name). Until then the Terms page has a "Copyright complaints" section routing notices to the support address. |

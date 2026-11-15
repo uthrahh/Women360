@@ -6,17 +6,17 @@ import { WakingNotice } from "@/components/WakingNotice";
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      <aside className="hidden lg:flex flex-col justify-between bg-maroon-900 text-white p-12">
+      <aside className="hidden lg:flex flex-col justify-between bg-ink-900 text-white p-12 dark:border-r dark:border-[var(--w360-border)]">
         <Link to="/" className="font-display text-2xl font-semibold">Women360</Link>
         <div>
           <p className="font-display text-3xl leading-snug max-w-sm">
             Your health, understood — across every stage of life.
           </p>
-          <p className="text-maroon-200 mt-4 max-w-sm text-sm">
+          <p className="text-white/75 mt-4 max-w-sm text-sm">
             One place to track your cycle, nutrition, activity, sleep and wellbeing — built to grow simpler as you need it to.
           </p>
         </div>
-        <p className="text-xs text-maroon-300">Women360 · Personal health, not a diagnosis.</p>
+        <p className="text-xs text-maroon-300"><span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-maroon-500 mr-2 align-middle" />Women360 · Personal health, not a diagnosis.</p>
       </aside>
       <main className="relative flex flex-col justify-center px-6 sm:px-12 py-16">
         <ThemeToggle className="absolute top-4 right-4 sm:right-6" />

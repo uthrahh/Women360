@@ -21,6 +21,7 @@ import { recordSecurityEvent } from "@/lib/security/events";
 import { issueSession, revokeEverySession } from "./session";
 import { TwoFactorUnavailableError, twoFactorService } from "./twoFactor.service";
 import { env } from "@/config/env";
+import { assertAdultBirthDate, isAdult } from "@/lib/age";
 
 function initialsFrom(name: string): string {
   return name
@@ -68,6 +69,9 @@ export const authService = {
       throw new BadRequestError("We couldn't create that account. Please try again.");
     }
 
+    // Age gate: a date of birth, when given (the web sign-up always gives one), must be an adult's. The phone's
+    // device-only account is created before any question is asked, so it meets the gate at onboarding instead.
+    if (input.dateOfBirth) assertAdultBirthDate(input.dateOfBirth);
     assertPasswordAcceptable(input.password, { email: input.email, name: input.name });
 
     const existing = await prisma.user.findUnique({ where: { email: input.email } });
@@ -270,6 +274,11 @@ export const authService = {
   },
 
   async completeOnboarding(userId: string) {
+    // Nobody uses the app without an adult date of birth on record (the age gate for accounts that skipped it at sign-up).
+    const current = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    if (!isAdult(current.dateOfBirth) && !current.isDemo) {
+      throw new BadRequestError("Please add your date of birth to finish setting up.");
+    }
     const user = await prisma.user.update({ where: { id: userId }, data: { onboarded: true } });
     return publicUser(user);
   },

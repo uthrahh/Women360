@@ -62,10 +62,18 @@ gratuitous scroll/hover animations (respect `prefers-reduced-motion`,
 already wired in `src/index.css`), or making everything a floating rounded
 card. A section can be typography + spacing + a divider.
 
+Owner-approved exceptions (2026-11-15), confined to where they are: a slowly turning iridescent panel behind the
+one-time-code tiles (`OtpInput.css`, pink/pearl tones only), and "privacy glass" (lightly frosted edges) on the new-password
+field while the password is shown (`NewPasswordField.css`). Don't spread either elsewhere.
+
 ## 2. Design system (already established — extend, don't replace)
 
-- Colors: deep maroon/burgundy (`tailwind.config.ts` → `maroon` 50–950) on
-  warm neutrals (`paper`, `warmgrey`, `ink`). Semantic tokens live as CSS
+- Colors (owner's choice, 2026-11-15): **black and white with a hot-pink accent**. Light mode is mostly white with black text;
+  dark mode is mostly black with white and hot pink as the pops. The Tailwind key is still called `maroon` (50–950) so existing
+  classes keep working, but it now holds the hot-pink scale: 600 `#D6006F` is the light accent (5.1:1 on white), 400 `#FF3EA5` the
+  dark accent, 500 `#FF1493` pure hot pink for decoration only (`--w360-pop`; never text or behind text). Neutrals (`paper`,
+  `warmgrey`, `ink`) are true greys. Primary buttons are black (light) / white (dark), with pink on hover and focus; pink marks
+  selection, focus, links, progress and emphasis. Semantic tokens live as CSS
   vars in `src/index.css` (`--w360-bg`, `--w360-bg-raised`, `--w360-text`,
   `--w360-text-muted`, `--w360-border`, `--w360-accent`, `--w360-focus`,
   etc.) with a real dark-mode block (`.dark`), not an inverted afterthought.
@@ -647,3 +655,16 @@ update that document, the privacy page and the guards in the same change. Standi
 - **A bad request is never a 500**: input errors answer 4xx and never page the administrator.
 - **Incidents and breaches** follow `docs/INCIDENTS.md` (SLOs, rollback, restore, breach steps, postmortems).
 - **Design reviews** apply the UX-law table in `docs/LAUNCH_STANDARD.md` §4 alongside §1-2 here.
+- **Age gate:** Women360 is for adults (18+; under India's DPDP Act a minor's data needs verifiable parental consent, which we
+  don't collect). Sign-up asks for a date of birth on a wheel, refuses a minor neutrally (never says which age is needed) and
+  remembers the refusal on the device (`lib/ageGate.ts`); the server refuses an under-18 date anywhere and won't finish onboarding
+  without an adult date of birth (`server/src/lib/age.ts`). Accounts created before this (and onboarded) were not re-checked.
+- **Pickers:** choose from a bounded list with `WheelPicker` / `DateWheel` (drag, momentum, snapping, a click per item, keyboard as a
+  spin button). Open-ended or decimal numbers stay on `NumberField` (typing is faster there).
+- **Passwords:** a new password is always `NewPasswordField` (outline meter, one calm line, Suggest one, monospaced dots that turn into
+  letters, no confirm field, hides itself when she leaves the tab); entering an existing one is `PasswordField`. Codes are `OtpInput`
+  (one real `autocomplete="one-time-code"` input under the tiles; submits itself). Sounds go through `lib/sound.ts` and the one switch.
+- **Email:** everything sent today is transactional. A marketing email can't be sent without an https unsubscribe link and
+  `MAIL_POSTAL_ADDRESS` in its text (`marketingProblem` in `mailer.ts`, tested), and carries List-Unsubscribe headers.
+- **Never** add session replay or screen recording, third-party fonts, or a subscribe/trial/upgrade button without its price,
+  renewal and cancellation terms beside it (all guarded by `check:compliance`). DMCA agent registration: `docs/DMCA.md`.

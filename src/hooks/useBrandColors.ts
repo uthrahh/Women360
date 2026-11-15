@@ -8,15 +8,15 @@ export function useBrandColors() {
   const dark = theme.theme === "dark";
   return {
     dark,
-    accent: dark ? "#D0899A" : "#6B1D30",
-    accentStrong: dark ? "#E6BFC9" : "#521626",
-    ink: dark ? "#F5EFE8" : "#171310",
-    inkOnAccent: dark ? "#171310" : "#FFFFFF",
-    muted: dark ? "#B8AA9C" : "#665A4E",
-    paper: dark ? "#15100E" : "#FBF8F4",
-    raised: dark ? "#1E1815" : "#FFFFFF",
-    tint: dark ? "#2B1B21" : "#F7EAED",
-    tintText: dark ? "#F1D3DB" : "#521626",
-    border: dark ? "#372E28" : "#E2D9CF",
+    accent: dark ? "#FF3EA5" : "#D6006F",
+    accentStrong: dark ? "#FF7CBB" : "#B8005F",
+    ink: dark ? "#FFFFFF" : "#0A0A0A",
+    inkOnAccent: dark ? "#000000" : "#FFFFFF",
+    muted: dark ? "#A3A3A3" : "#5C5C5C",
+    paper: dark ? "#000000" : "#FFFFFF",
+    raised: dark ? "#0D0D0D" : "#FFFFFF",
+    tint: dark ? "#1F0712" : "#FFF2F8",
+    tintText: dark ? "#FFB8DA" : "#8A0047",
+    border: dark ? "#262626" : "#E6E6E6",
   } as const;
 }

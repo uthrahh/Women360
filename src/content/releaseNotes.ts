@@ -21,6 +21,13 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    date: "2026-11-15",
+    headline: "A new look, and calmer sign-up and sign-in",
+    details:
+      "Women360 is now black and white with a hot-pink accent, in light and dark. Dates of birth and cycle numbers are chosen on wheels you can spin, drag or move with the keyboard. Choosing a password has one calm line instead of a list of rules, can suggest a strong one for you, and hides itself again when you leave the tab; codes from your authenticator app go into tiles and are checked as soon as the last digit is in.",
+    area: "Design",
+  },
+  {
     date: "2026-11-14",
     headline: "A hand-drawn welcome page",
     details:

@@ -3,7 +3,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { NumberField } from "@/components/ui/NumberField";
+import { DateWheel } from "@/components/ui/DateWheel";
+import { WheelPicker, type WheelItem } from "@/components/ui/WheelPicker";
+import { Banner } from "@/components/ui/Banner";
+import { oldEnough, plausibleBirthDate, rememberDeclined } from "@/lib/ageGate";
+import { localDateISO } from "@/services/mappers";
 import { MultiSelect, NONE } from "@/components/ui/MultiSelect";
 import { FlowStepper, Step } from "@/components/ui/FlowStepper";
 import { useApp } from "@/context/AppContext";
@@ -16,6 +20,14 @@ import clsx from "clsx";
 import { useFeatures } from "@/context/FeaturesContext";
 
 const STEP_COUNT = 4;
+
+// Wheels for the two cycle numbers. "Not sure" first, so leaving it alone stays unanswered.
+const range = (from: number, to: number, unit: string): WheelItem<string>[] => [
+  { value: "", label: "Not sure" },
+  ...Array.from({ length: to - from + 1 }, (_, i) => ({ value: String(from + i), label: `${from + i} ${unit}` })),
+];
+const CYCLE_LENGTHS = range(15, 90, "days");
+const PERIOD_LENGTHS = range(1, 15, "days");
 
 // What she picks for "where are you in your reproductive life?", as the stored life stage.
 type LifeStageValue = "REPRODUCTIVE" | "PERIMENOPAUSE" | "MENOPAUSE" | "POSTMENOPAUSE";
@@ -78,8 +90,37 @@ export default function OnboardingPage() {
   const [periodLength, setPeriodLength] = useState("");
   const [feel, setFeel] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [dobError, setDobError] = useState("");
+  const [declined, setDeclined] = useState(false);
+  const hasBirthDate = Boolean(auth.user?.dateOfBirth);
+
+  // The age gate for accounts that didn't give a date of birth at sign-up (the phone's device-only account):
+  // she can't finish setting up, or skip ahead, without one. The server checks it again.
+  async function confirmBirthDate(): Promise<boolean> {
+    if (hasBirthDate && (!dob || dob === auth.user?.dateOfBirth)) return true;
+    const today = localDateISO();
+    if (!dob) return setDobError("Choose your date of birth to continue."), false;
+    if (!plausibleBirthDate(dob, today)) return setDobError("Please choose a real date of birth."), false;
+    if (!oldEnough(dob, today)) {
+      rememberDeclined();
+      setDeclined(true);
+      return false;
+    }
+    setDobError("");
+    try {
+      auth.refreshUser(await userService.updateProfile({ dateOfBirth: dob }));
+      return true;
+    } catch (err) {
+      setDobError(err instanceof Error ? err.message : "Couldn't save that. Please try again.");
+      return false;
+    }
+  }
 
   async function finish() {
+    if (!(await confirmBirthDate())) {
+      setStep(1);
+      return;
+    }
     try {
       await auth.completeOnboarding();
       nav("/app/dashboard");
@@ -94,7 +135,6 @@ export default function OnboardingPage() {
   async function saveAll() {
     const profile: { name?: string; dateOfBirth?: string; lifeStage?: LifeStageValue } = {};
     if (name.trim() && name.trim() !== auth.user?.name) profile.name = name.trim();
-    if (dob && dob !== auth.user?.dateOfBirth) profile.dateOfBirth = dob;
     if (lifeStage && LIFE_STAGE[lifeStage]) profile.lifeStage = LIFE_STAGE[lifeStage];
     if (Object.keys(profile).length) auth.refreshUser(await userService.updateProfile(profile));
 
@@ -113,6 +153,19 @@ export default function OnboardingPage() {
     }
 
     if (feel.startsWith("Senior")) senior.setSeniorMode(true);
+  }
+
+  if (declined) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6">
+        <div className="max-w-sm w-full flex flex-col gap-5">
+          <Banner tone="info" title="Sorry, Women360 isn't available to you">
+            We're not able to set up Women360 with the details given.
+          </Banner>
+          <Button variant="secondary" onClick={() => { auth.logout(); nav("/", { replace: true }); }}>Close</Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -136,6 +189,11 @@ export default function OnboardingPage() {
           nextButtonProps={{
             disabled: saving,
             onClick: async (event) => {
+              if (step === 1) {
+                event.preventDefault();
+                if (await confirmBirthDate()) setStep(2);
+                return;
+              }
               if (step !== STEP_COUNT) return;
               // Last step: save what was answered, and only move on once it's saved.
               event.preventDefault();
@@ -166,7 +224,7 @@ export default function OnboardingPage() {
           <Step title="About you">
             <FormStep title="About you" subtitle={clinicalContent ? "This helps us show what applies to you, such as which check-ups are due at your age." : "This helps us tailor the app to you."}>
               <Input label="Full name" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
-              <Input label="Date of birth" type="date" value={dob} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDob(e.target.value)} />
+              <DateWheel label="Date of birth" value={dob} onChange={(v) => { setDob(v); setDobError(""); }} error={dobError} />
             </FormStep>
           </Step>
 
@@ -199,8 +257,8 @@ export default function OnboardingPage() {
                 onChange={setLifeStage}
               />
               <div className="grid grid-cols-2 gap-3 items-start">
-                <NumberField label="Cycle length" suffix="days" optional min={15} max={90} startAt={28} value={cycleLength} onChange={setCycleLength} hint="Your typical cycle, if you know it." />
-                <NumberField label="Period length" suffix="days" optional min={1} max={15} startAt={5} value={periodLength} onChange={setPeriodLength} hint="How long it usually lasts." />
+                <WheelPicker label="Typical cycle" items={CYCLE_LENGTHS} value={cycleLength} onChange={setCycleLength} />
+                <WheelPicker label="Typical period" items={PERIOD_LENGTHS} value={periodLength} onChange={setPeriodLength} />
               </div>
             </FormStep>
           </Step>

@@ -84,9 +84,9 @@ export function WomanDetail({ womanId, name }: { womanId: string; name: string }
                   <YAxis domain={[0, 4]} ticks={[0, 1, 2, 3, 4]} stroke="var(--w360-text-muted)" fontSize={11} tickLine={false} width={24} />
                   <Tooltip contentStyle={{ background: "var(--w360-bg-raised)", border: "1px solid var(--w360-border)", borderRadius: 8, fontSize: 12 }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Line type="monotone" dataKey="Mood" stroke="#6B1D30" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="Stress" stroke="#B5651D" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="Energy" stroke="#2C6E6A" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Mood" stroke="var(--w360-series-1)" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Stress" stroke="var(--w360-series-3)" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="Energy" stroke="var(--w360-series-2)" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -107,7 +107,7 @@ export function WomanDetail({ womanId, name }: { womanId: string; name: string }
                     <XAxis dataKey="day" stroke="var(--w360-text-muted)" fontSize={11} tickLine={false} />
                     <YAxis domain={[0, 10]} stroke="var(--w360-text-muted)" fontSize={11} tickLine={false} width={24} />
                     <Tooltip contentStyle={{ background: "var(--w360-bg-raised)", border: "1px solid var(--w360-border)", borderRadius: 8, fontSize: 12 }} />
-                    <Line type="monotone" dataKey="Hours" stroke="#6B1D30" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="Hours" stroke="var(--w360-series-1)" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

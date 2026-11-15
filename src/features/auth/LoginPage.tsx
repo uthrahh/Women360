@@ -6,6 +6,7 @@ import { AuthLayout } from "./AuthLayout";
 import { Input } from "@/components/ui/Input";
 import { PasswordField } from "@/components/ui/PasswordField";
 import { Button } from "@/components/ui/Button";
+import { OtpInput, type OtpState } from "@/components/ui/OtpInput";
 import { useApp } from "@/context/AppContext";
 import { isTwoFactorChallenge, type TwoFactorChallenge } from "@/services/authService";
 import { roleHome } from "@/lib/roleHome";
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const [code, setCode] = useState("");
   // The authenticator code is six digits (numeric keypad, submits itself); a backup code has letters, so it gets the full keyboard.
   const [useBackup, setUseBackup] = useState(false);
+  const [otpState, setOtpState] = useState<OtpState>("idle");
   useEffect(warmUpApi, []);
 
   const finish = (user: User) => nav(roleHome(user));
@@ -51,10 +53,15 @@ export default function LoginPage() {
       setError(useBackup ? "Enter one of your backup codes." : "Enter the code from your authenticator app.");
       return;
     }
+    setOtpState("verifying");
     try {
-      finish(await auth.completeTwoFactor(challenge!, value));
+      const user = await auth.completeTwoFactor(challenge!, value);
+      setOtpState("success");
+      // A beat to see the tick before the app opens.
+      setTimeout(() => finish(user), useBackup ? 0 : 450);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't verify that code. Please try again.");
+      setOtpState("error");
     }
   }
 
@@ -63,44 +70,56 @@ export default function LoginPage() {
     void verify(code);
   }
 
-  // The six-digit code is complete the moment the sixth digit arrives, whether typed, pasted or filled in by the phone's own
-  // one-time-code suggestion, so there is nothing more to press.
+  // Typing again after a wrong code goes back to the plain state. (The six-digit code submits itself: see OtpInput.)
   function onCodeChange(value: string) {
     setCode(value);
-    if (!useBackup && /^\d{6}$/.test(value.trim()) && !auth.loading) void verify(value.trim());
+    if (otpState === "error" && value) setOtpState("idle");
+    if (error && value) setError("");
   }
 
   if (challenge) {
     return (
-      <AuthLayout title="Enter your code" subtitle="Open your authenticator app and type the 6-digit code for Women360.">
+      <AuthLayout title="Enter your code" subtitle={useBackup ? "Each backup code works once." : "From your authenticator app."}>
         {/* A different key makes this a new form, so its field is created fresh and takes focus (React would otherwise reuse the email field). */}
-        <form key="two-factor" onSubmit={onSubmitCode} className="flex flex-col gap-4">
-          <Input
-            label={useBackup ? "Backup code" : "Authentication code"}
-            name="otp"
-            value={code}
-            onChange={(e) => onCodeChange(e.target.value)}
-            error={error || undefined}
-            hint={useBackup ? "Each backup code works once." : undefined}
-            hintAlways
-            inputMode={useBackup ? "text" : "numeric"}
-            pattern={useBackup ? undefined : "[0-9]*"}
-            maxLength={useBackup ? 20 : 6}
-            autoComplete="one-time-code"
-            enterKeyHint="go"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            autoFocus
-            required
-          />
-          <Button type="submit" fullWidth disabled={auth.loading}>{auth.loading ? "Checking…" : "Verify and log in"}</Button>
+        <form key={useBackup ? "backup" : "two-factor"} onSubmit={onSubmitCode} className="flex flex-col gap-4">
+          {useBackup ? (
+            <>
+              <Input
+                label="Backup code"
+                name="otp"
+                value={code}
+                onChange={(e) => onCodeChange(e.target.value)}
+                error={error || undefined}
+                maxLength={20}
+                inputMode="text"
+                autoComplete="one-time-code"
+                enterKeyHint="go"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoFocus
+                required
+              />
+              <Button type="submit" fullWidth disabled={auth.loading}>{auth.loading ? "Checking…" : "Log in"}</Button>
+            </>
+          ) : (
+            <OtpInput
+              label="Authentication code"
+              value={code}
+              onChange={onCodeChange}
+              onComplete={(c) => void verify(c)}
+              state={otpState}
+              error={error || undefined}
+              autoFocus
+            />
+          )}
           <button
             type="button"
             onClick={() => {
               setUseBackup((v) => !v);
               setCode("");
               setError("");
+              setOtpState("idle");
             }}
             className="text-sm font-medium text-maroon-700 dark:text-maroon-200"
           >
@@ -112,6 +131,7 @@ export default function LoginPage() {
               setChallenge(null);
               setCode("");
               setError("");
+              setOtpState("idle");
             }}
             className="text-sm text-[var(--w360-text-muted)] hover:text-[var(--w360-text)]"
           >

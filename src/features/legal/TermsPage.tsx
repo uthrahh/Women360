@@ -83,6 +83,16 @@ export default function TermsPage() {
           <p>If these terms change in a way that matters, we will say so in the app before the change takes effect.</p>
         </Section>
 
+        <Section title="Copyright complaints">
+          <p>
+            Women360 doesn't publish anything people post for others to see. If you believe something on Women360 infringes your
+            copyright, write to <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">{SUPPORT_EMAIL}</a> with: the work you
+            own, where the material is on Women360, your contact details, a statement that you believe in good faith the use isn't
+            authorised, and a statement, under penalty of perjury, that your notice is accurate and that you are the owner or may act
+            for them, with your signature. We will remove or disable access to it promptly.
+          </p>
+        </Section>
+
         <Section title="Contact">
           <p>
             Questions about these terms, or a problem with the service: <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">{SUPPORT_EMAIL}</a>.
@@ -94,6 +104,7 @@ export default function TermsPage() {
             <li>The name of the organisation that operates the service.</li>
             <li>Which country's law applies, and any regional requirements for where it is offered.</li>
             <li>Limits on liability and any paid features, which need a lawyer's review.</li>
+            <li>A registered agent for copyright notices (needed before Women360 hosts anything people share).</li>
           </ul>
         </Section>
       </main>

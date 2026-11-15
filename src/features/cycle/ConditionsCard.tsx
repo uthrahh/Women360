@@ -116,7 +116,7 @@ export function ConditionsCard({ list, cycle, onChanged }: { list: ConditionList
               const on = chosen.includes(c.code);
               return (
                 <label key={c.code} className="flex items-start gap-3 rounded-xl border border-[var(--w360-border)] px-3.5 py-3 cursor-pointer">
-                  <input type="checkbox" className="mt-1 w-4 h-4 accent-[#6B1D30]" checked={on} onChange={() => setChosen((cur) => (on ? cur.filter((x) => x !== c.code) : [...cur, c.code]))} />
+                  <input type="checkbox" className="mt-1 w-4 h-4 accent-[var(--w360-accent)]" checked={on} onChange={() => setChosen((cur) => (on ? cur.filter((x) => x !== c.code) : [...cur, c.code]))} />
                   <span>
                     <span className="block text-sm senior:text-lg font-medium">{c.label}</span>
                     <span className="block text-xs senior:text-base text-[var(--w360-text-muted)]">{c.about}</span>

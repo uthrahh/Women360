@@ -52,7 +52,7 @@ export default function InsightsPage() {
                   <XAxis dataKey="sleep" name="Sleep (h)" stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis dataKey="mood" name="Mood" stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} domain={[0, 5]} />
                   <Tooltip contentStyle={{ background: "var(--w360-bg-raised)", border: "1px solid var(--w360-border)", borderRadius: 8, fontSize: 13 }} cursor={{ strokeDasharray: "3 3" }} />
-                  <Scatter data={data.sleepMood} fill="#6B1D30" />
+                  <Scatter data={data.sleepMood} fill="var(--w360-series-1)" />
                 </ScatterChart>
               </ResponsiveContainer>
             </div>

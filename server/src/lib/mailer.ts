@@ -7,6 +7,30 @@ export interface Email {
   subject: string;
   text: string;
   html: string;
+  /**
+   * "transactional" (the default): something she asked for or needs about her account (confirm email, reset password,
+   * an alert to staff). "marketing": anything promotional. Women360 sends no marketing today; if it ever does, the
+   * message cannot leave without an unsubscribe link and the sender's postal address (CAN-SPAM, GDPR/PECR), and it
+   * carries List-Unsubscribe headers so mail apps show their own unsubscribe button.
+   */
+  category?: "transactional" | "marketing";
+  /** Required for marketing: a one-click link that unsubscribes this address. */
+  unsubscribeUrl?: string;
+}
+
+/** Why a marketing email may not be sent, or null when it may. */
+export function marketingProblem(email: Email): string | null {
+  if (email.category !== "marketing") return null;
+  if (!email.unsubscribeUrl || !email.unsubscribeUrl.startsWith("https://")) return "a marketing email needs an https unsubscribe link";
+  if (!env.MAIL_POSTAL_ADDRESS) return "a marketing email needs the sender's postal address (MAIL_POSTAL_ADDRESS)";
+  if (!email.text.includes(email.unsubscribeUrl) || !email.text.includes(env.MAIL_POSTAL_ADDRESS)) return "the unsubscribe link and postal address must appear in the message itself";
+  return null;
+}
+
+function listUnsubscribeHeaders(email: Email): Record<string, string> {
+  return email.category === "marketing" && email.unsubscribeUrl
+    ? { "List-Unsubscribe": `<${email.unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" }
+    : {};
 }
 
 /** Every message the test environment "sent", newest last, so tests can read a link without a mail server. */
@@ -32,7 +56,14 @@ async function sendViaBrevo(email: Email): Promise<void> {
   const res = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: { "api-key": env.BREVO_API_KEY!, "content-type": "application/json", accept: "application/json" },
-    body: JSON.stringify({ sender, to: [{ email: email.to }], subject: email.subject, htmlContent: email.html, textContent: email.text }),
+    body: JSON.stringify({
+      sender,
+      to: [{ email: email.to }],
+      subject: email.subject,
+      htmlContent: email.html,
+      textContent: email.text,
+      ...(email.category === "marketing" ? { headers: listUnsubscribeHeaders(email) } : {}),
+    }),
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) {
@@ -52,6 +83,11 @@ async function sendViaBrevo(email: Email): Promise<void> {
  * is not configured (never the message itself).
  */
 export async function sendEmail(email: Email): Promise<boolean> {
+  const refused = marketingProblem(email);
+  if (refused) {
+    logger.error({ subject: email.subject }, `Marketing email not sent: ${refused}`);
+    return false;
+  }
   try {
     const transport = mailTransport();
     if (transport === "brevo") {
@@ -60,7 +96,7 @@ export async function sendEmail(email: Email): Promise<boolean> {
     }
     if (transport === "smtp") {
       transporter ??= nodemailer.createTransport(env.SMTP_URL);
-      await transporter.sendMail({ from: env.mailFrom, to: email.to, subject: email.subject, text: email.text, html: email.html });
+      await transporter.sendMail({ from: env.mailFrom, to: email.to, subject: email.subject, text: email.text, html: email.html, headers: listUnsubscribeHeaders(email) });
       return true;
     }
     if (env.isTest) {

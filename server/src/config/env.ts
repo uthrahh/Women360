@@ -24,6 +24,8 @@ const envSchema = z.object({
   BREVO_API_KEY: z.string().optional(),
   SMTP_URL: z.string().optional(),
   MAIL_FROM: z.string().optional(),
+  // The sender's postal address. Needed only for marketing email (none is sent today); never invented, so unset by default.
+  MAIL_POSTAL_ADDRESS: z.string().max(300).optional(),
   // Where the web app lives, for links inside emails. Defaults to the first allowed CORS origin.
   APP_URL: z.string().url().optional(),
   // Request limits per address. The defaults are for production; the browser tests raise them because one

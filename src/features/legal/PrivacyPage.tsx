@@ -37,7 +37,7 @@ export default function PrivacyPage() {
 
         <Section title="What we keep">
           <p>
-            <span className="text-[var(--w360-text)] font-medium">Your account:</span> name, email, date of birth, whether and when you
+            <span className="text-[var(--w360-text)] font-medium">Your account:</span> name, email, date of birth (Women360 is for adults, so it is checked when you sign up), whether and when you
             confirmed your email address, and a one-way hash of your password. We can't read your password.
           </p>
           <p>
@@ -99,7 +99,7 @@ export default function PrivacyPage() {
             your summary or writes a note, it is recorded in an audit log.
           </p>
           <p>
-            Women360 doesn't sell your data and doesn't show advertising. Your sign-in is kept in your browser's own storage on your device.
+            Women360 doesn't sell your data and doesn't show advertising. Your sign-in is kept in your browser's own storage on your device, along with a few settings for this device only (light or dark, sounds on or off, which tips you have seen) and, if the date of birth given at sign-up meant an account couldn't be created, a note of that. None of these settings are sent to us.
             {analyticsEnabled()
               ? " Inside your account the site sets no cookies and uses no third-party analytics or tracking tools."
               : " The site sets no cookies and uses no third-party analytics or tracking tools."}

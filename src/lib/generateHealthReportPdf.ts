@@ -9,10 +9,10 @@ import { SLEEP_QUALITY_LABELS } from "@/types";
 // TypeScript can't resolve against a spread argument — so these are called
 // with three explicit numbers everywhere below rather than `...COLOR`.
 type Rgb = [number, number, number];
-const MAROON: Rgb = [107, 29, 48]; // #6B1D30
-const INK: Rgb = [23, 19, 16]; // #171310
-const MUTED: Rgb = [102, 90, 78]; // #665A4E
-const BORDER: Rgb = [226, 217, 207]; // #E2D9CF
+const ACCENT: Rgb = [214, 0, 111]; // #D6006F, the hot-pink accent (5.1:1 on white)
+const INK: Rgb = [10, 10, 10]; // #0A0A0A
+const MUTED: Rgb = [92, 92, 92]; // #5C5C5C
+const BORDER: Rgb = [230, 230, 230]; // #E6E6E6
 
 function setText(doc: jsPDF, color: Rgb) {
   doc.setTextColor(color[0], color[1], color[2]);
@@ -60,7 +60,7 @@ export function generateHealthReportPdf(report: HealthReportDetail): jsPDF {
     ensureSpace(30);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
-    setText(doc, MAROON);
+    setText(doc, ACCENT);
     doc.text(text, MARGIN, y);
     y += 6;
     setDraw(doc, BORDER);
@@ -111,7 +111,7 @@ export function generateHealthReportPdf(report: HealthReportDetail): jsPDF {
     doc.roundedRect(MARGIN, y, barWidth, barHeight, 3, 3, "F");
     const filled = Math.max(0, Math.min(100, pct)) / 100 * barWidth;
     if (filled > 0) {
-      setFill(doc, MAROON);
+      setFill(doc, ACCENT);
       doc.roundedRect(MARGIN, y, Math.max(filled, 6), barHeight, 3, 3, "F");
     }
     y += barHeight + 16;
@@ -124,7 +124,7 @@ export function generateHealthReportPdf(report: HealthReportDetail): jsPDF {
   // --- Cover / header ------------------------------------------------
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
-  setText(doc, MAROON);
+  setText(doc, ACCENT);
   doc.text("Women360", MARGIN, y);
   y += 30;
 

@@ -8,8 +8,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<string, string> = {
-  primary: "bg-maroon-700 text-white hover:bg-maroon-800 active:bg-maroon-900 dark:bg-maroon-300 dark:text-ink-900 dark:hover:bg-maroon-200",
-  secondary: "bg-transparent text-maroon-700 border border-maroon-700 hover:bg-maroon-50 dark:text-maroon-200 dark:border-maroon-300 dark:hover:bg-white/5",
+  // Black on white, white on black; hot pink is the accent on hover and focus, never the default fill.
+  primary: "bg-ink-900 text-white hover:bg-maroon-700 active:bg-maroon-800 dark:bg-white dark:text-black dark:hover:bg-maroon-300 dark:active:bg-maroon-200",
+  secondary: "bg-transparent text-[var(--w360-text)] border border-[var(--w360-text)] hover:border-maroon-600 hover:text-maroon-700 dark:hover:border-maroon-300 dark:hover:text-maroon-300",
   ghost: "bg-transparent text-[var(--w360-text)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]",
   danger: "bg-transparent text-red-700 border border-red-300 hover:bg-red-50 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-950/40",
 };

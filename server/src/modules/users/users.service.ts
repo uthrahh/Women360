@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { assertAdultBirthDate } from "@/lib/age";
 import { publicUser } from "@/lib/publicUser";
 import type { ContraceptionMethod, LifeStage, PregnancyStatus, SeniorEssentialKey } from "@prisma/client";
 
@@ -136,6 +137,7 @@ export const usersService = {
     userId: string,
     input: { name?: string; dateOfBirth?: string; lifeStage?: LifeStage }
   ) {
+    if (input.dateOfBirth) assertAdultBirthDate(input.dateOfBirth);
     const user = await prisma.user.update({
       where: { id: userId },
       data: {

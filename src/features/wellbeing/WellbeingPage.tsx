@@ -177,9 +177,9 @@ export default function WellbeingPage() {
                 <XAxis dataKey="date" stroke="var(--w360-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={{ background: "var(--w360-bg-raised)", border: "1px solid var(--w360-border)", borderRadius: 8, fontSize: 13 }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Line type="monotone" dataKey="mood" name="Mood" stroke="#6B1D30" strokeWidth={2.5} dot={{ r: 3 }} />
-                <Line type="monotone" dataKey="energy" name="Energy" stroke="#B85468" strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
-                <Line type="monotone" dataKey="stress" name="Stress" stroke="#A79A8B" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="4 3" connectNulls={false} />
+                <Line type="monotone" dataKey="mood" name="Mood" stroke="var(--w360-series-1)" strokeWidth={2.5} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="energy" name="Energy" stroke="var(--w360-series-2)" strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
+                <Line type="monotone" dataKey="stress" name="Stress" stroke="var(--w360-series-3)" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="4 3" connectNulls={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
