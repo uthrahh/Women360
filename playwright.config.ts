@@ -42,6 +42,9 @@ export default defineConfig({
       timeout: 120_000,
       env: {
         CLINICAL_CONTENT: "false",
+        // The chat answers from fixed scripts (free, offline); the real model is never called from a test.
+        CHATBOT_ENABLED: "true",
+        CHATBOT_PROVIDER: "scripted",
         API_RATE_LIMIT_PER_MINUTE: "100000",
         AUTH_RATE_LIMIT_PER_15_MIN: "1000",
         // Every test starts from one saved sign-in, and a refresh token works once. The whole run takes longer than the usual

@@ -83,17 +83,20 @@ model User {
   isDemo             Boolean    @default(false)
   // Set when she opens the link sent to her address. Null = not confirmed yet (nothing is blocked by it).
   emailVerifiedAt    DateTime?
+  // When she agreed to let the AI chat read a numbers-only summary of her last 30 days. Null = it reads nothing about her.
+  chatShareConsentAt DateTime?
 
-  twoFactorBackupCodes TwoFactorBackupCode[]
-  refreshTokens        RefreshToken[]
-  passwordResetTokens  PasswordResetToken[]
+  twoFactorBackupCodes    TwoFactorBackupCode[]
+  refreshTokens           RefreshToken[]
+  passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
-  healthProfile        HealthProfile?
-  emergencyContact     EmergencyContact?
-  seniorEssentials     SeniorEssentialPreference[]
-  nutritionGoal        NutritionGoal?
-  activityGoal         ActivityGoal?
-  cycleProfile         CycleProfile?
+  chatTurns               ChatTurn[]
+  healthProfile           HealthProfile?
+  emergencyContact        EmergencyContact?
+  seniorEssentials        SeniorEssentialPreference[]
+  nutritionGoal           NutritionGoal?
+  activityGoal            ActivityGoal?
+  cycleProfile            CycleProfile?
 
   cycleEntries           CycleEntry[]
   mealEntries            MealEntry[]
@@ -158,6 +161,18 @@ model TwoFactorBackupCode {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+}
+
+// One row per question she asks the AI chat: only who and when, so the per-person and site-wide limits survive a sleeping server.
+// Never the question or the answer (Women360 keeps no chat text). Swept after two days.
+model ChatTurn {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }
 
 // One-time link that confirms she owns the address she signed up with. Only a hash is stored.

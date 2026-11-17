@@ -76,7 +76,7 @@ export function TopBar() {
         <button
           onClick={senior.toggleSeniorMode}
           className={clsx(
-            "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-colors",
+            "flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-colors",
             senior.seniorMode
               ? "bg-maroon-700 text-white border-maroon-700"
               : "border-[var(--w360-border)] text-[var(--w360-text-muted)] hover:text-[var(--w360-text)]"

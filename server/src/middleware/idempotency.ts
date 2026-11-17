@@ -23,7 +23,8 @@ const MAX_STORED_BYTES = 256 * 1024;
 const STALE_PROCESSING_MS = 60_000;
 const KEEP_MS = 24 * 3_600_000;
 // Not worth guarding, and some must never be replayed from a stored answer.
-const SKIP = [/^\/auth\//, /^\/client-errors/, /^\/usage\//, /^\/internal\//];
+// /chat streams her private conversation: a stored copy of an answer would be exactly what the chat promises not to keep.
+const SKIP = [/^\/auth\//, /^\/client-errors/, /^\/usage\//, /^\/internal\//, /^\/chat\//];
 
 function pathOf(req: Request): string {
   return req.originalUrl.split("?")[0].replace(/^\/api\/v1/, "");

@@ -62,7 +62,7 @@ gratuitous scroll/hover animations (respect `prefers-reduced-motion`,
 already wired in `src/index.css`), or making everything a floating rounded
 card. A section can be typography + spacing + a divider.
 
-Owner-approved exceptions (2026-11-15), confined to where they are: a slowly turning iridescent panel behind the
+Owner-approved exceptions (2026-11-15; the chat screen added 2026-11-18), confined to where they are: the AI chat screen (`features/chat/`) is purple with a slow orange-and-lavender shader behind it, scoped to `.w360-chat` (don't spread it elsewhere); a slowly turning iridescent panel behind the
 one-time-code tiles (`OtpInput.css`, pink/pearl tones only), and "privacy glass" (lightly frosted edges) on the new-password
 field while the password is shown (`NewPasswordField.css`). Don't spread either elsewhere.
 
@@ -684,4 +684,4 @@ the app does, and it must stay true. Standing rules:
 - **Pickers:** a long list is a `ComboBox`; a bounded range is a wheel; a short list is a plain select; typed numbers stay `NumberField`.
 - **Sign-in screens** share `AuthLayout` (one title, one main action, a sky, a concentric card); a new auth screen uses it.
 - **No filler:** a badge, subtitle, divider, icon or caption that carries no information is cut; copy uses this product's own nouns and describes only what is live.
-- **Chat / AI assistant:** there is none. Building one is a product decision first (see `docs/CRAFT.md` §7).
+- **Chat / AI assistant:** "Ask Women360" exists (`features/chat/`, `server/src/modules/chat/`), off unless `CHATBOT_ENABLED=true` and `ANTHROPIC_API_KEY` is set. Rules: its text is never stored (the conversation lives in the tab; `ChatTurn` keeps only who and when for two days); her logs reach it only as the numbers-only summary and only while she has switched sharing on (server-enforced; demo accounts barred); links appear only for pages the server announced or screens of ours; the route is excluded from idempotency receipts; the model's text never becomes HTML; any change to what is sent to Anthropic changes `/privacy` in the same commit. Its health brief (`chat.prompt.ts`) awaits clinical review. See `docs/CRAFT.md` §7.

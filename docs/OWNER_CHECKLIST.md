@@ -86,10 +86,22 @@ The check-up schedule, "worth discussing with a doctor" patterns, condition guid
 ### 10. Decisions only you can make · Waiting
 | Decision | What I need from you |
 | --- | --- |
-| Chat / AI assistant | Yes or no. If yes: which provider, consent wording, who reviews its health statements (it would send what she logs to an outside model), and whether the black, white and pink theme applies instead of purple. See `docs/CRAFT.md` section 7. |
-| Illustrations inside app screens | Should the hand-drawn scenes also appear as headers on Nutrition, Activity, Wellbeing and in Senior Mode? (So far only the home page has them.) |
+| Chat / AI assistant | **Decided 2026-11-18: build it** (Anthropic's Claude; purple screen for the chat only). Built and tested; switching it on is item 13. |
+| Illustrations inside app screens | **Decided 2026-11-18: no.** |
 | Optional extras | Optional two-factor sign-in (`TWO_FACTOR_ENCRYPTION_KEY`), admin IP allowlist (`ADMIN_IP_ALLOWLIST`), Google Analytics (`VITE_GA_MEASUREMENT_ID`). |
-| Existing accounts and the age gate | Accounts created and onboarded before the age gate were not re-checked. If real people already have accounts, say so and I will add a check on their next sign-in. |
+| Existing accounts and the age gate | **Decided 2026-11-18: no re-check.** |
+
+### 13. Switch the AI chat on (20 minutes) · Waiting
+The chat ("Ask Women360") is built and tested with scripted answers. It stays **off** and invisible until you do all of these:
+1. **Anthropic account**: create it with `admin.women360@gmail.com` at console.anthropic.com, add a payment method and set a **monthly spend limit** in the console (the chat uses `claude-opus-5-5` with web search, which costs real money per question).
+2. In the same console create an API key. **You** paste it into Render: **women360-api > Environment**, `ANTHROPIC_API_KEY` = the key (never in a chat message, never in a file).
+3. Accept Anthropic's data-processing terms (the privacy page lists this under "Still to be confirmed") and check how long Anthropic keeps what the chat sends it.
+4. Have a **clinician read the chat's brief** in `server/src/modules/chat/chat.prompt.ts` (what it may and may not say about health). It cites the pages it reads, but its wording is not clinically reviewed.
+5. On Render set `CHATBOT_ENABLED` = `true` (it is `false` in `render.yaml`). The limits on how much one person and the whole site can ask are in `server/.env.example`.
+6. **Check:** sign in, **Support > Ask Women360** appears, ask one question, and see it cite pages. The Anthropic console's usage page shows the cost.
+
+### 14. Put every service under the admin email (except GitHub) · Waiting
+Decided 2026-11-18: GitHub stays on the personal account; Render, Vercel, Supabase, Brevo, UptimeRobot, Anthropic and anything else use `admin.women360@gmail.com`. Moving Render and Supabase means new services and a new database URL, so do it as a planned change (a new database means a data migration and new environment variables), not in the middle of other work.
 
 ### 11. Before you invite people (the gate) · Waiting
 - [ ] Items 1 to 4 above done and green
@@ -128,8 +140,8 @@ The check-up schedule, "worth discussing with a doctor" patterns, condition guid
 | 15 | Black, white and hot-pink theme (light and dark), new icon, emails and PDF recoloured | Completed |
 | 16 | Date wheel and number wheels, new-password field, code tiles, sound switch | Completed |
 | 17 | Craft pass: motion tokens, habit tick, rolling counts, sign-in sky card, combo box, tab pill, touch hit areas, landing unslop | Completed |
-| 18 | Chat / AI assistant | Not built, waiting for your decision (item 10) |
-| 19 | Illustrations inside the app screens | Waiting for your decision (item 10) |
+| 18 | Chat / AI assistant (Claude, web search, consented summary of her own logs, tick-off plans, limits, scripted test mode) | Completed (code, tests); **Waiting** for the key and your review (item 13) |
+| 19 | Illustrations inside the app screens | Decided: no |
 
 ### Verification
 | # | Step | Status |

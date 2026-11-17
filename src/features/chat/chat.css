@@ -1,0 +1,121 @@
+/*
+ * The chat screen. Deliberately its own place: a deep purple panel with a slow orange-and-lavender shader behind it (owner's request for
+ * this screen only, see CLAUDE.md section 1). The colours are scoped to .w360-chat so they can't leak into the rest of the app, and the
+ * panel looks the same in light and dark mode. Every text colour here is checked against the panel's solid base colour (#2a1b5c):
+ * body text 14:1, muted text 8:1, links 11:1.
+ */
+.w360-chat {
+  --chat-bg: #2a1b5c;
+  --chat-bg-deep: #1b1040;
+  --chat-text: #f7f3ff;
+  --chat-muted: #cfc5f2;
+  --chat-line: rgba(255, 255, 255, 0.2);
+  --chat-surface: rgba(255, 255, 255, 0.09);
+  --chat-surface-hover: rgba(255, 255, 255, 0.16);
+  --chat-lavender: #c9b8ff;
+  --chat-orange: #ff9a52;
+  --chat-link: #ffd6a8;
+  --chat-on-light: #2a1b5c;
+
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  border-radius: var(--w360-radius-card, 20px);
+  background-color: var(--chat-bg);
+  color: var(--chat-text);
+}
+
+/* The still gradient is always there: it is what shows with reduced motion, in Senior Mode, and wherever WebGL is missing. */
+.w360-chat-sky {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(60% 50% at 82% 8%, rgba(255, 154, 82, 0.55), transparent 70%),
+    radial-gradient(70% 60% at 12% 30%, rgba(201, 184, 255, 0.42), transparent 72%),
+    radial-gradient(80% 60% at 60% 100%, rgba(120, 84, 220, 0.5), transparent 70%),
+    var(--chat-bg);
+}
+.w360-chat-sky canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity 600ms var(--ease-enter, ease-out);
+}
+.w360-chat-sky canvas[data-ready="true"] { opacity: 1; }
+
+/* A veil over the sky so words stay readable wherever the light drifts; lighter on the empty screen where nothing is being read. */
+.w360-chat-veil {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(27, 16, 64, 0.5), rgba(27, 16, 64, 0.82) 38%, rgba(27, 16, 64, 0.9));
+  transition: opacity var(--dur-move, 320ms) var(--ease-move, ease);
+}
+.w360-chat[data-empty="true"] .w360-chat-veil { opacity: 0.55; }
+
+.w360-chat :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* A paragraph's words, laid out at once (so nothing below jumps) and then faded in one after another. */
+@keyframes w360-chat-word { from { opacity: 0; transform: translateY(0.25em); filter: blur(2px); } }
+.w360-chat-word { display: inline; }
+.w360-chat-live .w360-chat-word {
+  animation: w360-chat-word 360ms var(--ease-enter, ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* Where the next paragraph will go while it is still being written. */
+.w360-chat-pending { display: grid; gap: 0.55rem; padding-block: 0.35rem; }
+.w360-chat-pending span {
+  display: block;
+  height: 0.8rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--chat-surface), rgba(255, 255, 255, 0.2), var(--chat-surface));
+  background-size: 200% 100%;
+  animation: w360-chat-shimmer 1.6s linear infinite;
+}
+.w360-chat-pending span:nth-child(1) { width: 92%; }
+.w360-chat-pending span:nth-child(2) { width: 64%; }
+@keyframes w360-chat-shimmer { to { background-position: -200% 0; } }
+
+/* A step the chat is taking: a pulsing dot while it runs, a tick once it is done. */
+@keyframes w360-chat-dot { 50% { opacity: 0.35; transform: scale(0.7); } }
+.w360-chat-dot { width: 0.5rem; height: 0.5rem; border-radius: 999px; background: var(--chat-orange); animation: w360-chat-dot 1s ease-in-out infinite; }
+
+/* A plan task: an outline when not done, filled when done. */
+.w360-chat-tick {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  border: 2px solid var(--chat-lavender);
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: var(--chat-on-light);
+  transition: background-color var(--dur-hover, 150ms) var(--ease-enter, ease-out), border-color var(--dur-hover, 150ms) var(--ease-enter, ease-out), transform var(--dur-press, 120ms) var(--ease-enter, ease-out);
+}
+.w360-chat-tick svg { opacity: 0; transform: scale(0.6); transition: opacity var(--dur-hover, 150ms) var(--ease-enter, ease-out), transform var(--dur-popover, 200ms) var(--ease-overshoot, ease-out); }
+.w360-chat-tick[aria-checked="true"] { background: var(--chat-link); border-color: var(--chat-link); }
+.w360-chat-tick[aria-checked="true"] svg { opacity: 1; transform: none; }
+.w360-chat-tick:active { transform: scale(0.94); }
+
+/* The messages scroll with the page; the box she types in stays put at the bottom. */
+.w360-chat-composer {
+  position: sticky;
+  bottom: calc(4.75rem + var(--safe-bottom, 0px));
+  /* Solid underneath, so answers scrolling behind it do not show through the box or the small print. */
+  background: linear-gradient(to top, var(--chat-bg-deep) 82%, transparent);
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  padding-bottom: 0.25rem;
+}
+@media (min-width: 640px) { .w360-chat-composer { margin-inline: -2rem; padding-inline: 2rem; } }
+@media (min-width: 1024px) { .w360-chat-composer { bottom: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .w360-chat-pending span { animation: none; }
+  .w360-chat-dot { animation: none; }
+}

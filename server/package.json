@@ -26,6 +26,7 @@
     "push:keys": "node -e \"const k=require('web-push').generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+k.publicKey);console.log('VAPID_PRIVATE_KEY='+k.privateKey)\""
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.10.0",
     "@prisma/client": "^5.19.1",
     "argon2": "^0.41.1",
     "cors": "^2.8.5",

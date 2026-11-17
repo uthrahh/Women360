@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { env } from "@/config/env";
 import { clinicalContentOn } from "@/config/features";
+import { chatConfigured, chatEnabled } from "@/modules/chat/chat.config";
 import { asyncHandler } from "@/lib/asyncHandler";
 import { ok } from "@/lib/response";
 
@@ -17,6 +18,8 @@ configRouter.get(
       // Present only when reminders can reach her while the app is closed.
       pushPublicKey: env.pushConfigured ? env.VAPID_PUBLIC_KEY : null,
       supportEmail: env.SUPPORT_EMAIL ?? null,
+      // The AI chat appears only when the owner has switched it on and it can actually answer.
+      chatbot: chatEnabled() && chatConfigured(),
       // Only ask people to confirm their address when an email can actually reach them.
       emailVerification: env.mailConfigured,
     });

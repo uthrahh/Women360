@@ -21,6 +21,7 @@ export const GO_KEYS: Record<string, string> = {
   "/app/reports": "r",
   "/app/learn": "l",
   "/app/messages": "m",
+  "/app/chat": "k",
   "/app/settings": ",",
 };
 

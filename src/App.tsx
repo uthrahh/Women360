@@ -42,6 +42,7 @@ const InsightsPage = lazy(() => import("@/features/insights/InsightsPage"));
 const ReportsPage = lazy(() => import("@/features/reports/ReportsPage"));
 const LearnPage = lazy(() => import("@/features/learn/LearnPage"));
 const MessagesPage = lazy(() => import("@/features/messages/MessagesPage"));
+const ChatPage = lazy(() => import("@/features/chat/ChatPage"));
 const SettingsPage = lazy(() => import("@/features/settings/SettingsPage"));
 const AdminPage = lazy(() => import("@/features/admin/AdminPage"));
 const CoachPage = lazy(() => import("@/features/coach/CoachPage"));
@@ -167,6 +168,10 @@ export default function App() {
                 <Route
                   path="learn"
                   element={<Suspense fallback={<LoadingState label="Loading" />}><LearnPage /></Suspense>}
+                />
+                <Route
+                  path="chat"
+                  element={<Suspense fallback={<LoadingState label="Loading" />}><ChatPage /></Suspense>}
                 />
                 <Route
                   path="messages"

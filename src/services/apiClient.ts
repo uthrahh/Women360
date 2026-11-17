@@ -105,12 +105,42 @@ function newIdempotencyKey(): string {
  * A caller may supply its own key to cover a retry it makes itself, such as a form re-submitted after an error.
  */
 function withIdempotencyKey(path: string, init: RequestInit): RequestInit {
-  if ((init.method ?? "GET").toUpperCase() !== "POST" || /^\/(auth|usage|client-errors)(\/|$)/.test(path)) return init;
+  if ((init.method ?? "GET").toUpperCase() !== "POST" || /^\/(auth|usage|client-errors|chat)(\/|$)/.test(path)) return init;
   return { ...init, headers: { "Idempotency-Key": newIdempotencyKey(), ...(init.headers as Record<string, string> | undefined) } };
 }
 
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (await requestEnvelope<T>(path, withIdempotencyKey(path, init))).data as T;
+}
+
+/**
+ * A POST whose answer arrives as a stream (the chat). Same sign-in handling as request() (Bearer token, one shared refresh on a 401),
+ * but the body is handed back unread, and there is no Idempotency-Key and no automatic resend: the server must never store or replay it.
+ */
+export async function requestStream(path: string, body: unknown, signal: AbortSignal, isRetry = false): Promise<Response> {
+  const tokens = getTokens();
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    signal,
+    headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...(tokens ? { Authorization: `Bearer ${tokens.accessToken}` } : {}) },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401 && tokens && !isRetry) {
+    try {
+      await getSharedRefresh();
+    } catch {
+      clearTokens();
+      window.dispatchEvent(new Event("w360:session-expired"));
+      throw new ApiError("Your session has expired. Please sign in again.", 401, "UNAUTHORIZED");
+    }
+    return requestStream(path, body, signal, true);
+  }
+  if (res.status === 401) {
+    clearTokens();
+    window.dispatchEvent(new Event("w360:session-expired"));
+  }
+  if (!res.ok) throw await parseError(res);
+  return res;
 }
 
 /** For list endpoints that return pagination metadata beside the items. */

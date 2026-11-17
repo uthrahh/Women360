@@ -48,8 +48,8 @@ Automated guards:
 | Legal basis for processing | Owner: listed under "Still to be confirmed" on the privacy page (consent is the likely basis for health data). |
 | Marketing consent | Done: no marketing or promotional messages are sent (stated on the privacy page). Adding any needs explicit opt-in first. |
 | Data deletion | Done: whole account, or only cycle and reproductive history; immediate. |
-| Data retention | Done: "How long it is kept" on the privacy page, enforced by the daily sweep (security records 90 days, save receipts 24 h, spent tokens 7 days, sent-reminder records 3 days, usage counts about 13 months). |
-| Data processing agreements | Owner: accept the DPAs of Vercel, Render, Supabase, Brevo (and Google if Analytics is switched on). Each offers one in its dashboard or legal pages. |
+| Data retention | Done: "How long it is kept" on the privacy page, enforced by the daily sweep (security records 90 days, save receipts 24 h, spent tokens 7 days, sent-reminder records 3 days, AI chat question times 2 days, usage counts about 13 months). |
+| Data processing agreements | Owner: accept the DPAs of Vercel, Render, Supabase, Brevo (and Google if Analytics is switched on, and Anthropic if the AI chat is switched on). Each offers one in its dashboard or legal pages. |
 | Third-party disclosure | Done: "Services that handle it for us" on the privacy page. |
 | Data security | Done: see §3, summarised on the privacy page ("How it is protected"). |
 | Data breach procedure | Done: `docs/INCIDENTS.md` §4. **Owner**: confirm the regulator and timelines once the countries are decided. |

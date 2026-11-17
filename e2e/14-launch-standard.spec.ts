@@ -5,7 +5,7 @@ import { expect, expectNoHorizontalScroll, test, waitForApp } from "./fixtures";
 // a real 404 page, the email-confirmation page, and no placeholder screens anywhere.
 
 const PUBLIC = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms", "/release-notes", "/verify-email"];
-const SIGNED_IN = ["/app/dashboard", "/app/cycle", "/app/activity", "/app/sleep", "/app/nutrition", "/app/habits", "/app/goals", "/app/health", "/app/wellbeing", "/app/insights", "/app/reports", "/app/messages", "/app/settings"];
+const SIGNED_IN = ["/app/dashboard", "/app/cycle", "/app/activity", "/app/sleep", "/app/nutrition", "/app/habits", "/app/goals", "/app/health", "/app/wellbeing", "/app/insights", "/app/reports", "/app/messages", "/app/chat", "/app/settings"];
 const TABLETS = [
   { name: "iPad portrait", width: 768, height: 1024 },
   { name: "iPad landscape", width: 1024, height: 768 },

@@ -57,6 +57,7 @@ export const usersService = {
         feedback: true,
         pushSubscriptions: { select: { createdAt: true, timezone: true, endpoint: true } },
         bodyLogs: true,
+        chatTurns: { select: { createdAt: true } },
       },
     });
     return {
@@ -95,6 +96,8 @@ export const usersService = {
       feedback: u.feedback,
       // Devices she allowed closed-app reminders on. Only the push service's name is listed: the full address and keys are secrets.
       bodyLogs: u.bodyLogs,
+      // The AI chat: whether she agreed to share her summary, and when she asked (never what: no chat text is kept).
+      aiChat: { sharingAgreedAt: u.chatShareConsentAt, recentQuestions: u.chatTurns.map((t) => t.createdAt) },
       reminderDevices: u.pushSubscriptions.map((d) => ({ since: d.createdAt, timezone: d.timezone, service: new URL(d.endpoint).hostname })),
     };
   },

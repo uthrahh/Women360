@@ -25,7 +25,7 @@ const icon = (item: NavItem) => <item.icon size={16} strokeWidth={1.75} />;
 export function AppMenu({ onNavigate }: { onNavigate?: () => void }) {
   const { pathname } = useLocation();
   const nav = useTransitionNavigate();
-  const { clinicalContent } = useFeatures();
+  const { clinicalContent, chatbot } = useFeatures();
 
   const items = useMemo(
     () =>
@@ -34,10 +34,10 @@ export function AppMenu({ onNavigate }: { onNavigate?: () => void }) {
           ? { label: node.leaf.label, value: node.leaf.to }
           : {
               label: node.label,
-              children: node.items.filter((i) => clinicalContent || i.to !== "/app/learn").map((i) => ({ value: i.to, label: i.label, icon: icon(i) })),
+              children: node.items.filter((i) => (clinicalContent || i.to !== "/app/learn") && (chatbot || i.to !== "/app/chat")).map((i) => ({ value: i.to, label: i.label, icon: icon(i) })),
             }
       ),
-    [clinicalContent]
+    [clinicalContent, chatbot]
   );
 
   return (

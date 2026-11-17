@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { analyticsEnabled } from "@/lib/analytics/ga";
+import { useFeatures } from "@/context/FeaturesContext";
 
 // Plain-language account of what the app actually does with data. Every
 // statement here is backed by the code or the hosting setup; anything that
@@ -21,6 +22,8 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 export default function PrivacyPage() {
   usePageTitle("Privacy");
+  // The chat is described only while it is switched on: this page never describes something that is off.
+  const { chatbot } = useFeatures();
   return (
     <div className="min-h-screen">
       <header className="flex items-center justify-between px-6 sm:px-10 h-20 max-w-content mx-auto">
@@ -66,11 +69,34 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
+        {chatbot && (
+          <Section title="The AI chat">
+            <p>
+              <span className="text-[var(--w360-text)] font-medium">What it is:</span> "Ask Women360" answers your questions with an AI model from Anthropic. It can be wrong and it is not medical advice.
+              It is for signed-in accounts only, never the shared demonstration accounts.
+            </p>
+            <p>
+              <span className="text-[var(--w360-text)] font-medium">What is sent:</span> the questions you type and the earlier messages of that conversation, so it can follow it, and today's date.
+              To answer, it may search the web and read web pages, using search words it writes from your question, so leave your name and other details out of what you ask.
+            </p>
+            <p>
+              <span className="text-[var(--w360-text)] font-medium">Your logs, only if you say yes:</span> the switch at the top of the chat is off until you turn it on. When it is on, the chat can ask
+              for a summary of your last 30 days made of averages and counts (sleep, mood, energy, stress, activity, water, cycle phase, how many habits you ticked) and your age range. It never receives your name, email, date of birth,
+              medicines, allergies, notes, symptoms you typed, habit names, messages or contraception and pregnancy records. Turn the switch off and the next question is answered without it.
+            </p>
+            <p>
+              <span className="text-[var(--w360-text)] font-medium">What we keep:</span> not your questions and not its answers. The conversation lives in your browser tab and is gone when you close it or press New chat.
+              We keep only the time of each question for 2 days, so we can apply the limits on how much one person and the whole site can ask, and when you turned the switch on. Both are in your data download and are erased with your account.
+            </p>
+          </Section>
+        )}
+
         <Section title="How long it is kept">
           <ul className="list-disc pl-5 flex flex-col gap-1.5">
             <li>Your account and everything you log: until you delete it. You can delete your whole account, or only your cycle and reproductive history, in Settings at any time.</li>
             <li>Security records (sign-in successes and failures): 90 days.</li>
             <li>Save receipts: 24 hours.</li>
+            {chatbot && <li>The time of each AI chat question (never its words): 2 days.</li>}
             <li>Sign-in sessions, password-reset links and email-confirmation links: deleted 7 days after they expire, are used or are signed out.</li>
             <li>Records of reminders already sent: 3 days. A reminder device: until you turn reminders off on it, the browser reports it gone, or you delete your account.</li>
             <li>The anonymous usage counts: about 13 months. The one-way codes used to count different people are deleted at the end of each day.</li>
@@ -125,7 +151,7 @@ export default function PrivacyPage() {
         <Section title="Services that handle it for us">
           <p>
             The website is delivered by Vercel, the application server runs on Render, and the database is hosted by
-            Supabase. The fonts are served from Women360 itself, so no font provider sees your visit. If you turn on reminders for when Women360 is closed, they travel through your browser's own notification service (Google for Chrome, Mozilla for Firefox, Apple for Safari). It sees that a notification was sent to your device, but the message is encrypted so it can't read it.
+            Supabase.{chatbot && " If you use the AI chat, your questions are processed by Anthropic."} The fonts are served from Women360 itself, so no font provider sees your visit. If you turn on reminders for when Women360 is closed, they travel through your browser's own notification service (Google for Chrome, Mozilla for Firefox, Apple for Safari). It sees that a notification was sent to your device, but the message is encrypted so it can't read it.
           </p>
         </Section>
 
@@ -150,6 +176,9 @@ export default function PrivacyPage() {
 
         <Section title="Contact">
           <p>
+            Women360 is run by Pavithra Uthrah R K. The address below is the contact for everything on this page.
+          </p>
+          <p>
             For a copy of your data, a correction, deleting your account, or any question about this page, write to{" "}
             <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">{SUPPORT_EMAIL}</a>. You can also download or delete your data yourself in Settings.
           </p>
@@ -157,10 +186,10 @@ export default function PrivacyPage() {
 
         <Section title="Still to be confirmed">
           <ul className="list-disc pl-5 flex flex-col gap-1.5">
-            <li>The name of the organisation responsible for the service.</li>
             <li>How long our hosting providers keep backups after an account is deleted.</li>
             <li>How a legal request for someone's data (for example from a court or the police) would be handled and answered.</li>
             <li>How a data breach would be reported to you and to the authorities (a procedure exists; the regulator and timelines depend on the country, which is not settled yet).</li>
+            {chatbot && <li>Anthropic's data-processing terms and how long it keeps what the AI chat sends it (to be confirmed before the chat is turned on for the public).</li>}
             <li>The legal basis and any regional requirements for the countries where it will be offered. The terms of use are a draft awaiting legal review.</li>
           </ul>
         </Section>

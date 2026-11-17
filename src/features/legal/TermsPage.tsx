@@ -93,6 +93,10 @@ export default function TermsPage() {
           </p>
         </Section>
 
+        <Section title="Who runs it">
+          <p>Women360 is run by Pavithra Uthrah R K.</p>
+        </Section>
+
         <Section title="Contact">
           <p>
             Questions about these terms, or a problem with the service: <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">{SUPPORT_EMAIL}</a>.
@@ -101,7 +105,6 @@ export default function TermsPage() {
 
         <Section title="Still to be confirmed">
           <ul className="list-disc pl-5 flex flex-col gap-1.5">
-            <li>The name of the organisation that operates the service.</li>
             <li>Which country's law applies, and any regional requirements for where it is offered.</li>
             <li>Limits on liability and any paid features, which need a lawyer's review.</li>
             <li>A registered agent for copyright notices (needed before Women360 hosts anything people share).</li>

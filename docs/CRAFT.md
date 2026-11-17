@@ -103,13 +103,25 @@ place (the password's dots turning into letters); no unnecessary embellishment.
 | Rubber band past drag limits | Done: the wheel pickers. |
 | Same layout ID across shared objects | Done as a view-transition name on the tab pill (§2). |
 
-## 7. Chat screen: not built
+## 7. Chat screen ("Ask Women360")
 
-Women360 has no chat screen, and none of the product is an AI assistant (Messages is read-only: coach notes and messages shared with her).
-The chat list (purple, prompt suggestions, an orange-lavender shader, every step shown, every claim cited, paragraphs laid out before
-they stream, an interactive plan that anticipates her next action) describes a new feature rather than a restyle, and it raises decisions
-that are the owner's: it would send what she has logged to an outside model (a new third party on the privacy page, a data
-processing agreement, consent, retention), every health statement it makes would need a named source and clinical review (CLAUDE.md §0), and
-purple and orange-lavender would break the black, white and hot-pink palette chosen on 2026-11-15 and the "no purple or neon
-gradients" rule. If it is wanted, the building blocks already exist (`RollingNumber`-style reserved layout, the toast Undo, the combo box
-for suggested prompts), and the interaction rules above apply to it from the first line.
+Built on 2026-11-18 at the owner's request, from the owner's brief. It is the one place in the app that is purple, by the owner's choice,
+and it is switched off unless `CHATBOT_ENABLED` and an `ANTHROPIC_API_KEY` are set. Rules that stay true:
+
+- **Screen:** `features/chat/`. A deep purple panel (the same in light and dark), a slow orange-and-lavender WebGL sky behind a veil (`ChatShader`:
+  a quarter of the pixels, only while visible, one still frame under reduced motion and in Senior Mode, never `loseContext()`), and suggested prompts
+  to tap on the empty screen. Colours are scoped to `.w360-chat` and checked against the panel base (text 14:1, muted 8:1).
+- **Steps and citations:** every look-up shows as a step while it runs ("Searching: ...", "Reading ...", "Reading your last 30 days") and tucks into
+  "How I got this" afterwards. A link becomes a link only if the server announced the page as one it read (`sources`) or it is a screen of ours
+  (`/app/...`); anything else keeps its words and loses the link (`lib/chatMarkdown.ts`, tested). No HTML is ever made from the model's text.
+- **Layout before text:** only finished paragraphs are shown, whole, with their words fading in; the one still being written is a placeholder, so
+  nothing below jumps. An answer shown again from memory appears at once.
+- **Plan:** `- [ ]` lines become tick boxes with a rolling "n of m done"; the last line `>> a | b | c` becomes up to three next-question chips on the
+  newest answer only.
+- **Privacy:** the conversation lives in the tab's memory (it survives a trip to another screen, and is gone on reload, New chat or sign-out), never in
+  storage or on the server. Her logs reach it only through the numbers-only summary, only while the switch is on, and the server enforces that.
+  The route is excluded from idempotency receipts (a stored answer would be a stored conversation). Demo accounts cannot use it.
+- **Honesty:** "Not medical advice", what is kept and the emergency line are plain text, never a hint. It helps her understand and prepare for a
+  doctor; it never diagnoses. Its health brief awaits a clinician (OWNER_CHECKLIST item 13).
+- `e2e/17-chat.spec.ts` runs it against the scripted provider (`CHATBOT_PROVIDER=scripted`, refused in production): prompts, steps, citations, ticks,
+  follow-ups, sharing, unsafe links, limits, a dropped stream, reduced motion, phone width, axe in light and dark, and switched off.

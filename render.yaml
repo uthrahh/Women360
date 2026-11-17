@@ -64,6 +64,12 @@ services:
       # Lets the nightly backup job report a verified restore (shown in Administration > Service status). 32+ characters.
       - key: BACKUP_REPORT_TOKEN
         sync: false
+      # The AI chat. Off until you switch it on: it needs ANTHROPIC_API_KEY, a spend limit set in the Anthropic console, and a clinician's
+      # read of the chat's brief (server/src/modules/chat/chat.prompt.ts). See docs/OWNER_CHECKLIST.md.
+      - key: CHATBOT_ENABLED
+        value: "false"
+      - key: ANTHROPIC_API_KEY
+        sync: false
       # Features awaiting clinician review stay off unless this is exactly "true".
       - key: CLINICAL_CONTENT
         value: "false"

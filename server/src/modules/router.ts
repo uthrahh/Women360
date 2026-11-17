@@ -24,6 +24,7 @@ import { clientErrorsRouter } from "./clientErrors/clientErrors.routes";
 import { pushRouter } from "./push/push.routes";
 import { bodyRouter } from "./body/body.routes";
 import { usageRouter } from "./usage/usage.routes";
+import { chatRouter } from "./chat/chat.routes";
 import { internalRouter } from "./system/internal.routes";
 import { requireClinicalContent } from "@/middleware/clinicalGate";
 
@@ -51,6 +52,7 @@ router.use("/messages", messagesRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/push", pushRouter);
 router.use("/usage", usageRouter);
+router.use("/chat", chatRouter);
 router.use("/internal", internalRouter);
 router.use("/coach", coachRouter);
 router.use("/admin", adminRouter);

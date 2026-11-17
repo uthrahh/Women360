@@ -9,25 +9,28 @@ interface Features {
   pushPublicKey: string | null;
   /** True when the server can send email, so asking her to confirm her address makes sense. */
   emailVerification: boolean;
+  /** The AI chat: on only when the owner has switched it on and a key is set. Never shown otherwise. */
+  chatbot: boolean;
   /** False until the server has answered, so nothing flashes in and out. */
   loaded: boolean;
 }
 
 // While loading, and if the server can't be reached, everything that needs review stays hidden.
-const OFF: Features = { clinicalContent: false, supportEmail: null, pushPublicKey: null, emailVerification: false, loaded: false };
+const OFF: Features = { clinicalContent: false, supportEmail: null, pushPublicKey: null, emailVerification: false, chatbot: false, loaded: false };
 const FeaturesContext = createContext<Features>(OFF);
 
 /** Asks the server once which features are switched on. Public: it works before anyone signs in. */
 export function FeaturesProvider({ children }: { children: ReactNode }) {
   const [features, setFeatures] = useState<Features>(OFF);
   useEffect(() => {
-    request<{ clinicalContent: boolean; supportEmail: string | null; pushPublicKey?: string | null; emailVerification?: boolean }>("/config")
+    request<{ clinicalContent: boolean; supportEmail: string | null; pushPublicKey?: string | null; emailVerification?: boolean; chatbot?: boolean }>("/config")
       .then((c) =>
         setFeatures({
           clinicalContent: c.clinicalContent === true,
           supportEmail: c.supportEmail,
           pushPublicKey: c.pushPublicKey ?? null,
           emailVerification: c.emailVerification === true,
+          chatbot: c.chatbot === true,
           loaded: true,
         })
       )
