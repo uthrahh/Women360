@@ -521,6 +521,11 @@ model StepsLog {
   user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   date   DateTime @db.Date
   steps  Int
+  // MANUAL: she typed it. DEVICE: read from her phone's health store (Health Connect). IMPORT: from a file she chose.
+  // A day she typed is never overwritten by a device or a file.
+  source   String    @default("MANUAL")
+  // When a DEVICE or IMPORT value was last written; null for MANUAL.
+  syncedAt DateTime?
 
   @@unique([userId, date])
 }

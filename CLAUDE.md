@@ -383,9 +383,13 @@ accounts and is exempt from the production two-factor rule for that reason; none
 change a password, delete the account, use two-factor or sign out everywhere
 (`middleware/demoGuard.ts`). Do not give a demo account more power without
 revisiting that. `ReproductiveHealth` (contraception, pregnancy status) is her own
-record and is never used to predict or advise. Steps are entered by hand; syncing from
-a watch needs a native Health Connect (Android) or HealthKit (iOS) integration and is
-not built. The landing and sign-in pages ping the API's health endpoint so the
+record and is never used to predict or advise. Steps are entered by hand
+or filled in on request (`POST /activity/steps/sync`, `activity.service#syncSteps`): from Health Connect inside the installed Android app
+(`@capgo/capacitor-health`, `src/lib/healthSync.ts`, READ_STEPS only: `AndroidManifest.xml` removes the plugin's other ~46 permissions with
+`tools:node="remove"`, keep it that way and change the privacy page and the Play Health Connect declaration with it), or from an Apple Health
+`export.xml` / CSV read in the browser (`src/lib/stepsImport.ts`; only one number per day leaves the browser). A sync **never overwrites a day she typed**
+(`StepsLog.source` MANUAL vs DEVICE/IMPORT; typing over a synced day makes it hers) and says how many it kept. The Android path is built and typechecked but **not verified on a
+device**; there is no iPhone path yet (HealthKit needs a native iOS app). The landing and sign-in pages ping the API's health endpoint so the
 free-tier server wakes before sign-in.
 
 **Hardening pass (latest):** the server's validation moved to zod 4 (the 3.x line has an

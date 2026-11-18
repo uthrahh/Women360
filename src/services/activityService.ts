@@ -59,6 +59,11 @@ export const activityService = {
   async logSteps(steps: number): Promise<void> {
     await request("/activity/steps", { method: "POST", body: JSON.stringify({ date: localDateISO(), steps }) });
   },
+  /** Fills in step totals read from a phone or a file. Days she typed herself are kept as she typed them. */
+  syncSteps: (source: "DEVICE" | "IMPORT", days: { date: string; steps: number }[]) =>
+    request<{ saved: number; keptOwn: number }>("/activity/steps/sync", { method: "POST", body: JSON.stringify({ source, days }) }),
+  /** When steps were last filled in from a phone or file, and from which. */
+  syncStatus: () => request<{ lastSyncedAt: string | null; source: "DEVICE" | "IMPORT" | null }>("/activity/steps/sync"),
   async deleteEntry(id: string): Promise<void> {
     await request(`/activity/entries/${id}`, { method: "DELETE" });
   },

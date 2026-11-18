@@ -21,6 +21,13 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    date: "2026-11-18",
+    headline: "Fill in your steps from a file",
+    details:
+      "On the Activity page you can now import your step counts from an Apple Health export or a spreadsheet, instead of typing each day. Only one number per day is kept, and a day you entered yourself is never changed. You can see when steps were last filled in.",
+    area: "Activity",
+  },
+  {
     date: "2026-11-15",
     headline: "A clearer habit tick, and a sign-in on a sky",
     details:

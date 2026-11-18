@@ -1,6 +1,8 @@
 import { Prisma } from "@prisma/client";
 import type { Intensity } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { dayNumber, toIsoDay } from "@/lib/streak";
+import { STEPS_SYNC_MAX_DAYS } from "./activity.validation";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/lib/errors";
 import { ACTIVITIES, SOURCE, activityByCode, caloriesFor, parseWeightKg, quickLogLabel, resolveLevel, levelKeys, type LevelKey } from "./catalog";
 
@@ -49,6 +51,9 @@ function assertValidCombination(code: string, intensity: LevelKey, distanceKm: n
   if (sets != null && !def.extras.includes("sets")) throw new BadRequestError(`Sets don't apply to ${def.label.toLowerCase()}.`);
   return def;
 }
+
+// A day of slack either side of the server date: real time zones span UTC-12 to UTC+14.
+const FUTURE_SLACK_DAYS = 1;
 
 export const activityService = {
   /** The activities she can choose from, with each effort level and where its number comes from. */
@@ -207,11 +212,56 @@ export const activityService = {
   },
 
   async logSteps(userId: string, input: { date: string; steps: number }) {
+    // Typing a day yourself makes it yours: a later sync from a phone or a file won't replace it.
     return prisma.stepsLog.upsert({
       where: { userId_date: { userId, date: new Date(input.date) } },
       create: { userId, date: new Date(input.date), steps: input.steps },
-      update: { steps: input.steps },
+      update: { steps: input.steps, source: "MANUAL", syncedAt: null },
     });
+  },
+
+  /**
+   * Fills in days of steps from her phone's health store or a file. A day she typed herself is kept as it is; a day an earlier sync wrote
+   * is updated (today's count grows through the day). Safe to repeat: the same numbers change nothing.
+   */
+  async syncSteps(userId: string, input: { source: "DEVICE" | "IMPORT"; days: { date: string; steps: number }[] }, now = new Date()) {
+    const today = dayNumber(toIsoDay(now));
+    for (const d of input.days) {
+      const offset = dayNumber(d.date) - today;
+      if (offset > FUTURE_SLACK_DAYS) throw new BadRequestError("Steps can't be for a future day.");
+      if (offset < -STEPS_SYNC_MAX_DAYS) throw new BadRequestError("That is too far back to fill in.");
+    }
+    const dates = input.days.map((d) => new Date(d.date));
+    const existing = await prisma.stepsLog.findMany({ where: { userId, date: { in: dates } }, select: { date: true, steps: true, source: true } });
+    const byDay = new Map(existing.map((e) => [e.date.toISOString().slice(0, 10), e]));
+    const syncedAt = new Date();
+    let saved = 0;
+    let keptOwn = 0;
+    const writes = [];
+    for (const d of input.days) {
+      const row = byDay.get(d.date);
+      if (row && row.source === "MANUAL") {
+        keptOwn += 1;
+        continue;
+      }
+      if (row && row.steps === d.steps && row.source === input.source) continue;
+      saved += 1;
+      writes.push(
+        prisma.stepsLog.upsert({
+          where: { userId_date: { userId, date: new Date(d.date) } },
+          create: { userId, date: new Date(d.date), steps: d.steps, source: input.source, syncedAt },
+          update: { steps: d.steps, source: input.source, syncedAt },
+        })
+      );
+    }
+    if (writes.length) await prisma.$transaction(writes);
+    return { saved, keptOwn };
+  },
+
+  /** When steps were last filled in from a phone or a file, so the screen can say so. */
+  async stepsSyncStatus(userId: string) {
+    const last = await prisma.stepsLog.findFirst({ where: { userId, syncedAt: { not: null } }, orderBy: { syncedAt: "desc" }, select: { syncedAt: true, source: true } });
+    return { lastSyncedAt: last?.syncedAt ?? null, source: last?.source ?? null };
   },
 
   async upsertGoal(userId: string, input: { stepsGoal: number; activeMinutesGoal: number }) {

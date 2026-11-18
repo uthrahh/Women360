@@ -21,6 +21,7 @@ import { LoadingState, ErrorState, EmptyState } from "@/components/ui/states";
 import { useToast } from "@/components/ui/Toast";
 import { ActivityFields } from "./ActivityFields";
 import { ActivityHabits } from "./ActivityHabits";
+import { StepsSync } from "./StepsSync";
 import { ActivityPlanSection } from "./plan/ActivityPlanSection";
 import { Hint } from "@/components/ui/Hint";
 import { useFeatures } from "@/context/FeaturesContext";
@@ -433,7 +434,7 @@ export default function ActivityPage() {
                   >
                     Update steps
                   </button>
-                  <Hint id="act-steps-manual" className="text-xs text-[var(--w360-text-muted)] mt-0.5">Entered by hand. Syncing from a watch isn't available yet.</Hint>
+                  <StepsSync onChanged={reload} />
                 </>
               )}
             </div>

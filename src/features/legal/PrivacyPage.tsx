@@ -59,6 +59,12 @@ export default function PrivacyPage() {
             removed if you delete your account.
           </p>
           <p>
+            <span className="text-[var(--w360-text)] font-medium">Steps from your phone or a file:</span> only if you ask for it. In the Android app you can let Women360 read your daily step
+            totals from Health Connect (the permission is to read steps and nothing else: Women360 never writes to it), or you can import a file from the Apple Health app or a spreadsheet.
+            We keep one number for each day, and that it came from a phone or a file, with the time it was filled in. A file is read in your browser and the rest of it is never sent. A day you entered
+            yourself is never changed by a sync. You can stop at any time by removing the permission in Health Connect, and the steps stay with your other logs until you delete them or your account.
+          </p>
+          <p>
             <span className="text-[var(--w360-text)] font-medium">Save receipts:</span> when you save something, the app sends a one-time label with it, and we keep
             that label and the answer we gave you for 24 hours, so a save that is repeated by a dropped connection or a double tap is not recorded twice. They are
             then deleted, and sooner if you delete your account.

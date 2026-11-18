@@ -4,4 +4,6 @@
     <string name="title_activity_main">Women360</string>
     <string name="package_name">com.women360.app</string>
     <string name="custom_url_scheme">com.women360.app</string>
+    <!-- Shown by Health Connect when she taps "Privacy policy" in its permission sheet. -->
+    <string name="health_connect_privacy_policy_url">https://women-360.vercel.app/privacy</string>
 </resources>

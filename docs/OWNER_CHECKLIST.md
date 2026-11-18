@@ -60,7 +60,8 @@ Files: `C:\Users\uthra\Desktop\CC\Women360-android-release\Women360-1.0.apk` and
 2. Copy the `.apk` to an Android phone, open it, allow "install unknown apps", sign in, tick a habit. **It has never been run on a device**, so do this before telling anyone.
 3. Google Play (later): create a Play Console developer account (one-time fee, identity checks), upload the `.aab`, fill in the listing, content rating and **Data safety** form, privacy policy `https://women-360.vercel.app/privacy`. New personal accounts must run a closed test first; check Google's current numbers.
 4. Reviewers may question an app that only wraps a website. Give them a normal account (not only the demo logins, which cannot delete themselves) and describe it as a health tracker, not medical advice.
-5. iPhone/App Store: not possible yet. Apple rejects a website in a box; it needs native features first (see `docs/LAUNCH_STANDARD.md` section 1).
+5. **Steps from the phone (Health Connect):** the app can read daily step totals from Health Connect (Activity > Fill in from my phone). The web part goes live with a normal deploy, but the phone part is native, so it needs a **new APK/AAB** (rebuild after this change). It has **never been run on a device**: on a phone with Health Connect and some steps recorded, tap it, allow steps, and check the Activity page shows them. For Google Play, the **Health Connect permissions declaration** must be filled in (permission: read steps only; purpose: show and track her daily steps; the privacy policy link is already set). Do not add other health permissions without changing the privacy page first.
+6. iPhone/App Store: not possible yet. Apple rejects a website in a box; it needs native features first (see `docs/LAUNCH_STANDARD.md` section 1).
 
 ### 7. Legal and business items (a lawyer or an hour of your time) · Waiting
 These need facts only you have, or a qualified person. The privacy page lists most under "Still to be confirmed".

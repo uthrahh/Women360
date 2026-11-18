@@ -154,6 +154,25 @@ for (const token of ["--ease-enter", "--ease-exit", "--ease-move", "--dur-popove
   if (!read("src/index.css").includes(token + ":")) fail("motion", `src/index.css lost the ${token} token`);
 }
 
+// 10. Health Connect: steps, read only --------------------------------------------------------------------
+// The health library declares about fifty permissions (write access to every record, heart rate, blood pressure...). Women360 reads daily step
+// totals and nothing else (the privacy page says so), so the app manifest removes every other one. A permission added by a library update that
+// is not removed here fails the check, so the app can never quietly ask for more than it says.
+{
+  const appManifest = "android/app/src/main/AndroidManifest.xml";
+  const pluginManifest = "node_modules/@capgo/capacitor-health/android/src/main/AndroidManifest.xml";
+  const app = read(appManifest);
+  if (!/<uses-permission android:name="android\.permission\.health\.READ_STEPS"\s*\/>/.test(app)) fail("health-permissions", `${appManifest} no longer asks for READ_STEPS`);
+  if (/<uses-permission android:name="android\.permission\.health\.WRITE_/.test(app.replace(/<uses-permission[^>]*tools:node="remove"[^>]*>/g, ""))) fail("health-permissions", `${appManifest} asks for a health WRITE permission; Women360 only reads steps`);
+  if (fs.existsSync(pluginManifest)) {
+    for (const m of read(pluginManifest).matchAll(/android\.permission\.health\.([A-Z0-9_]+)/g)) {
+      const name = m[1];
+      if (name === "READ_STEPS") continue;
+      if (!app.includes(`android.permission.health.${name}" tools:node="remove"`)) fail("health-permissions", `${appManifest}: the health library asks for ${name}; remove it with tools:node="remove" (steps, read only) or change the privacy page first`);
+    }
+  }
+}
+
 if (problems.length) {
   console.error(`Launch standard: ${problems.length} problem(s)\n  ${problems.join("\n  ")}\n\nSee docs/LAUNCH_STANDARD.md.`);
   process.exit(1);

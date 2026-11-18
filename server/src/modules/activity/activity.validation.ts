@@ -52,6 +52,26 @@ export const stepsLogSchema = z.object({
   steps: z.number().int().min(0).max(200_000),
 });
 
+/** How far back a phone or a file may fill in steps, and how many days one request may carry. */
+export const STEPS_SYNC_MAX_DAYS = 90;
+
+export const stepsSyncSchema = z
+  .object({
+    // Where the numbers came from: her phone's health store, or a file she chose.
+    source: z.enum(["DEVICE", "IMPORT"]),
+    days: z
+      .array(z.object({ date: day, steps: z.number().int().min(0).max(200_000) }))
+      .min(1)
+      .max(STEPS_SYNC_MAX_DAYS),
+  })
+  .superRefine((v, ctx) => {
+    const seen = new Set<string>();
+    v.days.forEach((d, i) => {
+      if (seen.has(d.date)) ctx.addIssue({ code: "custom", message: "Each day can appear once.", path: ["days", i, "date"] });
+      seen.add(d.date);
+    });
+  });
+
 export const activityGoalSchema = z.object({
   stepsGoal: z.number().int().min(1000).max(50_000),
   activeMinutesGoal: z.number().int().min(5).max(600),

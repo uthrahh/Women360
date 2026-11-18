@@ -14,6 +14,7 @@ import {
   idParamSchema,
   quickLogSchema,
   stepsLogSchema,
+  stepsSyncSchema,
 } from "./activity.validation";
 
 export const activityRouter = Router();
@@ -74,6 +75,17 @@ activityRouter.post(
   "/steps",
   validate({ body: stepsLogSchema }),
   asyncHandler(async (req, res) => ok(res, await activityService.logSteps(req.user!.id, req.body)))
+);
+
+activityRouter.post(
+  "/steps/sync",
+  validate({ body: stepsSyncSchema }),
+  asyncHandler(async (req, res) => ok(res, await activityService.syncSteps(req.user!.id, req.body)))
+);
+
+activityRouter.get(
+  "/steps/sync",
+  asyncHandler(async (req, res) => ok(res, await activityService.stepsSyncStatus(req.user!.id)))
 );
 
 activityRouter.put(
