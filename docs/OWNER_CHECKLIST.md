@@ -17,7 +17,7 @@ Each one ends with a **Check** that proves it. Keys and passphrases are in `C:\U
 
 ## Part 1. What you have to do, in order
 
-### 1. Confirm the latest version deployed (10 minutes) · Waiting
+### 1. Confirm the latest version deployed (10 minutes) · Completed (owner, 2026-11-18)
 Two new database migrations went out (email confirmation, and row-level security on every table). Render applies them on deploy.
 1. Open **github.com/uthrahh/Women360 > Actions**. The latest run on `main` should be green (jobs: Secret scan, Server, Frontend, Browser). If a job is red, open it and send me the red text.
 2. Open **Render > women360-api > Events**. The newest deploy should say **Live**. Open **Logs** and look for `All migrations have been successfully applied`.
@@ -34,7 +34,7 @@ Without this, nobody who forgets a password can get back in, and the "confirm yo
 4. **Check:** on your computer with the same value in `server/.env`, run `npm --prefix server run mail:check -- you@example.com`. Then use "Forgot password" on the live site. **Administration > Overview > Service status** should stop saying "Email: Needs attention".
 Note: mail from a Gmail address can land in spam. That is a Gmail limit; the lasting fix is a domain you own (decision 10).
 
-### 3. Keep the API awake and get alerted (10 minutes) · Waiting
+### 3. Keep the API awake and get alerted (10 minutes) · Completed (owner, 2026-11-18)
 The free API sleeps after about 15 minutes and takes 20+ seconds to wake. A monitor fixes that, alerts you when the site breaks, keeps the free database from idling, and is what makes closed-app reminders arrive on time.
 1. Create a free account at **uptimerobot.com**.
 2. Add monitor: type **HTTP(s)**, URL `https://women360-api.onrender.com/health`, interval **5 minutes**, alert contact `admin.women360@gmail.com`.
