@@ -44,6 +44,7 @@ const LearnPage = lazy(() => import("@/features/learn/LearnPage"));
 const MessagesPage = lazy(() => import("@/features/messages/MessagesPage"));
 const ChatPage = lazy(() => import("@/features/chat/ChatPage"));
 const SettingsPage = lazy(() => import("@/features/settings/SettingsPage"));
+const ProgrammePage = lazy(() => import("@/features/programme/ProgrammePage"));
 const AdminPage = lazy(() => import("@/features/admin/AdminPage"));
 const CoachPage = lazy(() => import("@/features/coach/CoachPage"));
 import NotFoundPage from "@/pages/NotFoundPage";
@@ -176,6 +177,10 @@ export default function App() {
                 <Route
                   path="messages"
                   element={<Suspense fallback={<LoadingState label="Loading" />}><MessagesPage /></Suspense>}
+                />
+                <Route
+                  path="programme"
+                  element={<Suspense fallback={<LoadingState label="Loading" />}><ProgrammePage /></Suspense>}
                 />
                 <Route
                   path="settings"

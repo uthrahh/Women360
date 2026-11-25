@@ -127,6 +127,13 @@ them. Turn them on only after a clinician has reviewed every guideline and citat
 `conditions/guidelines.ts`, `insights/factors.ts`, `activity/plan/guidelines.ts` and the Learn content. The landing page and FAQ describe
 only what is on.
 
+**Guided programmes** are not behind that switch, because Women360 itself supplies no health content to them: an administrator writes
+each programme and task template, and a template can be given to a coach only after it is approved with the name of the person who
+reviewed it (Administration > Programmes). Before the first real programme is published: have a qualified reviewer approve every
+template, agree the coach response times and the escalation route for an urgent concern, and have the health content lead review the
+starting and final questions (`server/src/modules/programmes/questions.ts`; they ask about routine and readiness only, never symptoms or
+history). Nothing is offered to women until a programme is published, and the menu entry appears only then.
+
 ## 7. What people use (analytics)
 
 Administrator sign-in > **Usage**: daily different-women-active, new accounts, screens opened, actions done, for 7/30/90 days. Anonymous by

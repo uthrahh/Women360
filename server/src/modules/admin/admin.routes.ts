@@ -7,6 +7,7 @@ import { requireAdminIp, requireAdminTwoFactor } from "@/middleware/adminGuards"
 import { blockDemoWrites } from "@/middleware/demoGuard";
 import { noContent, ok, paginated } from "@/lib/response";
 import { adminService } from "./admin.service";
+import { adminProgrammeRouter } from "@/modules/programmes/programmes.routes";
 import { feedbackService } from "@/modules/feedback/feedback.service";
 import { summary as usageSummary } from "@/modules/usage/usage.service";
 import { systemStatus } from "@/modules/system/system.service";
@@ -23,6 +24,9 @@ export const adminRouter = Router();
 // Order matters: the IP check is first so outsiders learn nothing, and the
 // two-factor check is last so it only ever runs for a real, authenticated admin.
 adminRouter.use(requireAdminIp, requireAuth, requireRole("ADMIN"), asyncHandler(requireAdminTwoFactor), blockDemoWrites);
+
+// Guided programmes: programmes, the task library and assigning coaches.
+adminRouter.use("/programme", adminProgrammeRouter);
 
 adminRouter.get(
   "/overview",

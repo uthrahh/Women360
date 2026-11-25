@@ -33,6 +33,8 @@ export const usersService = {
         activityGoal: true,
         nutrientTargets: true,
         activityTargets: true,
+        // Guided programmes she joined: her answers, her plan and every task report, plan version and coach review.
+        enrolments: { include: { programme: { select: { name: true, durationDays: true } }, assessments: true, tasks: { include: { events: true } }, planVersions: true, reviews: true } },
         cycleProfile: true,
         cycleEntries: true,
         mealEntries: true,
@@ -74,6 +76,7 @@ export const usersService = {
       activityGoal: u.activityGoal,
       nutrientTargets: u.nutrientTargets,
       activityTargets: u.activityTargets,
+      programmes: u.enrolments,
       cycleProfile: u.cycleProfile,
       cycleEntries: u.cycleEntries,
       mealEntries: u.mealEntries,

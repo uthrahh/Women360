@@ -3,7 +3,7 @@ import { useTransitionNavigate } from "@/hooks/useTransitionNavigate";
 import { LogOut, Moon, Sun, Users } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Kbd } from "@/components/ui/Kbd";
-import { menuTree } from "@/config/navigation";
+import { menuTree, navVisible } from "@/config/navigation";
 import { useApp } from "@/context/AppContext";
 import { useFeatures } from "@/context/FeaturesContext";
 import { GO_KEYS, GO_WINDOW_MS, OPEN_COMMAND_MENU_EVENT, destinationFor, isTypingTarget, matchesQuery, modKeyLabel } from "@/lib/shortcuts";
@@ -27,7 +27,8 @@ interface Command {
 export function CommandMenu() {
   const nav = useTransitionNavigate();
   const { theme, senior, auth } = useApp();
-  const { clinicalContent, chatbot } = useFeatures();
+  const features = useFeatures();
+  const isDemo = !!auth.user?.isDemo;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -35,7 +36,7 @@ export function CommandMenu() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const commands = useMemo<Command[]>(() => {
-    const screens = menuTree.flatMap((node) => ("leaf" in node ? [node.leaf] : node.items)).filter((i) => (clinicalContent || i.to !== "/app/learn") && (chatbot || i.to !== "/app/chat"));
+    const screens = menuTree.flatMap((node) => ("leaf" in node ? [node.leaf] : node.items)).filter((i) => navVisible(i.to, features, isDemo));
     const go: Command[] = screens.map((s) => ({
       id: s.to,
       label: s.label,
@@ -74,7 +75,7 @@ export function CommandMenu() {
         },
       },
     ];
-  }, [clinicalContent, chatbot, nav, theme, senior, auth]);
+  }, [features, isDemo, nav, theme, senior, auth]);
 
   const shown = useMemo(() => commands.filter((c) => matchesQuery(query, c.label, c.keywords ?? "", c.group)), [commands, query]);
 
@@ -96,7 +97,7 @@ export function CommandMenu() {
       if (Date.now() < goUntil) {
         goUntil = 0;
         const to = destinationFor(e.key);
-        if (to && !(to === "/app/learn" && !clinicalContent) && !(to === "/app/chat" && !chatbot)) {
+        if (to && navVisible(to, features, isDemo)) {
           e.preventDefault();
           nav(to);
         }
@@ -111,7 +112,7 @@ export function CommandMenu() {
       document.removeEventListener("keydown", onKey);
       window.removeEventListener(OPEN_COMMAND_MENU_EVENT, onOpen);
     };
-  }, [nav, clinicalContent, chatbot]);
+  }, [nav, features, isDemo]);
 
   useEffect(() => {
     if (open) {

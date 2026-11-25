@@ -203,7 +203,69 @@ async function main() {
     });
   }
 
+  await seedProgramme(woman.id, coach.id);
+
   console.log("Demo accounts ready:", Object.values(DEMO_ACCOUNTS).map((a) => a.email).join(", "));
+}
+
+/**
+ * A sample guided programme for the demonstration accounts only (demoOnly: never offered to anyone else), with the demo woman
+ * four days in: three tasks from sample templates, a few days reported and one request for help waiting for the demo coach.
+ * The sample templates are marked as not reviewed, because they are example text.
+ */
+async function seedProgramme(womanId: string, coachId: string) {
+  let programme = await prisma.programme.findFirst({ where: { demoOnly: true } });
+  programme ??= await prisma.programme.create({
+    data: { name: "30-day guided start (sample)", summary: "Three small daily habits, with a coach who reads what you report and adjusts the plan with you.", durationDays: 30, status: "PUBLISHED", demoOnly: true },
+  });
+  const reviewer = "Sample text for the demonstration: not clinically reviewed";
+  const samples = [
+    { title: "A glass of water when you wake up", category: "HYDRATION" as const, kind: "CHECK" as const, unit: null, instructions: "Keep a glass by your bed and drink it before your morning tea or coffee." },
+    { title: "A short walk", category: "ACTIVITY" as const, kind: "AMOUNT" as const, unit: "minutes", instructions: "Walk at a pace where you can still talk, after a meal if that suits you.", safetyNotes: "Stop and rest if you feel pain, dizziness or breathlessness." },
+    { title: "One thing that went well", category: "WELLBEING" as const, kind: "REFLECTION" as const, unit: null, instructions: "Before bed, write one sentence about something that went well today, however small." },
+  ];
+  const templates = [];
+  for (const t of samples) {
+    templates.push(
+      (await prisma.taskTemplate.findFirst({ where: { demoOnly: true, title: t.title } })) ??
+        (await prisma.taskTemplate.create({ data: { ...t, status: "APPROVED", reviewedBy: reviewer, reviewedAt: new Date(), demoOnly: true } }))
+    );
+  }
+
+  const start = date(3); // today is day 4
+  const enrolment = await prisma.enrolment.create({
+    data: { programmeId: programme.id, userId: womanId, coachId, status: "ACTIVE", consentAt: date(5), startDate: start, planVersion: 1 },
+  });
+  await prisma.assessment.create({
+    data: {
+      enrolmentId: enrolment.id, kind: "BASELINE", schemaVersion: 1, submittedAt: date(5),
+      answers: { focus: ["move_more", "stress_less"], activeDays: 1, sleepHours: "6to7", homeMeals: "most", water: 4, energy: 3, stress: 4, timePerDay: "20", readiness: 4, forCoach: "Mornings are busy with school runs." },
+    },
+  });
+  const tasks = [];
+  for (const [i, t] of templates.entries()) {
+    tasks.push(
+      await prisma.programmeTask.create({
+        data: {
+          enrolmentId: enrolment.id, templateId: t.id, title: t.title, category: t.category, kind: t.kind, unit: t.unit, target: t.kind === "AMOUNT" ? 10 : null,
+          instructions: t.instructions, safetyNotes: t.safetyNotes, frequency: i === 2 ? "WEEKDAYS" : "DAILY", weekdays: i === 2 ? [1, 3, 5] : [], startDay: 1, endDay: 30,
+          published: true, createdById: coachId,
+        },
+      })
+    );
+  }
+  await prisma.planVersion.create({
+    data: { enrolmentId: enrolment.id, version: 1, reason: "Your first plan: three small things to start with.", createdById: coachId, snapshot: tasks.map((t) => ({ title: t.title, frequency: t.frequency })) as Prisma.InputJsonValue },
+  });
+  const [water, walk] = tasks;
+  const report = (taskId: string, n: number, type: "DONE" | "SKIPPED" | "NEED_HELP", extra: { value?: number; note?: string } = {}) =>
+    prisma.taskEvent.create({ data: { taskId, date: date(n), type, value: extra.value ?? null, note: extra.note ?? null, actorId: womanId, actorRole: "WOMAN", createdAt: new Date(day(n) + 9 * 3_600_000) } });
+  await report(water.id, 3, "DONE");
+  await report(water.id, 2, "DONE");
+  await report(water.id, 1, "SKIPPED", { note: "Early start, forgot" });
+  await report(walk.id, 3, "DONE", { value: 10 });
+  await report(walk.id, 2, "DONE", { value: 15 });
+  await report(walk.id, 1, "NEED_HELP", { note: "It rained and I had no time after work. Is there something I can do indoors?" });
 }
 
 main()

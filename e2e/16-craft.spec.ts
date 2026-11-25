@@ -38,7 +38,8 @@ test.describe("habit tick", () => {
     await expect(page.getByText(/Saving/)).toHaveCount(0);
     // Done: the fill grows to full size (it overshoots on the way, then settles).
     await expect.poll(() => fill.evaluate((el) => getComputedStyle(el).transform), { timeout: 3000 }).toBe("matrix(1, 0, 0, 1, 0, 0)");
-    await expect(page.getByText("Done for today")).toBeVisible();
+    // Its own row: other tests on the same account may have habits done today too.
+    await expect(page.locator("div").filter({ has: tick }).filter({ hasText: "Done for today" }).last().getByText("Done for today")).toBeVisible();
 
     await page.unroute("**/habits/*/log");
     await tick.click();

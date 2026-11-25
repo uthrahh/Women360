@@ -4,6 +4,7 @@ import { clinicalContentOn } from "@/config/features";
 import { chatConfigured, chatEnabled } from "@/modules/chat/chat.config";
 import { asyncHandler } from "@/lib/asyncHandler";
 import { ok } from "@/lib/response";
+import { prisma } from "@/lib/prisma";
 
 export const configRouter = Router();
 
@@ -12,6 +13,11 @@ export const configRouter = Router();
 configRouter.get(
   "/",
   asyncHandler(async (_req, res) => {
+    // Programme appears in the menu only when there is one to join or someone is in one (the sample programme for the
+    // demonstration accounts doesn't count: the web app shows it to those accounts itself).
+    const programmes =
+      (await prisma.programme.count({ where: { status: "PUBLISHED", demoOnly: false } })) > 0 ||
+      (await prisma.enrolment.count({ where: { status: { notIn: ["COMPLETED", "LEFT"] }, user: { isDemo: false } } })) > 0;
     res.setHeader("Cache-Control", "public, max-age=60");
     return ok(res, {
       clinicalContent: clinicalContentOn(),
@@ -22,6 +28,7 @@ configRouter.get(
       chatbot: chatEnabled() && chatConfigured(),
       // Only ask people to confirm their address when an email can actually reach them.
       emailVerification: env.mailConfigured,
+      programmes,
     });
   })
 );

@@ -491,6 +491,24 @@ follow each other until she picks one, and the wake day is locked when editing (
 the duration out from the two days and times itself (`modules/sleep/duration.ts`; wake must be after bed and within
 24 hours) rather than trusting the client's number; an older client that sends no `bedDate` still works.
 
+**Guided programmes (mentor's "30-day transformation" spec, first vertical slice):** `server/src/modules/programmes/`, `src/features/programme/`,
+coach tab in `features/coach/` (`ProgrammeCaseload`, `EnrolmentDetail`, `TaskEditor`), Administration > Programmes. An administrator writes a
+programme (length 7-365 days) and task templates; a template is usable only once approved with the reviewer's name, and editing it sends it back to
+draft. She joins (consent text says exactly what her coach sees: her programme answers and task reports, nothing else she logs), answers versioned
+starting questions (`questions.ts`, routine and readiness only, never symptoms; draft and resume), an administrator assigns a coach (the existing COACH
+role is the spec's "advisor"), the coach builds the plan from approved templates or writes tasks, and publishes it as plan version 1. Day 1 is the day
+she first opens the published plan, on her calendar. Rules worth keeping: due days are computed from the schedule (`schedule.ts`, pure, tested), never
+generated rows, so retries can't duplicate; what she reports is an append-only `TaskEvent` (done/skipped/needs help/undone/coach reply), and the same
+report twice is not a second event; a published task is never edited in place once her programme has started: it ends yesterday (`endedOnDay`) and a
+replacement starts today, with a new `PlanVersion` and a reason she reads; she may report today and the two days before (`RECOVERY_DAYS`); a coach sees an
+enrolment only while assigned and the programme is running (a refused attempt is audited as `security.programme_access_denied`); the final questions
+open after the last day, and the coach's final review completes it, after which her report sets her own before/after answers side by side ("not a
+medical result"). Progress is engagement only (done of due), never a health score. The menu entry appears only when a real programme is published or
+someone is in one (`/config` `programmes`, `navVisible()` in `config/navigation.ts`); demonstration accounts get a sample programme (`demoOnly`) from
+`seed:demo`. Not built from the spec, deliberately (see `docs/SUPER_HEALTH_SPEC_STATUS.md`): phone OTP, payments and tiers, WhatsApp, Tamil, family
+participation in programmes, food library and meal plans, academy lessons linked to tasks, daily check-ins, AI summaries/copilot, advisor credentials
+and workload reports. e2e: `e2e/20-programme.spec.ts` (staff accounts via `e2e/staff.ts`, test database only).
+
 **Launch readiness (latest pass; the owner-only steps are in `docs/OPERATIONS.md`):**
 - *Clinician switch.* `CLINICAL_CONTENT` (server env, read per call, only the exact word "true" enables) hides every feature
   that needs clinical review: screening, conditions/"worth discussing" patterns, activity plans, explain-this cards, Learn, and the

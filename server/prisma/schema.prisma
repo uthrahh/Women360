@@ -135,6 +135,9 @@ model User {
   coachNotesAuthored      CoachNote[]       @relation("CoachNoteAuthor")
   coachNotesAboutMe       CoachNote[]       @relation("CoachNoteSubject")
 
+  enrolments        Enrolment[] @relation("EnrolmentParticipant")
+  coachedEnrolments Enrolment[] @relation("EnrolmentCoach")
+
   auditLogs AuditLog[]
 
   @@index([role])
@@ -567,11 +570,11 @@ model ActivityQuickLog {
 }
 
 model StepsLog {
-  id     String   @id @default(cuid())
-  userId String
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date   DateTime @db.Date
-  steps  Int
+  id       String    @id @default(cuid())
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date     DateTime  @db.Date
+  steps    Int
   // MANUAL: she typed it. DEVICE: read from her phone's health store (Health Connect). IMPORT: from a file she chose.
   // A day she typed is never overwritten by a device or a file.
   source   String    @default("MANUAL")
@@ -1047,4 +1050,235 @@ model BodyLog {
   loggedAt DateTime @default(now())
 
   @@index([userId, date])
+}
+
+// ---------------------------------------------------------------------------
+// Guided programmes: a coach-led plan of daily tasks over a fixed number of days
+// ---------------------------------------------------------------------------
+//
+// An administrator writes a programme (name, length) and a library of task templates; a template
+// is approved only with the name of the person who reviewed it. A woman joins a programme, agrees
+// that her answers and task activity are shared with the coach an administrator assigns, answers a
+// short baseline questionnaire, and her coach builds her plan from the templates (or writes a task).
+// Publishing the plan makes it a numbered version; every later change is a new version with a reason
+// she can read. What she does with a task is an append-only event (done, skipped, needs help, undone,
+// coach reply), so nothing she reported is ever overwritten. Day 1 is the first day she opens her
+// published plan, on her own calendar.
+
+enum ProgrammeStatus {
+  DRAFT
+  PUBLISHED
+  RETIRED
+}
+
+enum TemplateStatus {
+  DRAFT
+  APPROVED
+  RETIRED
+}
+
+enum TaskCategory {
+  NUTRITION
+  HYDRATION
+  ACTIVITY
+  SLEEP
+  WELLBEING
+  WOMENS_HEALTH
+  FAMILY
+  LEARNING
+  PROFESSIONAL
+}
+
+// CHECK: done or not. AMOUNT: a number with a unit. REFLECTION: a few written words.
+enum TaskKind {
+  CHECK
+  AMOUNT
+  REFLECTION
+}
+
+enum TaskFrequency {
+  DAILY
+  WEEKDAYS
+  ONCE
+}
+
+enum EnrolmentStatus {
+  ASSESSING
+  WAITING_FOR_COACH
+  PLANNING
+  ACTIVE
+  FINAL_ASSESSMENT
+  FINAL_REVIEW
+  COMPLETED
+  LEFT
+}
+
+enum ProgrammeTaskStatus {
+  ACTIVE
+  PAUSED
+  STOPPED
+  REPLACED
+}
+
+enum TaskEventType {
+  DONE
+  SKIPPED
+  NEED_HELP
+  UNDONE
+  COACH_REPLY
+}
+
+enum AssessmentKind {
+  BASELINE
+  FINAL
+}
+
+enum ReviewKind {
+  WEEKLY
+  FINAL
+}
+
+model Programme {
+  id           String          @id @default(cuid())
+  name         String
+  summary      String
+  durationDays Int
+  status       ProgrammeStatus @default(DRAFT)
+  // Sample content for the published demonstration accounts; never offered to anyone else.
+  demoOnly     Boolean         @default(false)
+  createdById  String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  enrolments   Enrolment[]
+}
+
+model TaskTemplate {
+  id           String         @id @default(cuid())
+  title        String
+  category     TaskCategory
+  kind         TaskKind
+  unit         String?
+  instructions String
+  safetyNotes  String?
+  status       TemplateStatus @default(DRAFT)
+  // Who checked the content before it could be used, and when. Editing an approved template sends it back to draft.
+  reviewedBy   String?
+  reviewedAt   DateTime?
+  demoOnly     Boolean        @default(false)
+  createdById  String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Enrolment {
+  id           String          @id @default(cuid())
+  programmeId  String
+  programme    Programme       @relation(fields: [programmeId], references: [id], onDelete: Restrict)
+  userId       String
+  user         User            @relation("EnrolmentParticipant", fields: [userId], references: [id], onDelete: Cascade)
+  coachId      String?
+  coach        User?           @relation("EnrolmentCoach", fields: [coachId], references: [id], onDelete: SetNull)
+  status       EnrolmentStatus @default(ASSESSING)
+  // When she agreed that her answers and task activity are shared with the coach she is given. Required to join.
+  consentAt    DateTime
+  startDate    DateTime?       @db.Date
+  planVersion  Int             @default(0)
+  nextReviewOn DateTime?       @db.Date
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  endedAt      DateTime?
+
+  assessments  Assessment[]
+  tasks        ProgrammeTask[]
+  planVersions PlanVersion[]
+  reviews      ProgrammeReview[]
+
+  @@index([userId])
+  @@index([coachId])
+}
+
+model Assessment {
+  id            String         @id @default(cuid())
+  enrolmentId   String
+  enrolment     Enrolment      @relation(fields: [enrolmentId], references: [id], onDelete: Cascade)
+  kind          AssessmentKind
+  schemaVersion Int
+  answers       Json
+  // Null while it is a draft she can come back to.
+  submittedAt   DateTime?
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([enrolmentId, kind])
+}
+
+model ProgrammeTask {
+  id           String              @id @default(cuid())
+  enrolmentId  String
+  enrolment    Enrolment           @relation(fields: [enrolmentId], references: [id], onDelete: Cascade)
+  templateId   String?
+  title        String
+  category     TaskCategory
+  kind         TaskKind
+  unit         String?
+  target       Float?
+  instructions String
+  safetyNotes  String?
+  frequency    TaskFrequency
+  // For WEEKDAYS: 0 = Sunday .. 6 = Saturday, on her calendar.
+  weekdays     Int[]
+  startDay     Int
+  endDay       Int
+  status       ProgrammeTaskStatus @default(ACTIVE)
+  // False while it is part of a plan the coach has not published yet.
+  published    Boolean             @default(false)
+  // The last programme day it was due, once it was paused, stopped or replaced. Earlier days keep their history.
+  endedOnDay   Int?
+  replacesId   String?
+  createdById  String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  events       TaskEvent[]
+
+  @@index([enrolmentId])
+}
+
+model TaskEvent {
+  id        String        @id @default(cuid())
+  taskId    String
+  task      ProgrammeTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  // Her calendar day the event is about.
+  date      DateTime      @db.Date
+  type      TaskEventType
+  value     Float?
+  note      String?
+  actorId   String?
+  actorRole Role
+  createdAt DateTime      @default(now())
+
+  @@index([taskId, date])
+}
+
+model PlanVersion {
+  id          String    @id @default(cuid())
+  enrolmentId String
+  enrolment   Enrolment @relation(fields: [enrolmentId], references: [id], onDelete: Cascade)
+  version     Int
+  reason      String
+  // The published tasks as they stood (titles, schedules, targets): a record, never read back as the live plan.
+  snapshot    Json
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@unique([enrolmentId, version])
+}
+
+model ProgrammeReview {
+  id          String     @id @default(cuid())
+  enrolmentId String
+  enrolment   Enrolment  @relation(fields: [enrolmentId], references: [id], onDelete: Cascade)
+  coachId     String?
+  kind        ReviewKind
+  // Shared with her: the coach is told so where it is written.
+  notes       String
+  createdAt   DateTime   @default(now())
 }

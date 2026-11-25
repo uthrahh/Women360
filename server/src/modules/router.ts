@@ -16,6 +16,7 @@ import { learnRouter } from "./learn/learn.routes";
 import { messagesRouter } from "./messages/messages.routes";
 import { notificationsRouter } from "./notifications/notifications.routes";
 import { coachRouter } from "./coach/coach.routes";
+import { coachProgrammeRouter, programmesRouter } from "./programmes/programmes.routes";
 import { adminRouter } from "./admin/admin.routes";
 import { feedbackRouter } from "./feedback/feedback.routes";
 import { conditionsRouter } from "./conditions/conditions.routes";
@@ -54,6 +55,9 @@ router.use("/push", pushRouter);
 router.use("/usage", usageRouter);
 router.use("/chat", chatRouter);
 router.use("/internal", internalRouter);
+router.use("/programmes", programmesRouter);
+// Before /coach, so the programme routes are not shadowed by the sharing ones.
+router.use("/coach/programme", coachProgrammeRouter);
 router.use("/coach", coachRouter);
 router.use("/admin", adminRouter);
 router.use("/feedback", feedbackRouter);

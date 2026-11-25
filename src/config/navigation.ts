@@ -1,7 +1,7 @@
 import {
   LayoutGrid, HeartPulse, CalendarHeart, Apple, Activity, Moon, Smile,
   Target, TrendingUp, FileBarChart2, BookOpen, MessageCircle, Settings,
-  Pill, CalendarClock, Phone, Flame, MessageSquareText,
+  Pill, CalendarClock, Phone, Flame, MessageSquareText, Route,
 } from "lucide-react";
 import type { SeniorEssential, SeniorEssentialKey } from "@/types";
 
@@ -21,6 +21,7 @@ export const standardNav: NavItem[] = [
   { to: "/app/wellbeing", label: "Wellbeing", icon: Smile },
   { to: "/app/habits", label: "Habits", icon: Flame },
   { to: "/app/goals", label: "Goals", icon: Target },
+  { to: "/app/programme", label: "Programme", icon: Route },
   { to: "/app/insights", label: "Insights", icon: TrendingUp },
   { to: "/app/reports", label: "Reports", icon: FileBarChart2 },
   { to: "/app/learn", label: "Learn", icon: BookOpen },
@@ -42,10 +43,22 @@ export type MenuNode = { leaf: NavItem } | { label: string; items: NavItem[] };
 export const menuTree: MenuNode[] = [
   { leaf: byTo("/app/dashboard") },
   { label: "Track", items: ["/app/habits", "/app/cycle", "/app/nutrition", "/app/activity", "/app/sleep", "/app/wellbeing"].map(byTo) },
-  { label: "Care", items: ["/app/health", "/app/goals", "/app/insights", "/app/reports"].map(byTo) },
+  { label: "Care", items: ["/app/health", "/app/programme", "/app/goals", "/app/insights", "/app/reports"].map(byTo) },
   { label: "Support", items: ["/app/chat", "/app/learn", "/app/messages"].map(byTo) },
   { leaf: byTo("/app/settings") },
 ];
+
+/**
+ * Screens that exist only while something is switched on: Learn (clinical review), the AI chat (owner's switch and key) and
+ * Programme (an administrator has published one, or she is in one; a demonstration account always has the sample one).
+ * The menu and the command menu both ask this, so a hidden screen is hidden everywhere.
+ */
+export function navVisible(to: string, f: { clinicalContent: boolean; chatbot: boolean; programmes: boolean }, isDemo = false): boolean {
+  if (to === "/app/learn") return f.clinicalContent;
+  if (to === "/app/chat") return f.chatbot;
+  if (to === "/app/programme") return f.programmes || isDemo;
+  return true;
+}
 
 // Primary items surfaced in the mobile bottom nav (kept short by design)
 export const mobileBottomNav: NavItem[] = [

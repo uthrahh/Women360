@@ -33,7 +33,7 @@ Automated guards:
 | Screenshots don't match the app | Owner: take store screenshots from the real app; the landing page's phone already says "No real data is shown". |
 | "Coming soon" screens | Done: none. *(guarded)* placeholder copy fails CI and the iPad test. Features waiting for a clinician are removed from menus, not shown as "coming soon". |
 | Dead support or privacy links | Done: *(guarded)* footer Privacy, Terms, Release notes and Contact (mailto) are followed in the browser suite. |
-| Comments without a report button | N/A: there is no content one person posts for others to see. Coach notes are written by an assigned coach the woman chose and can revoke. Any future comments, forums or community need report and block. |
+| Comments without a report button | N/A: there is no content one person posts for others to see. Coach notes are written by an assigned coach the woman chose and can revoke; in a guided programme, coach replies and reviews go only to that one participant, who can leave at any time. Any future comments, forums or community need report and block. |
 | Broken "Restore purchases" | N/A: no purchases. |
 | Paid features shown without saying they are paid | N/A: nothing is paid; the landing page makes no pricing claim (CLAUDE.md). |
 
@@ -66,7 +66,7 @@ Automated guards:
 | Check git history for keys | Done: gitleaks over full history in CI; a manual scan of all 199 commits on 2026-11-15 found nothing. |
 | Protect admin routes | Done: role checks on the server, admins created only by `npm run create-admin`, two-factor required in production, optional IP allowlist. |
 | Authentication | Done: argon2id passwords, short-lived access tokens, rotating refresh tokens, optional two-factor. |
-| User permissions | Done: every query is scoped to the signed-in account; role guards on coach and admin routes; tests cover cross-account access. |
+| User permissions | Done: every query is scoped to the signed-in account; role guards on coach and admin routes; a programme coach reaches only enrolments an administrator assigned to them, only while the programme runs, and a refused attempt is audited; tests cover cross-account and cross-coach access (`programmes.test.ts`). |
 | Sanitise input | Done: zod validation on every route body, query and parameter. |
 | XSS | Done: React escapes output; strict Content-Security-Policy. *(guarded)* no raw HTML. |
 | SQL injection | Done: Prisma parameterises everything. *(guarded)* no SQL built from strings. |

@@ -25,7 +25,7 @@ async function audit(page: Page) {
 }
 
 const PUBLIC = ["/", "/login", "/register", "/forgot-password", "/privacy", "/terms", "/release-notes", "/analytics-reference"];
-const SIGNED_IN = ["/app/dashboard", "/app/cycle", "/app/activity", "/app/sleep", "/app/nutrition", "/app/habits", "/app/goals", "/app/health", "/app/wellbeing", "/app/insights", "/app/reports", "/app/messages", "/app/chat", "/app/settings", "/app/settings?tab=reminders"];
+const SIGNED_IN = ["/app/dashboard", "/app/cycle", "/app/activity", "/app/sleep", "/app/nutrition", "/app/habits", "/app/goals", "/app/health", "/app/wellbeing", "/app/insights", "/app/reports", "/app/messages", "/app/chat", "/app/programme", "/app/settings", "/app/settings?tab=reminders"];
 
 test.describe("public pages", () => {
   test.use({ storageState: { cookies: [], origins: [] } });

@@ -47,7 +47,7 @@ export default function PrivacyPage() {
             <span className="text-[var(--w360-text)] font-medium">What you log:</span> cycle, meals and hydration,
             caffeine and alcoholic drinks and bowel movements, activity, sleep, mood and wellbeing (stress, energy and a note
             only if you add them), goals and check-ins, the daily nutrient amounts and activity minutes you set as targets (and, if you choose to enter them on a meal, its vitamins and minerals), medicines and doses, appointments, measurements,
-            your emergency contact, contraception and pregnancy status if you choose to record them, notes a coach writes about you, and any feedback you send.
+            your emergency contact, contraception and pregnancy status if you choose to record them, notes a coach writes about you, any feedback you send, and, if you join a guided programme, your answers to its starting and final questions, the tasks in your plan, what you report on them (done, skipped, a request for help, and any amount or note you add), your coach's replies and reviews, and each version of your plan with the reason it changed.
             On a cycle day you may also record pads or tampons used, cervical mucus, waking temperature and sex. Those are
             kept for your own record only: Women360 does not use them to predict anything, and they are never part of what a coach sees.
           </p>
@@ -129,6 +129,13 @@ export default function PrivacyPage() {
             profile and medicines are never part of that summary. You give a coach access under Settings, Privacy &amp;
             sharing, by entering their email, and you can stop sharing there whenever you like. Every time a coach opens
             your summary or writes a note, it is recorded in an audit log.
+          </p>
+          <p>
+            Guided programmes work differently, and only if you join one. When you join, you agree that the coach an administrator assigns
+            you sees two things: your answers to the programme's starting and final questions, and what you report on your programme tasks.
+            Nothing else you log is part of it. Administrators see your name, the programme and its status so they can assign a coach, not
+            your answers. If you leave the programme, or once it is completed, your coach no longer sees it. Every time a coach opens your
+            programme, and every change to your plan, is recorded in an audit log.
           </p>
           <p>
             Women360 doesn't sell your data and doesn't show advertising. Your sign-in is kept in your browser's own storage on your device, along with a few settings for this device only (light or dark, sounds on or off, which tips you have seen) and, if the date of birth given at sign-up meant an account couldn't be created, a note of that. None of these settings are sent to us.
