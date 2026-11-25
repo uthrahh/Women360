@@ -75,6 +75,15 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
+        <Section title="Game mode and the health advisor">
+          <p>
+            Game mode is off unless you turn it on. Its points, level, run and badges are worked out from what you already log each time you
+            open it; the only things stored are that it is on and the highest level you've been congratulated on. The health advisor's
+            ideas are worked out from your own logs and goals in the same way, and are not stored; if you add one, it becomes an ordinary
+            habit or goal.{chatbot && " Its AI ideas use the same numbers-only summary as the AI chat, only after you agree to share it, and are not stored either."}
+          </p>
+        </Section>
+
         {chatbot && (
           <Section title="The AI chat">
             <p>
@@ -102,6 +111,7 @@ export default function PrivacyPage() {
             <li>Your account and everything you log: until you delete it. You can delete your whole account, or only your cycle and reproductive history, in Settings at any time.</li>
             <li>Security records (sign-in successes and failures): 90 days.</li>
             <li>Save receipts: 24 hours.</li>
+            <li>Health advisor ideas you said "not for me" to: 90 days, so they aren't offered again.</li>
             {chatbot && <li>The time of each AI chat question (never its words): 2 days.</li>}
             <li>Sign-in sessions, password-reset links and email-confirmation links: deleted 7 days after they expire, are used or are signed out.</li>
             <li>Records of reminders already sent: 3 days. A reminder device: until you turn reminders off on it, the browser reports it gone, or you delete your account.</li>
@@ -136,6 +146,16 @@ export default function PrivacyPage() {
             Nothing else you log is part of it. Administrators see your name, the programme and its status so they can assign a coach, not
             your answers. If you leave the programme, or once it is completed, your coach no longer sees it. Every time a coach opens your
             programme, and every change to your plan, is recorded in an audit log.
+          </p>
+          <p>
+            Family access is also your choice. You can let a family member who has their own Women360 account view your records, or view
+            and update them, and change or stop that at any time; they can ask, but only you decide. It covers your tracking (cycle, food
+            and water, activity and steps, sleep, mood, habits, goals, medicines, appointments and measurements). It never covers your
+            account, password, data download, contraception or pregnancy record, health profile, messages, programme or AI chat. Each time
+            someone opens your records, and every change they make, is recorded in an audit log (which screen was changed, never what was
+            written). You can also keep a profile for a family member who doesn't use the app: a teenager from 13 (only if you are their parent
+            or legal guardian, which you confirm, and we record when) or an adult relative. Only you can see a profile you keep; it can never
+            sign in; you can download or delete it from the Family screen; and it is deleted with your account.
           </p>
           <p>
             Women360 doesn't sell your data and doesn't show advertising. Your sign-in is kept in your browser's own storage on your device, along with a few settings for this device only (light or dark, sounds on or off, which tips you have seen) and, if the date of birth given at sign-up meant an account couldn't be created, a note of that. None of these settings are sent to us.

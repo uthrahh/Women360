@@ -3,11 +3,16 @@ import type { Role } from "@prisma/client";
 import { verifyAccessToken } from "@/lib/jwt";
 import { UnauthorizedError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
+import { resolveActing } from "@/modules/family/acting";
 
 export interface AuthenticatedUser {
+  /** Whose records this request reads and writes: her own, or a family member's she was given access to. */
   id: string;
   role: Role;
   isDemo: boolean;
+  /** Set only while she is looking at a family member's records: her own id, and the access she has. */
+  actorId?: string;
+  access?: "MANAGE" | "MODIFY" | "MONITOR";
 }
 
 declare global {
@@ -46,8 +51,17 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
       return next(new UnauthorizedError("Your session has ended. Please sign in again."));
     }
     req.user = { id: user.id, role: user.role, isDemo: user.isDemo };
-    return next();
   } catch {
     return next(new UnauthorizedError("Your session has expired. Please sign in again."));
   }
+  // "X-Acting-For": a family member's records instead of her own. Checked on every request, never remembered.
+  const actingFor = req.headers["x-acting-for"];
+  if (typeof actingFor === "string" && actingFor && actingFor !== req.user.id) {
+    try {
+      req.user = await resolveActing(req.user, actingFor, req.method, req.originalUrl);
+    } catch (err) {
+      return next(err);
+    }
+  }
+  return next();
 }

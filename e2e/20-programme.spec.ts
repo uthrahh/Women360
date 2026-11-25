@@ -106,7 +106,7 @@ test("an administrator assigns a coach, who builds the plan from the library and
   await c.getByRole("button", { name: "Add to the plan" }).click();
   await c.getByRole("button", { name: "Add a task" }).click();
   await c.getByLabel("Title").fill("A short walk");
-  await c.getByRole("radio", { name: "An amount" }).check({ force: true });
+  await c.getByRole("dialog").getByText("An amount", { exact: true }).click();
   await c.getByLabel("Counted in").fill("minutes");
   await c.getByLabel("How to do it").fill("Walk at an easy pace.");
   await c.getByRole("button", { name: "Add to the plan" }).click();

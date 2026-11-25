@@ -85,6 +85,22 @@ model User {
   emailVerifiedAt    DateTime?
   // When she agreed to let the AI chat read a numbers-only summary of her last 30 days. Null = it reads nothing about her.
   chatShareConsentAt DateTime?
+  // Show the cycle tracker. On for everyone who had an account before family profiles existed; a family member who
+  // doesn't have periods (or doesn't want to track them) turns it off, and the cycle screens disappear for them.
+  cycleTracking      Boolean    @default(true)
+  // A family profile: a person who doesn't sign in (a teenager, or a parent who won't use the app) whose records are kept
+  // by the account that made it. It has an unusable address and password, so nobody can sign in as it.
+  managedById        String?
+  managedBy          User?      @relation("ManagedProfiles", fields: [managedById], references: [id], onDelete: Cascade)
+  managedProfiles    User[]     @relation("ManagedProfiles")
+  // How the manager describes them ("Daughter", "Mother"); shown to the manager only.
+  relation           String?
+  // For a profile of someone under 18: when the manager confirmed they are that person's parent or legal guardian.
+  guardianConsentAt  DateTime?
+  // Game mode: off unless she turns it on. Points, levels and badges are worked out from her logs; nothing is stored but
+  // this switch and the highest level she has already been congratulated on.
+  gameMode           Boolean    @default(false)
+  gameLevelSeen      Int        @default(1)
 
   twoFactorBackupCodes    TwoFactorBackupCode[]
   refreshTokens           RefreshToken[]
@@ -137,6 +153,10 @@ model User {
 
   enrolments        Enrolment[] @relation("EnrolmentParticipant")
   coachedEnrolments Enrolment[] @relation("EnrolmentCoach")
+
+  familyAccessGiven    FamilyAccess[]     @relation("FamilyAccessOwner")
+  familyAccessReceived FamilyAccess[]     @relation("FamilyAccessViewer")
+  advisorDismissals    AdvisorDismissal[]
 
   auditLogs AuditLog[]
 
@@ -1281,4 +1301,46 @@ model ProgrammeReview {
   // Shared with her: the coach is told so where it is written.
   notes       String
   createdAt   DateTime   @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Family: one account looking at, or keeping, another person's records
+// ---------------------------------------------------------------------------
+
+enum FamilyAccessLevel {
+  MONITOR
+  MODIFY
+}
+
+enum FamilyAccessStatus {
+  REQUESTED
+  ACTIVE
+}
+
+// The owner's records may be seen (MONITOR) or seen and changed (MODIFY) by the viewer. Only the owner decides the level,
+// changes it or ends it; the viewer can ask (REQUESTED, no level yet) and can stop looking at any time. Ending it deletes the row.
+model FamilyAccess {
+  id        String             @id @default(cuid())
+  ownerId   String
+  owner     User               @relation("FamilyAccessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  viewerId  String
+  viewer    User               @relation("FamilyAccessViewer", fields: [viewerId], references: [id], onDelete: Cascade)
+  status    FamilyAccessStatus
+  level     FamilyAccessLevel?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@unique([ownerId, viewerId])
+  @@index([viewerId])
+}
+
+// An advisor suggestion she said "not for me" to, by its key, so it isn't offered again for 90 days (the daily sweep deletes older rows).
+model AdvisorDismissal {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, key])
 }

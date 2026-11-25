@@ -2,9 +2,8 @@ import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { useTransitionNavigate } from "@/hooks/useTransitionNavigate";
 import BranchedMenu from "@/components/reactbits/BranchedMenu";
-import { menuTree, navVisible, type NavItem } from "@/config/navigation";
-import { useFeatures } from "@/context/FeaturesContext";
-import { useApp } from "@/context/AppContext";
+import { menuTree, type NavItem } from "@/config/navigation";
+import { useNavVisible } from "@/hooks/useNavVisible";
 
 const ALL_ROUTES = menuTree.flatMap((node) => ("leaf" in node ? [node.leaf] : node.items));
 
@@ -26,21 +25,22 @@ const icon = (item: NavItem) => <item.icon size={16} strokeWidth={1.75} />;
 export function AppMenu({ onNavigate }: { onNavigate?: () => void }) {
   const { pathname } = useLocation();
   const nav = useTransitionNavigate();
-  const features = useFeatures();
-  const { auth } = useApp();
-  const isDemo = !!auth.user?.isDemo;
+  const visible = useNavVisible();
 
   const items = useMemo(
     () =>
-      menuTree.map((node) =>
-        "leaf" in node
-          ? { label: node.leaf.label, value: node.leaf.to }
-          : {
-              label: node.label,
-              children: node.items.filter((i) => navVisible(i.to, features, isDemo)).map((i) => ({ value: i.to, label: i.label, icon: icon(i) })),
-            }
-      ),
-    [features, isDemo]
+      menuTree
+        .filter((node) => ("leaf" in node ? visible(node.leaf.to) : true))
+        .map((node) =>
+          "leaf" in node
+            ? { label: node.leaf.label, value: node.leaf.to }
+            : {
+                label: node.label,
+                children: node.items.filter((i) => visible(i.to)).map((i) => ({ value: i.to, label: i.label, icon: icon(i) })),
+              }
+        )
+        .filter((node) => !("children" in node) || (node.children?.length ?? 0) > 0),
+    [visible]
   );
 
   return (

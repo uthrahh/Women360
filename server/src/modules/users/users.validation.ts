@@ -4,6 +4,9 @@ export const updateProfileSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
   dateOfBirth: z.string().date().optional(),
   lifeStage: z.enum(["REPRODUCTIVE", "PERIMENOPAUSE", "MENOPAUSE", "POSTMENOPAUSE"]).optional(),
+  // Show the cycle tracker (off for someone who doesn't have periods or doesn't want to track them).
+  cycleTracking: z.boolean().optional(),
+  gameMode: z.boolean().optional(),
 });
 
 export const updateEmergencyContactSchema = z.object({

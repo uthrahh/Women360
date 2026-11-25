@@ -34,7 +34,8 @@ export function trackUsage(req: Request, res: Response, next: NextFunction) {
     if (!action) return;
     // Sign-ups have no signed-in user yet; everything else counts only real women's accounts.
     if (action === "signup") return void countEvent(action);
-    if (!req.user || req.user.role !== "WOMAN" || req.user.isDemo) return;
+    // Not counted: staff, demonstration accounts, and someone looking at a family member's records (that is not the family member using the app).
+    if (!req.user || req.user.role !== "WOMAN" || req.user.isDemo || req.user.actorId) return;
     void countEvent(action);
     void noteActive(req.user.id);
   });

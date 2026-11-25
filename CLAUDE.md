@@ -509,6 +509,32 @@ someone is in one (`/config` `programmes`, `navVisible()` in `config/navigation.
 participation in programmes, food library and meal plans, academy lessons linked to tasks, daily check-ins, AI summaries/copilot, advisor credentials
 and workload reports. e2e: `e2e/20-programme.spec.ts` (staff accounts via `e2e/staff.ts`, test database only).
 
+**Family, game mode and the health advisor (owner's request, 2026-11-25):**
+- *Family* (`server/src/modules/family/`, `features/family/`, `context/FamilyContext.tsx`). Two kinds: a **managed profile** (a `User` with
+  `managedById`, an unusable `.invalid` address and random password, so it can never sign in; 13+, under-18 needs guardian confirmation;
+  max 10; deleted with the manager) and **access between accounts** (`FamilyAccess`: the owner decides MONITOR or MODIFY, the viewer can
+  only ask, either side can end it; ending deletes the row). Mechanism: the client sends `X-Acting-For` only for tracking paths
+  (`ACTING_PATHS` in `apiClient.ts`); `requireAuth` calls `resolveActing` (`family/acting.ts`), which re-checks access on **every request**,
+  allows only the tracking modules plus a read of `/auth/me`, refuses any write on MONITOR, audits every write (`family.record_changed`, route
+  shape only) and every refusal (`security.family_access_denied`), then swaps `req.user.id` to the subject so every existing service just works.
+  Never reachable while acting: account, password, export, reproductive record, health profile, coach sharing, family, programme, chat,
+  messages, notifications. Traps: keep the client `ACTING_PATHS` and the server `OPEN` list in step; switching person must clear the stale
+  cache (`setActing` does) and the shell remounts the page per person (`key`); demo accounts can't link or create profiles. `cycleTracking` on
+  `User` hides the cycle screens (Settings > Features; per profile in Family); `navVisible()` takes it, the acting state and game mode, and every
+  menu (sidebar, bottom bar, Senior tiles, command menu) goes through `useNavVisible`.
+- *Game mode* (`server/src/modules/game/`, `features/game/`). Off by default (`User.gameMode`, Settings > Features); off hides it everywhere.
+  Points are derived from her logs at read time (`rules.ts`, pure, tested): only for logging and for habits/programme tasks done, capped per
+  day, never for weight, calories, fasting or amounts; 3 deterministic daily quests; level thresholds 0/100/300/600...; a forgiving run (one
+  rest day a week, a freeze per 7 active days, max 2; an uncovered miss restarts quietly, the best run is kept). Stored: only the switch and
+  `gameLevelSeen` (to congratulate a level once). No "lost" state, no leaderboard.
+- *Health advisor* (`server/src/modules/advisor/`, `features/advisor/`). Ideas from her own logs (`ideas.ts`, pure, tested) are measured only
+  against her own goals/targets and earlier weeks (no outside guideline numbers, no risk statements), each with the why in her numbers and a
+  one-tap add as habit or goal (her tap is the confirmation; nothing is added for her). AI ideas (`advisor.ai.ts`) only when the chat is
+  switched on, not for demo accounts, after she agrees to share the numbers-only summary, and they count as a chat question; the model must
+  answer through a strict tool and every idea passes `FORBIDDEN` (no diagnosis, medicine, supplement, dose, fasting, weight or calorie
+  target) or is dropped. Nothing is stored except "not for me" keys (`AdvisorDismissal`, 90 days, daily sweep). Its brief awaits clinical review.
+- e2e: `e2e/21-family-game-advisor.spec.ts`.
+
 **Launch readiness (latest pass; the owner-only steps are in `docs/OPERATIONS.md`):**
 - *Clinician switch.* `CLINICAL_CONTENT` (server env, read per call, only the exact word "true" enables) hides every feature
   that needs clinical review: screening, conditions/"worth discussing" patterns, activity plans, explain-this cards, Learn, and the
@@ -681,6 +707,9 @@ update that document, the privacy page and the guards in the same change. Standi
   don't collect). Sign-up asks for a date of birth on a wheel, refuses a minor neutrally (never says which age is needed) and
   remembers the refusal on the device (`lib/ageGate.ts`); the server refuses an under-18 date anywhere and won't finish onboarding
   without an adult date of birth (`server/src/lib/age.ts`). Accounts created before this (and onboarded) were not re-checked.
+  Owner decision (2026-11-25): anyone 13+ may be *tracked*, but under-18s exist only as **family profiles an adult manages**, never as
+  their own sign-up; creating one for a 13-17-year-old needs the manager's confirmation that they are the parent or legal guardian
+  (`User.guardianConsentAt`). Self sign-up stays 18+.
 - **Pickers:** choose from a bounded list with `WheelPicker` / `DateWheel` (drag, momentum, snapping, a click per item, keyboard as a
   spin button). Open-ended or decimal numbers stay on `NumberField` (typing is faster there).
 - **Passwords:** a new password is always `NewPasswordField` (outline meter, one calm line, Suggest one, monospaced dots that turn into

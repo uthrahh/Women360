@@ -1,19 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useTransitionNavigate } from "@/hooks/useTransitionNavigate";
 import GooeyNav from "@/components/reactbits/GooeyNav";
 import { mobileBottomNav } from "@/config/navigation";
+import { useNavVisible } from "@/hooks/useNavVisible";
 import { useBrandColors } from "@/hooks/useBrandColors";
 
-const items = mobileBottomNav.map((n) => ({
-  label: n.label,
-  href: n.to,
-  client: true,
-  icon: <n.icon size={20} strokeWidth={1.75} />,
-}));
-
-function indexFor(pathname: string): number {
-  const i = mobileBottomNav.findIndex((n) => pathname === n.to || pathname.startsWith(`${n.to}/`));
+function indexFor(list: typeof mobileBottomNav, pathname: string): number {
+  const i = list.findIndex((n) => pathname === n.to || pathname.startsWith(`${n.to}/`));
   return i < 0 ? 0 : i;
 }
 
@@ -38,6 +32,9 @@ export function BottomNav() {
   const nav = useTransitionNavigate();
   const brand = useBrandColors();
   const narrow = useNarrow();
+  const visible = useNavVisible();
+  const shown = useMemo(() => mobileBottomNav.filter((n) => visible(n.to)), [visible]);
+  const items = useMemo(() => shown.map((n) => ({ label: n.label, href: n.to, client: true, icon: <n.icon size={20} strokeWidth={1.75} /> })), [shown]);
   if (!narrow) return null;
 
   return (
@@ -48,7 +45,8 @@ export function BottomNav() {
       <GooeyNav
         className="gooey-nav--dock"
         items={items}
-        activeIndex={indexFor(pathname)}
+        key={shown.map((n) => n.to).join()}
+        activeIndex={indexFor(shown, pathname)}
         onChange={(_, item) => nav(item.href as string)}
         size="sm"
         frame={false}

@@ -124,6 +124,8 @@ interface ApiUser {
   onboarded: boolean;
   isDemo?: boolean;
   emailVerified?: boolean;
+  cycleTracking?: boolean;
+  gameMode?: boolean;
 }
 
 export function toFrontendUser(apiUser: ApiUser): User {
@@ -138,6 +140,8 @@ export function toFrontendUser(apiUser: ApiUser): User {
     onboarded: apiUser.onboarded,
     isDemo: apiUser.isDemo ?? false,
     emailVerified: apiUser.emailVerified ?? false,
+    cycleTracking: apiUser.cycleTracking ?? true,
+    gameMode: apiUser.gameMode ?? false,
   };
 }
 

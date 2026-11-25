@@ -34,8 +34,28 @@ export function setTokens(tokens: Tokens): void {
 
 export function clearTokens(): void {
   clearStaleCache();
+  acting = null;
   localStorage.removeItem(TOKENS_KEY);
 }
+
+/**
+ * Looking at a family member's records. Requests for her tracking screens carry "X-Acting-For" and the server checks the
+ * access on every one; everything else (notifications, settings, the app's own counters) stays her own. Memory only: a
+ * reload goes back to her own records. Switching clears the screens' cached data so one person's records never show as another's.
+ */
+export interface Acting {
+  id: string;
+  name: string;
+  access: "MANAGE" | "MODIFY" | "MONITOR";
+}
+let acting: Acting | null = null;
+const ACTING_PATHS = /^\/(cycle|nutrition|body|activity|sleep|wellbeing|goals|habits|health|insights|reports|conditions|screening|game)(\/|\?|$)|^\/auth\/me$/;
+
+export function setActing(next: Acting | null): void {
+  acting = next;
+  clearStaleCache();
+}
+export const getActing = (): Acting | null => acting;
 
 export interface PageMeta {
   page: number;
@@ -195,11 +215,17 @@ async function fetchRetrying(url: string, init: RequestInit): Promise<Response> 
 
 async function requestEnvelope<T>(path: string, init: RequestInit = {}, isRetry = false): Promise<Envelope<T>> {
   const tokens = getTokens();
+  const actingFor = acting && ACTING_PATHS.test(path) ? acting : null;
+  // View-only access: say so at once rather than send a change the server will refuse.
+  if (actingFor?.access === "MONITOR" && (init.method ?? "GET").toUpperCase() !== "GET") {
+    throw new ApiError(`${actingFor.name.split(" ")[0]} gave you view-only access, so you can look but not change anything.`, 403, "FORBIDDEN");
+  }
   const res = await fetchRetrying(`${BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
       ...(tokens ? { Authorization: `Bearer ${tokens.accessToken}` } : {}),
+      ...(actingFor ? { "X-Acting-For": actingFor.id } : {}),
       ...init.headers,
     },
   });

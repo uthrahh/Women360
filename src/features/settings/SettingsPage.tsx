@@ -64,6 +64,16 @@ export default function SettingsPage() {
     }
   }
 
+  // Switches that change what the app shows her. Saved at once; the menus follow.
+  async function setFeature(patch: { cycleTracking?: boolean; gameMode?: boolean }, done: string) {
+    try {
+      auth.refreshUser(await userService.updateProfile(patch));
+      toast.show(done);
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't save that. Please try again.", { tone: "error" });
+    }
+  }
+
   async function handleSaveEmergency(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const errs: Record<string, string> = {};
@@ -98,7 +108,7 @@ export default function SettingsPage() {
 
       <Tabs
         urlParam="tab"
-        defaultTab={["essentials", "emergency", "reminders", "security", "data", "feedback"].includes(params.get("tab") ?? "") ? params.get("tab")! : "profile"}
+        defaultTab={["features", "essentials", "emergency", "reminders", "security", "data", "feedback"].includes(params.get("tab") ?? "") ? params.get("tab")! : "profile"}
         tabs={[
           {
             id: "profile", label: "Profile",
@@ -113,6 +123,25 @@ export default function SettingsPage() {
                     <Button size="sm" variant="secondary" type="button" onClick={() => { auth.logout(); nav("/login"); }}>Log out</Button>
                   </div>
                 </form>
+              </CardBody></Card>
+            ),
+          },
+          {
+            id: "features", label: "Features",
+            content: (
+              <Card><CardBody className="pt-5 flex flex-col gap-5">
+                <ToggleRow
+                  title="Cycle tracker"
+                  description="Periods, cycle predictions and symptoms. Turn it off if you don't have periods or don't want to track them; nothing already logged is deleted."
+                  checked={auth.user?.cycleTracking !== false}
+                  onChange={() => setFeature({ cycleTracking: auth.user?.cycleTracking === false }, auth.user?.cycleTracking === false ? "Cycle tracker on" : "Cycle tracker off")}
+                />
+                <ToggleRow
+                  title="Game mode"
+                  description="Points, levels, a daily run and quests for looking after yourself. Nothing is taken away for a missed day, and nothing rewards a number on a scale."
+                  checked={!!auth.user?.gameMode}
+                  onChange={() => setFeature({ gameMode: !auth.user?.gameMode }, auth.user?.gameMode ? "Game mode off" : "Game mode on. Your points include what you've already logged.")}
+                />
               </CardBody></Card>
             ),
           },

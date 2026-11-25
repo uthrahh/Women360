@@ -12,6 +12,8 @@ export function publicUser(user: {
   onboarded: boolean;
   isDemo?: boolean;
   emailVerifiedAt?: Date | null;
+  cycleTracking?: boolean;
+  gameMode?: boolean;
 }) {
   return {
     id: user.id,
@@ -24,5 +26,7 @@ export function publicUser(user: {
     onboarded: user.onboarded,
     isDemo: user.isDemo ?? false,
     emailVerified: Boolean(user.emailVerifiedAt),
+    cycleTracking: user.cycleTracking ?? true,
+    gameMode: user.gameMode ?? false,
   };
 }

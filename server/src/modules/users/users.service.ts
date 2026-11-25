@@ -34,6 +34,10 @@ export const usersService = {
         nutrientTargets: true,
         activityTargets: true,
         // Guided programmes she joined: her answers, her plan and every task report, plan version and coach review.
+        familyAccessGiven: { select: { viewerId: true, status: true, level: true, createdAt: true } },
+        familyAccessReceived: { select: { ownerId: true, status: true, level: true, createdAt: true } },
+        managedProfiles: { select: { id: true, name: true, relation: true, dateOfBirth: true, createdAt: true } },
+        advisorDismissals: { select: { key: true, createdAt: true } },
         enrolments: { include: { programme: { select: { name: true, durationDays: true } }, assessments: true, tasks: { include: { events: true } }, planVersions: true, reviews: true } },
         cycleProfile: true,
         cycleEntries: true,
@@ -77,6 +81,10 @@ export const usersService = {
       nutrientTargets: u.nutrientTargets,
       activityTargets: u.activityTargets,
       programmes: u.enrolments,
+      // Who you share with and who shares with you (ids only), the family profiles you keep (each has its own download under Family),
+      // and the advisor ideas you said no to.
+      family: { sharingWith: u.familyAccessGiven, sharedWithYou: u.familyAccessReceived, profilesYouKeep: u.managedProfiles },
+      advisorDismissals: u.advisorDismissals,
       cycleProfile: u.cycleProfile,
       cycleEntries: u.cycleEntries,
       mealEntries: u.mealEntries,
@@ -145,7 +153,7 @@ export const usersService = {
 
   async updateProfile(
     userId: string,
-    input: { name?: string; dateOfBirth?: string; lifeStage?: LifeStage }
+    input: { name?: string; dateOfBirth?: string; lifeStage?: LifeStage; cycleTracking?: boolean; gameMode?: boolean }
   ) {
     if (input.dateOfBirth) assertAdultBirthDate(input.dateOfBirth);
     const user = await prisma.user.update({
@@ -154,6 +162,8 @@ export const usersService = {
         name: input.name,
         dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : undefined,
         lifeStage: input.lifeStage,
+        cycleTracking: input.cycleTracking,
+        gameMode: input.gameMode,
       },
     });
     return publicUser(user);

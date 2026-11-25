@@ -1,3 +1,5 @@
+import { GameStrip } from "@/features/game/GameStrip";
+import { useFamily } from "@/context/FamilyContext";
 import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useState, useCallback , useRef} from "react";
 import { useStaleState } from "@/lib/stale";
@@ -90,7 +92,8 @@ function StandardDashboard() {
   const now = new Date();
   const hour = now.getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  const firstName = auth.user?.name?.split(" ")[0] ?? "there";
+  const { acting } = useFamily();
+  const firstName = (acting?.name ?? auth.user?.name)?.split(" ")[0] ?? "there";
 
   if (failed) return <ErrorState title="Couldn't load your day" description="Check your connection and try again." onRetry={load} />;
   if (!loaded) return <LoadingState label="Preparing your snapshot" />;
@@ -105,10 +108,20 @@ function StandardDashboard() {
           {now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
         </p>
         <h1 className="font-display text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.08] mt-2">
-          {greeting},{" "}
-          <span className="text-maroon-700 dark:text-maroon-300">{firstName}</span>.
+          {acting ? (
+            <>
+              <span className="text-maroon-700 dark:text-maroon-300">{firstName}</span>'s day
+            </>
+          ) : (
+            <>
+              {greeting},{" "}
+              <span className="text-maroon-700 dark:text-maroon-300">{firstName}</span>.
+            </>
+          )}
         </h1>
       </header>
+
+      {auth.user?.gameMode && !acting && <GameStrip />}
 
       {cyclePhase && (
         <section className="w360-rise" style={{ "--i": 1 } as CSSProperties} aria-label="Your cycle">

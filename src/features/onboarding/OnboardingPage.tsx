@@ -86,6 +86,8 @@ export default function OnboardingPage() {
   const [allergies, setAllergies] = useState<string[]>([]);
   const [medications, setMedications] = useState<string[]>([]);
   const [lifeStage, setLifeStage] = useState<string>("");
+  // "Yes" / "No" / "" (unanswered keeps the cycle tracker on, as it always was).
+  const [tracksCycle, setTracksCycle] = useState<string>("");
   const [cycleLength, setCycleLength] = useState("");
   const [periodLength, setPeriodLength] = useState("");
   const [feel, setFeel] = useState<string>("");
@@ -133,9 +135,10 @@ export default function OnboardingPage() {
   // answer (an empty list); a question left alone stays unanswered, so the
   // profile never claims "no allergies" for someone who skipped the question.
   async function saveAll() {
-    const profile: { name?: string; dateOfBirth?: string; lifeStage?: LifeStageValue } = {};
+    const profile: { name?: string; dateOfBirth?: string; lifeStage?: LifeStageValue; cycleTracking?: boolean } = {};
+    if (tracksCycle) profile.cycleTracking = tracksCycle === "Yes";
     if (name.trim() && name.trim() !== auth.user?.name) profile.name = name.trim();
-    if (lifeStage && LIFE_STAGE[lifeStage]) profile.lifeStage = LIFE_STAGE[lifeStage];
+    if (tracksCycle !== "No" && lifeStage && LIFE_STAGE[lifeStage]) profile.lifeStage = LIFE_STAGE[lifeStage];
     if (Object.keys(profile).length) auth.refreshUser(await userService.updateProfile(profile));
 
     const health: HealthProfileInput = {};
@@ -144,7 +147,7 @@ export default function OnboardingPage() {
     if (Object.keys(health).length) await userService.updateHealthProfile(health);
 
     // The cycle profile always holds both numbers, so one that was left blank keeps its current value.
-    if (cycleLength || periodLength) {
+    if (tracksCycle !== "No" && (cycleLength || periodLength)) {
       const current = await cycleService.getProfile();
       await cycleService.upsertProfile({
         averageCycleLength: cycleLength ? Number(cycleLength) : current.averageCycleLength,
@@ -250,16 +253,23 @@ export default function OnboardingPage() {
 
           <Step title="Cycle">
             <FormStep title="Menstrual health" subtitle="Skip if this doesn't apply to you.">
-              <ChoiceGroup
-                label="Where are you in your reproductive life?"
-                options={Object.keys(LIFE_STAGE).concat("Prefer not to say")}
-                value={lifeStage}
-                onChange={setLifeStage}
-              />
-              <div className="grid grid-cols-2 gap-3 items-start">
-                <WheelPicker label="Typical cycle" items={CYCLE_LENGTHS} value={cycleLength} onChange={setCycleLength} />
-                <WheelPicker label="Typical period" items={PERIOD_LENGTHS} value={periodLength} onChange={setPeriodLength} />
-              </div>
+              <ChoiceGroup label="Do you want to track periods?" options={["Yes", "No"]} value={tracksCycle} onChange={setTracksCycle} />
+              {tracksCycle === "No" ? (
+                <p className="text-sm text-[var(--w360-text-muted)]">The cycle tracker stays out of your way. You can turn it on in Settings, Features.</p>
+              ) : (
+                <>
+                  <ChoiceGroup
+                    label="Where are you in your reproductive life?"
+                    options={Object.keys(LIFE_STAGE).concat("Prefer not to say")}
+                    value={lifeStage}
+                    onChange={setLifeStage}
+                  />
+                  <div className="grid grid-cols-2 gap-3 items-start">
+                    <WheelPicker label="Typical cycle" items={CYCLE_LENGTHS} value={cycleLength} onChange={setCycleLength} />
+                    <WheelPicker label="Typical period" items={PERIOD_LENGTHS} value={periodLength} onChange={setPeriodLength} />
+                  </div>
+                </>
+              )}
             </FormStep>
           </Step>
 

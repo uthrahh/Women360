@@ -3,9 +3,9 @@ import { useTransitionNavigate } from "@/hooks/useTransitionNavigate";
 import { LogOut, Moon, Sun, Users } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Kbd } from "@/components/ui/Kbd";
-import { menuTree, navVisible } from "@/config/navigation";
+import { menuTree } from "@/config/navigation";
+import { useNavVisible } from "@/hooks/useNavVisible";
 import { useApp } from "@/context/AppContext";
-import { useFeatures } from "@/context/FeaturesContext";
 import { GO_KEYS, GO_WINDOW_MS, OPEN_COMMAND_MENU_EVENT, destinationFor, isTypingTarget, matchesQuery, modKeyLabel } from "@/lib/shortcuts";
 
 interface Command {
@@ -27,8 +27,7 @@ interface Command {
 export function CommandMenu() {
   const nav = useTransitionNavigate();
   const { theme, senior, auth } = useApp();
-  const features = useFeatures();
-  const isDemo = !!auth.user?.isDemo;
+  const visible = useNavVisible();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -36,7 +35,7 @@ export function CommandMenu() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const commands = useMemo<Command[]>(() => {
-    const screens = menuTree.flatMap((node) => ("leaf" in node ? [node.leaf] : node.items)).filter((i) => navVisible(i.to, features, isDemo));
+    const screens = menuTree.flatMap((node) => ("leaf" in node ? [node.leaf] : node.items)).filter((i) => visible(i.to));
     const go: Command[] = screens.map((s) => ({
       id: s.to,
       label: s.label,
@@ -75,7 +74,7 @@ export function CommandMenu() {
         },
       },
     ];
-  }, [features, isDemo, nav, theme, senior, auth]);
+  }, [visible, nav, theme, senior, auth]);
 
   const shown = useMemo(() => commands.filter((c) => matchesQuery(query, c.label, c.keywords ?? "", c.group)), [commands, query]);
 
@@ -97,7 +96,7 @@ export function CommandMenu() {
       if (Date.now() < goUntil) {
         goUntil = 0;
         const to = destinationFor(e.key);
-        if (to && navVisible(to, features, isDemo)) {
+        if (to && visible(to)) {
           e.preventDefault();
           nav(to);
         }
@@ -112,7 +111,7 @@ export function CommandMenu() {
       document.removeEventListener("keydown", onKey);
       window.removeEventListener(OPEN_COMMAND_MENU_EVENT, onOpen);
     };
-  }, [nav, features, isDemo]);
+  }, [nav, visible]);
 
   useEffect(() => {
     if (open) {

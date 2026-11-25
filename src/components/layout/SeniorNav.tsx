@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { Sun, Moon, Settings as SettingsIcon, ArrowLeft } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { seniorNavMap } from "@/config/navigation";
+import { useNavVisible } from "@/hooks/useNavVisible";
 import { Link, useLocation } from "react-router-dom";
 import { HelpButton } from "@/components/HelpButton";
 
@@ -42,7 +43,8 @@ export function SeniorTopBar({ title }: { title?: string }) {
 
 export function SeniorTileGrid() {
   const { senior } = useApp();
-  const enabled = senior.essentials.filter((e) => e.enabled);
+  const visible = useNavVisible();
+  const enabled = senior.essentials.filter((e) => e.enabled && visible(seniorNavMap[e.key].to));
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 max-w-3xl mx-auto">

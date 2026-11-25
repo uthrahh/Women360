@@ -13,6 +13,10 @@ export interface User {
   isDemo?: boolean;
   /** She opened the confirmation link sent to her address. */
   emailVerified?: boolean;
+  /** The cycle screens are shown (off for someone who doesn't track periods). */
+  cycleTracking?: boolean;
+  /** Game mode is on. */
+  gameMode?: boolean;
 }
 
 export interface SeniorEssential {
