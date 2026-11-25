@@ -535,6 +535,22 @@ and workload reports. e2e: `e2e/20-programme.spec.ts` (staff accounts via `e2e/s
   target) or is dropped. Nothing is stored except "not for me" keys (`AdvisorDismissal`, 90 days, daily sweep). Its brief awaits clinical review.
 - e2e: `e2e/21-family-game-advisor.spec.ts`.
 
+**Coaches' clients (a coach's own assessment form, 2026-11-25):** `server/src/modules/clients/`, `features/coach/clients/`, Settings > Your coaches
+(`CoachingTab`), Administration > Coaches, `/invite`. A coach adds a client during a consultation (name and date of birth required; she must confirm the
+client agreed, and under 18 that a parent or guardian agreed; 13+), fills in the assessment (`intake.ts`: lifestyle, medical, menstrual, dietary with a
+24-hour recall; served to the web app, which draws the form; versioned), body measurements (`ClientMeasurement`; BMI from the latest known height and
+waist-hip ratio computed when read, **numbers only, no category**, which would be a clinical claim) and consultations (plan given, target weight/date,
+next follow-up, notes). Owner decisions: public sign-up stays alongside coach-added clients; a client can claim her record with a one-time link
+(`AccountInvite`, hash only, 7 days, one use, 18+ only, never for demo records; also how an administrator adds a coach); anyone can be a client (gender is
+recorded, and "menstrual history applies" is chosen per client and drives `cycleTracking`); **a practice has several coaches with specialities
+(`User.coachSpecialities`: GENERAL, NUTRITION, FITNESS, WELLBEING, WOMENS_HEALTH; empty = general) and each sees only the parts of a client's record that
+match** (`access.ts`, pure and tested, the single place this is decided: sections by speciality, consultations by the area they were written in, and her
+own daily logs by kind, totals only, never her notes). Basic and contact details go to all her coaches. Rules: a coach reaches a client only through a
+`ClientCoach` row (refusals audited `security.client_access_denied`; views audited `client.viewed`/`client.logs_viewed`); a coach can't attach herself to an
+existing account by typing its address (409: the woman shares from Settings instead); a claimed record belongs to the client (only she deletes it; a coach
+can leave); the client sees everything recorded except coach notes (which are in her export) and can remove any coach. Weight measured by a coach is also
+written to her own vitals (so calorie estimates use it); menstrual cycle/period lengths seed her cycle profile. e2e: `e2e/22-coach-clients.spec.ts`.
+
 **Launch readiness (latest pass; the owner-only steps are in `docs/OPERATIONS.md`):**
 - *Clinician switch.* `CLINICAL_CONTENT` (server env, read per call, only the exact word "true" enables) hides every feature
   that needs clinical review: screening, conditions/"worth discussing" patterns, activity plans, explain-this cards, Learn, and the

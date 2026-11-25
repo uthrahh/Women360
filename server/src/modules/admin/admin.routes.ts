@@ -8,6 +8,7 @@ import { blockDemoWrites } from "@/middleware/demoGuard";
 import { noContent, ok, paginated } from "@/lib/response";
 import { adminService } from "./admin.service";
 import { adminProgrammeRouter } from "@/modules/programmes/programmes.routes";
+import { adminCoachesRouter } from "@/modules/clients/clients.routes";
 import { feedbackService } from "@/modules/feedback/feedback.service";
 import { summary as usageSummary } from "@/modules/usage/usage.service";
 import { systemStatus } from "@/modules/system/system.service";
@@ -27,6 +28,8 @@ adminRouter.use(requireAdminIp, requireAuth, requireRole("ADMIN"), asyncHandler(
 
 // Guided programmes: programmes, the task library and assigning coaches.
 adminRouter.use("/programme", adminProgrammeRouter);
+// Coaches: specialities, new coach accounts.
+adminRouter.use("/coaches", adminCoachesRouter);
 
 adminRouter.get(
   "/overview",

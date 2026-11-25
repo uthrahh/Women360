@@ -189,6 +189,13 @@ export const authService = {
     return user;
   },
 
+  /** Claims a record a coach (or, for a coach, an administrator) started, with the one-time link, and signs in. */
+  async claimInvite(token: string, body: { password: string; email?: string | null }): Promise<User> {
+    const res = await request<AuthResponse>(`/invites/${encodeURIComponent(token)}`, { method: "POST", body: JSON.stringify({ ...body, agreed: true }) });
+    return persistSession(res);
+  },
+  peekInvite: (token: string) => request<{ name: string; role: "WOMAN" | "COACH" | "ADMIN"; email: string | null }>(`/invites/${encodeURIComponent(token)}`),
+
   // For pages (e.g. Settings) that update the user via a different service
   // (userService) but still need the shared session cache/state to reflect it.
   cacheUser,

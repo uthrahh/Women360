@@ -148,6 +148,17 @@ export default function PrivacyPage() {
             programme, and every change to your plan, is recorded in an audit log.
           </p>
           <p>
+            A coach can also start your record during a consultation, only with your agreement (and, under 18, a parent's or guardian's): your
+            basic and contact details, and the assessment they take (measurements, lifestyle, medical and menstrual history, diet) plus their
+            consultations and the plans they give you. A practice can have several coaches, and each of your coaches sees only the parts that match
+            their speciality (nutrition, fitness and physiotherapy, mental wellbeing, women's health; a general wellness coach sees all of it). Your
+            basic and contact details are seen by all of your coaches. If you use the app, a coach also sees the last 14 days of what you log in
+            their area, as totals and ratings, never your written notes. You see what they recorded under Settings, Your coaches (their working
+            notes are in your data download), and you can remove any coach there at any time. Every time a coach opens your record or changes it,
+            it is recorded in an audit log. Your coach can send you a one-time link (it works once, for 7 days) to set a password and use the app
+            yourself; only a hash of the link is kept, and it is deleted 7 days after it expires or is used.
+          </p>
+          <p>
             Family access is also your choice. You can let a family member who has their own Women360 account view your records, or view
             and update them, and change or stop that at any time; they can ask, but only you decide. It covers your tracking (cycle, food
             and water, activity and steps, sleep, mood, habits, goals, medicines, appointments and measurements). It never covers your

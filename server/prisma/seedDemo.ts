@@ -204,6 +204,7 @@ async function main() {
   }
 
   await seedProgramme(woman.id, coach.id);
+  await seedClients(woman.id, coach.id);
 
   console.log("Demo accounts ready:", Object.values(DEMO_ACCOUNTS).map((a) => a.email).join(", "));
 }
@@ -266,6 +267,49 @@ async function seedProgramme(womanId: string, coachId: string) {
   await report(walk.id, 3, "DONE", { value: 10 });
   await report(walk.id, 2, "DONE", { value: 15 });
   await report(walk.id, 1, "NEED_HELP", { note: "It rained and I had no time after work. Is there something I can do indoors?" });
+}
+
+/**
+ * Two demonstration clients of the demo coach: one the coach added during a consultation (assessment, measurements, a consultation
+ * with a follow-up), and the demo woman herself, who uses the app, so the coach can see her logs. Only demonstration accounts.
+ */
+async function seedClients(womanId: string, coachId: string) {
+  const email = "demo.client.lakshmi@clients.women360.invalid";
+  await prisma.user.deleteMany({ where: { email } });
+  const lakshmi = await prisma.user.create({
+    data: {
+      email, name: "Lakshmi Sundar", passwordHash: await hashPassword(`unused-${Date.now()}-${Math.random()}`), dateOfBirth: new Date("1988-04-12"),
+      avatarInitials: "LS", onboarded: true, addedByCoach: true, isDemo: true, cycleTracking: true,
+      clientProfile: { create: { gender: "Woman", phone: "+91 98400 00000", occupation: "Bank officer", maritalStatus: "Married", consentAt: date(20), consentById: coachId } },
+      clientCoaches: { create: { coachId, addedById: coachId } },
+      clientIntake: {
+        create: {
+          schemaVersion: 1, updatedById: coachId,
+          lifestyle: { activityLevel: "Lightly active", exerciseExperience: "Beginner", occupationType: "Desk-based", sleepHours: 6, sleepQuality: "Fair", waterLitres: 1.5, stressLevel: "Moderate" },
+          medical: { mainGoal: "More energy through the afternoon", familyHistory: "Mother: type 2 diabetes", foodAllergies: "None known" },
+          menstrual: { menarcheAge: 13, cycleLength: 33, periodLength: 5, flow: "Moderate", cramps: "Yes", crampSeverity: "Mild", regularity: "Irregular", pcos: "Not sure" },
+          dietary: {
+            foodPreference: "Vegetarian", mealsPerDay: 3, eatingOut: "1-2 times a week", breakfast: "Sometimes", teaCoffee: "3 cups of tea", alcohol: "Never", tobacco: "Never",
+            recall24h: [{ time: "9 am", food: "Tea, 2 biscuits" }, { time: "1:30 pm", food: "Rice, sambar, beans poriyal" }, { time: "5 pm", food: "Tea, murukku" }, { time: "9 pm", food: "2 chapatis, dal" }],
+          },
+        },
+      },
+      clientMeasurements: {
+        create: [
+          { date: date(20), heightCm: 158, weightKg: 66, waistCm: 86, hipCm: 102, recordedById: coachId },
+          { date: date(6), weightKg: 65.2, waistCm: 85, hipCm: 101, recordedById: coachId },
+        ],
+      },
+      consultationsAbout: {
+        create: [
+          { coachId, area: "GENERAL", date: date(20), planGiven: "Breakfast every day with a protein (curd, egg-free besan chilla, sprouts). One glass of water before each tea.", nextFollowUp: date(6), notes: "Keen; works long hours." },
+          { coachId, area: "GENERAL", date: date(6), targetWeightKg: 62, planGiven: "Keep breakfast; swap the 5 pm snack for fruit or roasted chana three days a week.", nextFollowUp: date(-1), notes: "Breakfast on most days now." },
+        ],
+      },
+    },
+  });
+  await prisma.clientCoach.upsert({ where: { clientId_coachId: { clientId: womanId, coachId } }, create: { clientId: womanId, coachId, addedById: coachId }, update: {} });
+  void lakshmi;
 }
 
 main()

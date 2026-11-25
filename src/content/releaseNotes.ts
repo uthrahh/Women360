@@ -21,7 +21,14 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
-    date: "2026-11-26",
+    date: "2026-11-25",
+    headline: "Your coach can start your record with you",
+    details:
+      "A coach can now add you during a consultation, with your agreement, and record your assessment, measurements and the plans they give you. Each of your coaches sees only the parts that match their speciality. Your coach can send you a one-time link to use the app yourself, and under Settings, Your coaches, you can see what was recorded and remove a coach at any time.",
+    area: "Privacy",
+  },
+  {
+    date: "2026-11-25",
     headline: "Family, game mode and a health advisor",
     details:
       "Under Family you can keep records for a family member from 13, or link with a relative's own account: they decide whether you can view their records or also update them, and can stop it at any time. Game mode, off unless you turn it on in Settings, turns your logging into points, levels, daily quests and a forgiving run that never takes anything away. The health advisor suggests small habits from your own logs and goals, each added in one tap.",

@@ -54,17 +54,17 @@ enum PregnancyStatus {
 }
 
 model User {
-  id                 String     @id @default(cuid())
-  email              String     @unique
+  id                 String            @id @default(cuid())
+  email              String            @unique
   passwordHash       String
   name               String
-  dateOfBirth        DateTime?  @db.Date
-  role               Role       @default(WOMAN)
+  dateOfBirth        DateTime?         @db.Date
+  role               Role              @default(WOMAN)
   lifeStage          LifeStage?
   avatarInitials     String?
-  onboarded          Boolean    @default(false)
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+  onboarded          Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
   deletedAt          DateTime?
   // Any access token issued before this instant is rejected, so changing a
   // password or "sign out everywhere" takes effect immediately instead of
@@ -73,34 +73,40 @@ model User {
   // Two-factor sign-in (TOTP). The secret is AES-256-GCM encrypted (never
   // plaintext); twoFactorLastStep is the last accepted 30-second time step,
   // so a code can't be used twice.
-  twoFactorEnabled   Boolean    @default(false)
+  twoFactorEnabled   Boolean           @default(false)
   twoFactorSecretEnc String?
   twoFactorLastStep  Int?
   // A shared demonstration account (see prisma/seedDemo.ts) whose credentials are
   // published for evaluators. It can look around but cannot change shared
   // settings, delete itself or change its own password, and a demo administrator
   // only ever sees other demo accounts.
-  isDemo             Boolean    @default(false)
+  isDemo             Boolean           @default(false)
   // Set when she opens the link sent to her address. Null = not confirmed yet (nothing is blocked by it).
   emailVerifiedAt    DateTime?
   // When she agreed to let the AI chat read a numbers-only summary of her last 30 days. Null = it reads nothing about her.
   chatShareConsentAt DateTime?
   // Show the cycle tracker. On for everyone who had an account before family profiles existed; a family member who
   // doesn't have periods (or doesn't want to track them) turns it off, and the cycle screens disappear for them.
-  cycleTracking      Boolean    @default(true)
+  cycleTracking      Boolean           @default(true)
   // A family profile: a person who doesn't sign in (a teenager, or a parent who won't use the app) whose records are kept
   // by the account that made it. It has an unusable address and password, so nobody can sign in as it.
   managedById        String?
-  managedBy          User?      @relation("ManagedProfiles", fields: [managedById], references: [id], onDelete: Cascade)
-  managedProfiles    User[]     @relation("ManagedProfiles")
+  managedBy          User?             @relation("ManagedProfiles", fields: [managedById], references: [id], onDelete: Cascade)
+  managedProfiles    User[]            @relation("ManagedProfiles")
   // How the manager describes them ("Daughter", "Mother"); shown to the manager only.
   relation           String?
   // For a profile of someone under 18: when the manager confirmed they are that person's parent or legal guardian.
   guardianConsentAt  DateTime?
   // Game mode: off unless she turns it on. Points, levels and badges are worked out from her logs; nothing is stored but
   // this switch and the highest level she has already been congratulated on.
-  gameMode           Boolean    @default(false)
-  gameLevelSeen      Int        @default(1)
+  gameMode           Boolean           @default(false)
+  // For a coach: what they specialise in, which decides the parts of a client's record they see. Empty means general.
+  coachSpecialities  CoachSpeciality[]
+  // A record a coach started for a client during a consultation. It has no usable password until the client
+  // claims it with the one-time link her coach sends (claimedAt); a coach account made by an administrator works the same way.
+  addedByCoach       Boolean           @default(false)
+  claimedAt          DateTime?
+  gameLevelSeen      Int               @default(1)
 
   twoFactorBackupCodes    TwoFactorBackupCode[]
   refreshTokens           RefreshToken[]
@@ -157,6 +163,15 @@ model User {
   familyAccessGiven    FamilyAccess[]     @relation("FamilyAccessOwner")
   familyAccessReceived FamilyAccess[]     @relation("FamilyAccessViewer")
   advisorDismissals    AdvisorDismissal[]
+
+  clientProfile        ClientProfile?
+  clientIntake         ClientIntake?
+  clientMeasurements   ClientMeasurement[]
+  consultationsAbout   Consultation[]      @relation("ConsultationClient")
+  consultationsWritten Consultation[]      @relation("ConsultationCoach")
+  clientCoaches        ClientCoach[]       @relation("ClientCoachClient")
+  coachClients         ClientCoach[]       @relation("ClientCoachCoach")
+  accountInvites       AccountInvite[]
 
   auditLogs AuditLog[]
 
@@ -1343,4 +1358,115 @@ model AdvisorDismissal {
   createdAt DateTime @default(now())
 
   @@unique([userId, key])
+}
+
+// ---------------------------------------------------------------------------
+// Coaches' clients: the assessment a coach records during a consultation
+// ---------------------------------------------------------------------------
+
+enum CoachSpeciality {
+  GENERAL
+  NUTRITION
+  FITNESS
+  WELLBEING
+  WOMENS_HEALTH
+}
+
+// Which coaches look after which client. Each coach sees only the sections of the record that match their specialities
+// (modules/clients/access.ts). Any of her coaches can add another; a coach can leave; she (once she has claimed her account)
+// or an administrator can remove any.
+model ClientCoach {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    User     @relation("ClientCoachClient", fields: [clientId], references: [id], onDelete: Cascade)
+  coachId   String
+  coach     User     @relation("ClientCoachCoach", fields: [coachId], references: [id], onDelete: Cascade)
+  addedById String?
+  createdAt DateTime @default(now())
+
+  @@unique([clientId, coachId])
+  @@index([coachId])
+}
+
+// Basic details that aren't on the account itself. Contact details are for her coaches to reach her.
+model ClientProfile {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gender          String?
+  phone           String?
+  address         String?
+  occupation      String?
+  maritalStatus   String?
+  // When the coach confirmed she agreed to her details being recorded here (and, under 18, that a parent or guardian agreed).
+  consentAt       DateTime
+  consentById     String?
+  guardianConsent Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+}
+
+// The assessment sections, each a checked JSON object (modules/clients/intake.ts holds the fields and their versions).
+model ClientIntake {
+  userId        String   @id
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schemaVersion Int
+  lifestyle     Json?
+  medical       Json?
+  menstrual     Json?
+  dietary       Json?
+  updatedAt     DateTime @updatedAt
+  updatedById   String?
+}
+
+// Body measurements taken at a consultation. BMI and waist-hip ratio are worked out when read, never stored.
+model ClientMeasurement {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime @db.Date
+  heightCm     Float?
+  weightKg     Float?
+  waistCm      Float?
+  hipCm        Float?
+  chestCm      Float?
+  armCm        Float?
+  thighCm      Float?
+  recordedById String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+// One consultation or follow-up, written by one coach in one of their specialities. Seen by her coaches who share that speciality.
+model Consultation {
+  id             String          @id @default(cuid())
+  clientId       String
+  client         User            @relation("ConsultationClient", fields: [clientId], references: [id], onDelete: Cascade)
+  coachId        String?
+  coach          User?           @relation("ConsultationCoach", fields: [coachId], references: [id], onDelete: SetNull)
+  area           CoachSpeciality
+  date           DateTime        @db.Date
+  targetWeightKg Float?
+  targetDate     DateTime?       @db.Date
+  planGiven      String?
+  nextFollowUp   DateTime?       @db.Date
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([clientId])
+  @@index([coachId, nextFollowUp])
+}
+
+// A one-time link to claim an account a coach (or, for a coach, an administrator) started. Only a hash is kept. 7 days, one use.
+model AccountInvite {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
 }

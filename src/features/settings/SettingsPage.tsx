@@ -1,3 +1,4 @@
+import { CoachingTab } from "./CoachingTab";
 import { useSearchParams } from "react-router-dom";
 import { useSounds } from "@/hooks/useSounds";
 import { useEffect, useState, type FormEvent } from "react";
@@ -108,7 +109,7 @@ export default function SettingsPage() {
 
       <Tabs
         urlParam="tab"
-        defaultTab={["features", "essentials", "emergency", "reminders", "security", "data", "feedback"].includes(params.get("tab") ?? "") ? params.get("tab")! : "profile"}
+        defaultTab={["features", "coaching", "essentials", "emergency", "reminders", "security", "data", "feedback"].includes(params.get("tab") ?? "") ? params.get("tab")! : "profile"}
         tabs={[
           {
             id: "profile", label: "Profile",
@@ -238,6 +239,7 @@ export default function SettingsPage() {
           { id: "security", label: "Security", content: <SecurityTab /> },
           { id: "data", label: "Your data", content: <YourDataTab /> },
           { id: "feedback", label: "Feedback", content: <FeedbackTab /> },
+          { id: "coaching", label: "Your coaches", content: <CoachingTab /> },
           {
             id: "privacy", label: "Privacy & sharing",
             content: (

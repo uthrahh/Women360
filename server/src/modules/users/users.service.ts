@@ -38,6 +38,12 @@ export const usersService = {
         familyAccessReceived: { select: { ownerId: true, status: true, level: true, createdAt: true } },
         managedProfiles: { select: { id: true, name: true, relation: true, dateOfBirth: true, createdAt: true } },
         advisorDismissals: { select: { key: true, createdAt: true } },
+        // What her coaches recorded: her details, assessment, measurements and every consultation, including their notes.
+        clientProfile: true,
+        clientIntake: true,
+        clientMeasurements: true,
+        consultationsAbout: true,
+        clientCoaches: { select: { coachId: true, createdAt: true } },
         enrolments: { include: { programme: { select: { name: true, durationDays: true } }, assessments: true, tasks: { include: { events: true } }, planVersions: true, reviews: true } },
         cycleProfile: true,
         cycleEntries: true,
@@ -85,6 +91,7 @@ export const usersService = {
       // and the advisor ideas you said no to.
       family: { sharingWith: u.familyAccessGiven, sharedWithYou: u.familyAccessReceived, profilesYouKeep: u.managedProfiles },
       advisorDismissals: u.advisorDismissals,
+      coaching: { coaches: u.clientCoaches, details: u.clientProfile, assessment: u.clientIntake, measurements: u.clientMeasurements, consultations: u.consultationsAbout },
       cycleProfile: u.cycleProfile,
       cycleEntries: u.cycleEntries,
       mealEntries: u.mealEntries,

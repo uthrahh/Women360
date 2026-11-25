@@ -19,6 +19,7 @@ import { coachRouter } from "./coach/coach.routes";
 import { familyRouter } from "./family/family.routes";
 import { gameRouter } from "./game/game.routes";
 import { advisorRouter } from "./advisor/advisor.routes";
+import { coachClientsRouter, inviteRouter, myCoachingRouter } from "./clients/clients.routes";
 import { coachProgrammeRouter, programmesRouter } from "./programmes/programmes.routes";
 import { adminRouter } from "./admin/admin.routes";
 import { feedbackRouter } from "./feedback/feedback.routes";
@@ -64,6 +65,9 @@ router.use("/advisor", advisorRouter);
 router.use("/programmes", programmesRouter);
 // Before /coach, so the programme routes are not shadowed by the sharing ones.
 router.use("/coach/programme", coachProgrammeRouter);
+router.use("/coach/clients", coachClientsRouter);
+router.use("/invites", inviteRouter);
+router.use("/coaching", myCoachingRouter);
 router.use("/coach", coachRouter);
 router.use("/admin", adminRouter);
 router.use("/feedback", feedbackRouter);

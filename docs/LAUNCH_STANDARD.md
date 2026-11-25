@@ -66,7 +66,7 @@ Automated guards:
 | Check git history for keys | Done: gitleaks over full history in CI; a manual scan of all 199 commits on 2026-11-15 found nothing. |
 | Protect admin routes | Done: role checks on the server, admins created only by `npm run create-admin`, two-factor required in production, optional IP allowlist. |
 | Authentication | Done: argon2id passwords, short-lived access tokens, rotating refresh tokens, optional two-factor. |
-| User permissions | Done: every query is scoped to the signed-in account; role guards on coach and admin routes; a programme coach reaches only enrolments an administrator assigned to them, only while the programme runs, and a refused attempt is audited; tests cover cross-account and cross-coach access (`programmes.test.ts`). |
+| User permissions | Done: every query is scoped to the signed-in account; role guards on coach and admin routes; a programme coach reaches only enrolments an administrator assigned to them, only while the programme runs, and a refused attempt is audited; a coach reaches a client's record only as one of her coaches and sees only the sections, consultations and log kinds of their speciality (`clients.test.ts`); tests cover cross-account and cross-coach access (`programmes.test.ts`). |
 | Sanitise input | Done: zod validation on every route body, query and parameter. |
 | XSS | Done: React escapes output; strict Content-Security-Policy. *(guarded)* no raw HTML. |
 | SQL injection | Done: Prisma parameterises everything. *(guarded)* no SQL built from strings. |

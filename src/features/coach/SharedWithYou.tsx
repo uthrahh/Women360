@@ -48,7 +48,7 @@ export function SharedWithYou() {
           description="A woman gives you access by entering your email under Settings, Privacy & sharing in her account. She can take it back at any time."
         />
       ) : (
-        <div className="grid lg:grid-cols-[18rem_minmax(0,1fr)] gap-5 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] gap-5 items-start">
           <nav aria-label="Clients">
             <ul className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-1">
               {women.map((w) => (

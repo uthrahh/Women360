@@ -1,10 +1,11 @@
 import { Tabs } from "@/components/ui/Tabs";
 import { ProgrammeCaseload } from "./ProgrammeCaseload";
 import { SharedWithYou } from "./SharedWithYou";
+import { ClientsTab } from "./clients/ClientsTab";
 
 /**
- * The coach's working page. Two different relationships, kept apart: people in a guided programme an administrator assigned to this
- * coach (their answers and task reports only), and women who chose to share their own logs.
+ * The coach's working page. Three relationships, kept apart: clients the coach looks after (their record, cut to her specialities),
+ * people in a guided programme an administrator assigned (their answers and task reports only), and women who shared their own logs.
  */
 export default function CoachPage() {
   return (
@@ -13,6 +14,7 @@ export default function CoachPage() {
       <Tabs
         urlParam="tab"
         tabs={[
+          { id: "clients", label: "Clients", content: <ClientsTab /> },
           { id: "programme", label: "Programme", content: <ProgrammeCaseload /> },
           { id: "shared", label: "Shared with you", content: <SharedWithYou /> },
         ]}

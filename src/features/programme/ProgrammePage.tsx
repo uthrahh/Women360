@@ -289,7 +289,7 @@ function Completed({ cur, questions }: { cur: NonNullable<MyProgramme["current"]
         </blockquote>
       )}
       {cur.comparison && questions && (
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full text-sm">
             <caption className="text-left font-display text-lg font-semibold mb-2">Then and now, in your own words</caption>
             <thead>

@@ -125,7 +125,7 @@ function newIdempotencyKey(): string {
  * A caller may supply its own key to cover a retry it makes itself, such as a form re-submitted after an error.
  */
 function withIdempotencyKey(path: string, init: RequestInit): RequestInit {
-  if ((init.method ?? "GET").toUpperCase() !== "POST" || /^\/(auth|usage|client-errors|chat)(\/|$)/.test(path)) return init;
+  if ((init.method ?? "GET").toUpperCase() !== "POST" || /^\/(auth|usage|client-errors|chat|invites)(\/|$)/.test(path)) return init;
   return { ...init, headers: { "Idempotency-Key": newIdempotencyKey(), ...(init.headers as Record<string, string> | undefined) } };
 }
 

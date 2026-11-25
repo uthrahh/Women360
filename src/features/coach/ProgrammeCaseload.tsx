@@ -36,7 +36,7 @@ export function ProgrammeCaseload() {
   const sorted = [...list].sort((a, b) => waiting(a) - waiting(b));
 
   return (
-    <div className="grid lg:grid-cols-[18rem_minmax(0,1fr)] gap-6 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-[18rem_minmax(0,1fr)] gap-6 items-start">
       <nav aria-label="Programme participants">
         <ul className="flex flex-col gap-2">
           {sorted.map((c) => (
