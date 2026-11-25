@@ -10,6 +10,8 @@ import {
   hydrationLogSchema,
   idParamSchema,
   mealEntrySchema,
+  nutrientCodeParamSchema,
+  nutrientTargetSchema,
   nutritionGoalSchema,
   updateMealSchema,
 } from "./nutrition.validation";
@@ -70,6 +72,30 @@ nutritionRouter.post(
 nutritionRouter.get(
   "/goal",
   asyncHandler(async (req, res) => ok(res, await nutritionService.getGoal(req.user!.id)))
+);
+
+nutritionRouter.get(
+  "/targets",
+  validate({ query: dateQuerySchema }),
+  asyncHandler(async (req, res) => ok(res, await nutritionService.getTargets(req.user!.id, req.query.date as string | undefined)))
+);
+
+nutritionRouter.put(
+  "/targets/:code",
+  validate({ params: nutrientCodeParamSchema, body: nutrientTargetSchema }),
+  asyncHandler(async (req, res) => {
+    await nutritionService.setTarget(req.user!.id, req.params.code, req.body);
+    return ok(res, await nutritionService.getTargets(req.user!.id));
+  })
+);
+
+nutritionRouter.delete(
+  "/targets/:code",
+  validate({ params: nutrientCodeParamSchema }),
+  asyncHandler(async (req, res) => {
+    await nutritionService.removeTarget(req.user!.id, req.params.code);
+    return noContent(res);
+  })
 );
 
 nutritionRouter.put(

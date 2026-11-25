@@ -7,7 +7,7 @@ import { cycleService } from "@/services/cycleService";
 import { habitService } from "@/services/habitService";
 import { localDateISO } from "@/services/mappers";
 import { effortOf, emptyFields, formatDuration, shortcutKey, type FieldsValue } from "@/lib/activity";
-import type { ActivityCatalog, ActivityEntry, ActivitySummary, CycleSummary, Effort, Habit, QuickLogItem } from "@/types";
+import type { ActivityCatalog, ActivityCategoryCode, ActivityEntry, ActivitySummary, ActivityTargets as ActivityTargetsData, CycleSummary, Effort, Habit, QuickLogItem } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Button } from "@/components/ui/Button";
@@ -22,6 +22,7 @@ import { useToast } from "@/components/ui/Toast";
 import { ActivityFields } from "./ActivityFields";
 import { ActivityHabits } from "./ActivityHabits";
 import { StepsSync } from "./StepsSync";
+import { ActivityTargets } from "./ActivityTargets";
 import { ActivityPlanSection } from "./plan/ActivityPlanSection";
 import { Hint } from "@/components/ui/Hint";
 import { useFeatures } from "@/context/FeaturesContext";
@@ -174,15 +175,21 @@ export default function ActivityPage() {
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
   const [stepsEditing, setStepsEditing] = useState(false);
   const [stepsValue, setStepsValue] = useState("");
+  const [targets, setTargets] = useState<ActivityTargetsData | null>(null);
   const toast = useToast();
 
-  const reload = () => activityService.getSummary().then(setData).catch(() => undefined);
+  const reload = () => {
+    activityService.getTargets().then(setTargets).catch(() => undefined);
+    return activityService.getSummary().then(setData).catch(() => undefined);
+  };
   const load = () => {
     setFailed(false);
     Promise.all([reload(), activityService.catalog().then(setCatalog)]).catch(() => setFailed(true));
     cycleService.getSummary().then(setCycle).catch(() => undefined);
     activityService.listQuickLog().then(setQuick).catch(() => setQuick([]));
     habitService.list().then(setHabits).catch(() => setHabits([]));
+    // Targets are an addition to the page: if they fail to load the rest still works.
+    activityService.getTargets().then(setTargets).catch(() => undefined);
   };
   useEffect(load, []);
 
@@ -289,6 +296,30 @@ export default function ActivityPage() {
     }
   }
 
+  async function saveTarget(category: ActivityCategoryCode, minutes: number, period: "DAY" | "WEEK"): Promise<boolean> {
+    try {
+      await activityService.setTarget(category, minutes, period);
+      setTargets(await activityService.getTargets());
+      toast.show("Target saved");
+      return true;
+    } catch (err) {
+      fail(err, "Could not save that target. Please try again.");
+      return false;
+    }
+  }
+
+  async function removeTarget(category: ActivityCategoryCode): Promise<boolean> {
+    try {
+      await activityService.removeTarget(category);
+      setTargets(await activityService.getTargets());
+      toast.show("Target removed");
+      return true;
+    } catch (err) {
+      fail(err, "Could not remove that target. Please try again.");
+      return false;
+    }
+  }
+
   async function handleDelete() {
     if (!deleteTarget) return;
     const id = deleteTarget.id;
@@ -335,6 +366,8 @@ export default function ActivityPage() {
       <ActivityHabits habits={habits} onChange={(h) => setHabits((list) => list.map((x) => (x.id === h.id ? h : x)))} />
 
       {clinicalContent && <ActivityPlanSection onLogged={() => { reload(); }} />}
+
+      {targets && <ActivityTargets data={targets} onSave={saveTarget} onRemove={removeTarget} />}
 
       <section aria-label="Quick log" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">

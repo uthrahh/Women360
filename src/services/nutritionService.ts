@@ -1,5 +1,5 @@
 import { request } from "./apiClient";
-import type { NutritionSummary, MealEntry } from "@/types";
+import type { NutritionSummary, MealEntry, NutrientTargets } from "@/types";
 import { localDateISO, toBackendMealEntry, toFrontendMealEntry, toFrontendNutritionSummary } from "./mappers";
 
 export const nutritionService = {
@@ -36,9 +36,17 @@ export const nutritionService = {
         carbsG: meal.carbs,
         fatG: meal.fat,
         notes: meal.notes,
+        micros: meal.micros && Object.keys(meal.micros).length ? meal.micros : null,
       }),
     });
     return toFrontendMealEntry(apiMeal);
+  },
+  getTargets: () => request<NutrientTargets>(`/nutrition/targets?date=${localDateISO()}`),
+  async setTarget(code: string, amount: number, mode: "AT_LEAST" | "AT_MOST"): Promise<void> {
+    await request(`/nutrition/targets/${code}`, { method: "PUT", body: JSON.stringify({ amount, mode }) });
+  },
+  async removeTarget(code: string): Promise<void> {
+    await request(`/nutrition/targets/${code}`, { method: "DELETE" });
   },
   async deleteMeal(id: string): Promise<void> {
     await request(`/nutrition/meals/${id}`, { method: "DELETE" });

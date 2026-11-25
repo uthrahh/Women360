@@ -21,6 +21,13 @@ export interface ReleaseNote {
 
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    date: "2026-11-25",
+    headline: "Set your own nutrition and activity targets",
+    details:
+      "On Nutrition you can now set a daily amount for protein, carbs, fat, fibre, water and fruit and veg, and for vitamins and minerals if you add them to a meal. On Activity you can set minutes a day or a week for walking, cardio, strength, yoga and stretching, or physiotherapy. You choose every number; Women360 doesn't suggest one for vitamins and minerals.",
+    area: "Activity",
+  },
+  {
     date: "2026-11-18",
     headline: "Fill in your steps from a file",
     details:

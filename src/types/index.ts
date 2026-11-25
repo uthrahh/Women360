@@ -126,6 +126,8 @@ export interface MealEntry {
   carbs?: number | null;
   fat?: number | null;
   notes?: string | null;
+  /** Optional vitamins and minerals for this meal, by code ("iron": 2.1). */
+  micros?: Record<string, number> | null;
 }
 
 export interface NutritionSummary {
@@ -738,4 +740,45 @@ export interface HealthSignals {
   review: { reviewed: boolean; note: string };
   today: string;
   signals: HealthSignal[];
+}
+
+/** One nutrient she has a daily target for, with today's total beside it. */
+export interface NutrientTarget {
+  code: string;
+  label: string;
+  unit: string;
+  group: "main" | "micro";
+  /** AT_LEAST is a floor to reach; AT_MOST is a ceiling to stay under (sodium, say). */
+  mode: "AT_LEAST" | "AT_MOST";
+  amount: number;
+  total: number;
+  /** True for the four always-on targets until she has changed them. */
+  usual: boolean;
+}
+export interface NutrientOption {
+  code: string;
+  label: string;
+  unit: string;
+  group: "main" | "micro";
+  usuallyAtMost: boolean;
+}
+export interface NutrientTargets {
+  date: string;
+  targets: NutrientTarget[];
+  available: NutrientOption[];
+}
+
+export type ActivityCategoryCode = "WALKING" | "CARDIO" | "STRENGTH" | "FLEXIBILITY" | "PHYSIO";
+/** A minutes target for one kind of movement, with the minutes logged toward it so far (today, or this Monday to Sunday week). */
+export interface ActivityTarget {
+  category: ActivityCategoryCode;
+  label: string;
+  minutes: number;
+  period: "DAY" | "WEEK";
+  done: number;
+}
+export interface ActivityTargets {
+  date: string;
+  targets: ActivityTarget[];
+  available: { category: ActivityCategoryCode; label: string }[];
 }

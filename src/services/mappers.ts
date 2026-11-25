@@ -259,6 +259,7 @@ interface ApiMealEntry {
   carbsG: number | null;
   fatG: number | null;
   notes: string | null;
+  micros?: Record<string, number> | null;
 }
 
 export function toFrontendMealEntry(apiMeal: ApiMealEntry): MealEntry {
@@ -273,6 +274,7 @@ export function toFrontendMealEntry(apiMeal: ApiMealEntry): MealEntry {
     carbs: apiMeal.carbsG ?? undefined,
     fat: apiMeal.fatG ?? undefined,
     notes: apiMeal.notes ?? undefined,
+    micros: apiMeal.micros ?? undefined,
   };
 }
 
@@ -288,6 +290,8 @@ export function toBackendMealEntry(meal: Omit<MealEntry, "id">, date: string) {
     carbsG: meal.carbs,
     fatG: meal.fat,
     notes: meal.notes,
+    // null clears the amounts on an edit; an empty set is sent as null so nothing stale is kept.
+    micros: meal.micros && Object.keys(meal.micros).length ? meal.micros : null,
   };
 }
 

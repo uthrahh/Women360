@@ -46,6 +46,11 @@ describe("activity catalog", () => {
     for (const a of ACTIVITIES) {
       const keys = levelKeys(a);
       expect(keys.length).toBeGreaterThan(0);
+      // Prescribed physiotherapy has no MET value to take from the Compendium, so it makes no estimate at all (never a guessed code).
+      if (a.noEstimate) {
+        expect(keys).toEqual(["LOW"]);
+        continue;
+      }
       for (const k of keys) {
         expect(a.levels[k]!.code).toMatch(/^\d{5}$/);
         expect(a.levels[k]!.met).toBeGreaterThan(1);

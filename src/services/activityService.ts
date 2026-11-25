@@ -1,5 +1,5 @@
 import { request } from "./apiClient";
-import type { ActivityCatalog, ActivityEntry, ActivitySummary, Effort, QuickLogItem } from "@/types";
+import type { ActivityCatalog, ActivityCategoryCode, ActivityEntry, ActivitySummary, ActivityTargets, Effort, QuickLogItem } from "@/types";
 import { localDateISO, toFrontendActivityEntry, toFrontendActivitySummary } from "./mappers";
 
 type ApiEntry = Parameters<typeof toFrontendActivityEntry>[0];
@@ -64,6 +64,13 @@ export const activityService = {
     request<{ saved: number; keptOwn: number }>("/activity/steps/sync", { method: "POST", body: JSON.stringify({ source, days }) }),
   /** When steps were last filled in from a phone or file, and from which. */
   syncStatus: () => request<{ lastSyncedAt: string | null; source: "DEVICE" | "IMPORT" | null }>("/activity/steps/sync"),
+  getTargets: () => request<ActivityTargets>(`/activity/targets?date=${localDateISO()}`),
+  async setTarget(category: ActivityCategoryCode, minutes: number, period: "DAY" | "WEEK"): Promise<void> {
+    await request(`/activity/targets/${category}`, { method: "PUT", body: JSON.stringify({ minutes, period }) });
+  },
+  async removeTarget(category: ActivityCategoryCode): Promise<void> {
+    await request(`/activity/targets/${category}`, { method: "DELETE" });
+  },
   async deleteEntry(id: string): Promise<void> {
     await request(`/activity/entries/${id}`, { method: "DELETE" });
   },

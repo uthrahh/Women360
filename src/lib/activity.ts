@@ -10,7 +10,8 @@ export function formatDuration(minutes: number): string {
 
 /** The same estimate the server makes (MET x kilograms x hours), for the live preview while she fills the form in. */
 export function estimateCalories(met: number | undefined, weightKg: number | null, minutes: number): number | null {
-  if (met === undefined || weightKg === null || !(weightKg > 0) || !(minutes > 0)) return null;
+  // met 0 is a placeholder for prescribed physiotherapy: there is no honest estimate, so none is shown.
+  if (met === undefined || !(met > 0) || weightKg === null || !(weightKg > 0) || !(minutes > 0)) return null;
   return Math.round(met * weightKg * (minutes / 60));
 }
 

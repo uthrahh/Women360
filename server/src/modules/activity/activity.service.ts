@@ -1,10 +1,10 @@
 import { Prisma } from "@prisma/client";
 import type { Intensity } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { dayNumber, toIsoDay } from "@/lib/streak";
+import { dayNumber, toIsoDay, weekIndex } from "@/lib/streak";
 import { STEPS_SYNC_MAX_DAYS } from "./activity.validation";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/lib/errors";
-import { ACTIVITIES, SOURCE, activityByCode, caloriesFor, parseWeightKg, quickLogLabel, resolveLevel, levelKeys, type LevelKey } from "./catalog";
+import { ACTIVITIES, ACTIVITY_CATEGORIES, SOURCE, activityByCode, codesIn, caloriesFor, parseWeightKg, quickLogLabel, resolveLevel, levelKeys, type LevelKey } from "./catalog";
 
 const MAX_QUICK_LOG = 20;
 
@@ -262,6 +262,44 @@ export const activityService = {
   async stepsSyncStatus(userId: string) {
     const last = await prisma.stepsLog.findFirst({ where: { userId, syncedAt: { not: null } }, orderBy: { syncedAt: "desc" }, select: { syncedAt: true, source: true } });
     return { lastSyncedAt: last?.syncedAt ?? null, source: last?.source ?? null };
+  },
+
+  /**
+   * Her minutes targets with how many minutes she has logged toward each so far today (DAY) or this week, Monday to Sunday (WEEK),
+   * on her own calendar day (the client sends it). Done is always summed from her logged activity, never stored.
+   */
+  async getTargets(userId: string, date?: string) {
+    const today = date ?? toIsoDay(new Date());
+    const monday = toIsoDay(new Date((weekIndex(dayNumber(today)) * 7 - 3) * 86_400_000));
+    const rows = await prisma.activityTarget.findMany({ where: { userId } });
+    const entries = rows.length
+      ? await prisma.activityEntry.findMany({ where: { userId, date: { gte: new Date(monday), lte: new Date(today) } }, select: { activityCode: true, durationMinutes: true, date: true } })
+      : [];
+    const targets = rows.map((r) => {
+      const codes = new Set(codesIn(r.category));
+      const from = r.period === "DAY" ? today : monday;
+      const done = entries
+        .filter((e) => codes.has(e.activityCode) && toIsoDay(e.date) >= from)
+        .reduce((sum, e) => sum + e.durationMinutes, 0);
+      return { category: r.category, label: ACTIVITY_CATEGORIES.find((c) => c.code === r.category)!.label, minutes: r.minutes, period: r.period, done };
+    });
+    const chosen = new Set(rows.map((r) => r.category as string));
+    const available = ACTIVITY_CATEGORIES.filter((c) => !chosen.has(c.code)).map((c) => ({ category: c.code, label: c.label }));
+    return { date: today, targets, available };
+  },
+
+  async setTarget(userId: string, category: string, input: { minutes: number; period: "DAY" | "WEEK" }) {
+    const cat = ACTIVITY_CATEGORIES.find((c) => c.code === category);
+    if (!cat) throw new NotFoundError("That kind of activity isn't one we track.");
+    await prisma.activityTarget.upsert({
+      where: { userId_category: { userId, category: cat.code } },
+      create: { userId, category: cat.code, ...input },
+      update: input,
+    });
+  },
+
+  async removeTarget(userId: string, category: string) {
+    await prisma.activityTarget.deleteMany({ where: { userId, category: category as never } });
   },
 
   async upsertGoal(userId: string, input: { stepsGoal: number; activeMinutesGoal: number }) {

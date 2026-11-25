@@ -35,6 +35,11 @@ export interface ActivityDef {
   extras: Extra[];
   /** Only the levels that make sense for the activity; some have just one. */
   levels: Partial<Record<LevelKey, Level>>;
+  /**
+   * Prescribed rehabilitation work: its effort is whatever her physiotherapist set, so there is no MET value to take from the
+   * Compendium and no calorie estimate is made (the single level carries met 0 as a placeholder and is never used for a figure).
+   */
+  noEstimate?: true;
 }
 
 export const SOURCE = {
@@ -136,6 +141,10 @@ export const ACTIVITIES: ActivityDef[] = [
     MODERATE: lv("General play", "General", 4.0, "15660"),
   } },
 
+  { code: "physiotherapy", label: "Physiotherapy exercises", group: "Rehab", extras: [], noEstimate: true, levels: {
+    LOW: lv("As your physiotherapist set them", "Prescribed", 0, ""),
+  } },
+
   { code: "housework", label: "Housework", group: "Everyday", extras: [], levels: {
     LOW: lv("General, light effort", "Light", 2.5, "05040"),
     MODERATE: lv("Heavy cleaning", "Heavy", 3.5, "05020"),
@@ -169,7 +178,7 @@ export function resolveLevel(def: ActivityDef, intensity: LevelKey): Level {
 /** Whole calories for one session, or null when the activity is unknown or her weight is. */
 export function caloriesFor(code: string, intensity: LevelKey, minutes: number, weightKg: number | null): number | null {
   const def = activityByCode(code);
-  if (!def || weightKg === null || !(weightKg > 0) || !(minutes > 0)) return null;
+  if (!def || def.noEstimate || weightKg === null || !(weightKg > 0) || !(minutes > 0)) return null;
   return Math.round(resolveLevel(def, intensity).met * weightKg * (minutes / 60));
 }
 
@@ -197,3 +206,26 @@ export function parseWeightKg(value: string): number | null {
   const kg = match[2] && /^(lb|pound)/.test(match[2]) ? n * 0.45359237 : n;
   return kg >= 20 && kg <= 400 ? Math.round(kg * 10) / 10 : null;
 }
+
+/** The kinds of movement a minutes target can count. Everyday chores (housework, gardening) count toward none of them. */
+export const ACTIVITY_CATEGORIES = [
+  { code: "WALKING", label: "Walking" },
+  { code: "CARDIO", label: "Cardio" },
+  { code: "STRENGTH", label: "Strength" },
+  { code: "FLEXIBILITY", label: "Yoga and stretching" },
+  { code: "PHYSIO", label: "Physiotherapy" },
+] as const;
+export type CategoryCode = (typeof ACTIVITY_CATEGORIES)[number]["code"];
+
+const CATEGORY_OF: Record<string, CategoryCode> = {
+  walking: "WALKING", hiking: "WALKING",
+  running: "CARDIO", cycling: "CARDIO", "exercise-bike": "CARDIO", swimming: "CARDIO", "circuit-training": "CARDIO", "rowing-machine": "CARDIO",
+  elliptical: "CARDIO", "skipping-rope": "CARDIO", "dance-aerobics": "CARDIO", badminton: "CARDIO", tennis: "CARDIO", basketball: "CARDIO",
+  football: "CARDIO", "table-tennis": "CARDIO",
+  "strength-training": "STRENGTH", "bodyweight-training": "STRENGTH",
+  yoga: "FLEXIBILITY", pilates: "FLEXIBILITY", stretching: "FLEXIBILITY",
+  physiotherapy: "PHYSIO",
+};
+export const categoryOf = (code: string): CategoryCode | null => CATEGORY_OF[code] ?? null;
+export const codesIn = (category: string): string[] => Object.entries(CATEGORY_OF).filter(([, c]) => c === category).map(([code]) => code);
+

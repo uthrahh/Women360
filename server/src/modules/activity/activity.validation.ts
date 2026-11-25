@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ACTIVITY_CODES, activityByCode } from "./catalog";
+import { ACTIVITY_CATEGORIES, ACTIVITY_CODES, activityByCode } from "./catalog";
 
 const day = z.string().date();
 const levelEnum = z.enum(["LOW", "MODERATE", "HIGH"]);
@@ -78,3 +78,15 @@ export const activityGoalSchema = z.object({
 });
 
 export const idParamSchema = z.object({ id: z.string().min(1) });
+
+const CATEGORY_CODES = ACTIVITY_CATEGORIES.map((c) => c.code) as [string, ...string[]];
+export const categoryParamSchema = z.object({ category: z.enum(CATEGORY_CODES) });
+export const activityTargetSchema = z.object({
+  minutes: z.number().int().min(1).max(10_000),
+  period: z.enum(["DAY", "WEEK"]),
+}).superRefine((v, ctx) => {
+  // Nobody has more than 1,440 minutes in a day or 10,080 in a week.
+  if (v.period === "DAY" && v.minutes > 1440) ctx.addIssue({ code: "custom", path: ["minutes"], message: "A day has 1,440 minutes." });
+});
+export const targetsQuerySchema = z.object({ date: z.string().date().optional() });
+

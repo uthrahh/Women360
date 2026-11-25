@@ -46,7 +46,7 @@ export default function PrivacyPage() {
           <p>
             <span className="text-[var(--w360-text)] font-medium">What you log:</span> cycle, meals and hydration,
             caffeine and alcoholic drinks and bowel movements, activity, sleep, mood and wellbeing (stress, energy and a note
-            only if you add them), goals and check-ins, medicines and doses, appointments, measurements,
+            only if you add them), goals and check-ins, the daily nutrient amounts and activity minutes you set as targets (and, if you choose to enter them on a meal, its vitamins and minerals), medicines and doses, appointments, measurements,
             your emergency contact, contraception and pregnancy status if you choose to record them, notes a coach writes about you, and any feedback you send.
             On a cycle day you may also record pads or tampons used, cervical mucus, waking temperature and sex. Those are
             kept for your own record only: Women360 does not use them to predict anything, and they are never part of what a coach sees.

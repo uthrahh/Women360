@@ -11,10 +11,13 @@ import {
   activityEntrySchema,
   activityEntryUpdateSchema,
   activityGoalSchema,
+  activityTargetSchema,
+  categoryParamSchema,
   idParamSchema,
   quickLogSchema,
   stepsLogSchema,
   stepsSyncSchema,
+  targetsQuerySchema,
 } from "./activity.validation";
 
 export const activityRouter = Router();
@@ -129,6 +132,30 @@ activityRouter.post(
   validate({ params: planIdParamSchema }),
   asyncHandler(async (req, res) => {
     await planService.end(req.user!.id, req.params.id);
+    return noContent(res);
+  })
+);
+
+activityRouter.get(
+  "/targets",
+  validate({ query: targetsQuerySchema }),
+  asyncHandler(async (req, res) => ok(res, await activityService.getTargets(req.user!.id, req.query.date as string | undefined)))
+);
+
+activityRouter.put(
+  "/targets/:category",
+  validate({ params: categoryParamSchema, body: activityTargetSchema }),
+  asyncHandler(async (req, res) => {
+    await activityService.setTarget(req.user!.id, req.params.category, req.body);
+    return ok(res, await activityService.getTargets(req.user!.id));
+  })
+);
+
+activityRouter.delete(
+  "/targets/:category",
+  validate({ params: categoryParamSchema }),
+  asyncHandler(async (req, res) => {
+    await activityService.removeTarget(req.user!.id, req.params.category);
     return noContent(res);
   })
 );

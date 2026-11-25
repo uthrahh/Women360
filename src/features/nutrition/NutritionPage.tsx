@@ -2,7 +2,7 @@ import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { nutritionService } from "@/services/nutritionService";
 import { hasAtMostOneDecimal, to12Hour, to24Hour } from "@/services/mappers";
-import type { MealEntry, NutritionSummary } from "@/types";
+import type { MealEntry, NutrientTargets as NutrientTargetsData, NutritionSummary } from "@/types";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +17,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Droplet, Apple, Plus } from "lucide-react";
 import { Hint } from "@/components/ui/Hint";
 import { BodyLogCard } from "./BodyLogCard";
+import { NutrientTargets } from "./NutrientTargets";
 
 const HYDRATION_STEP_ML = 250;
 
@@ -73,10 +74,12 @@ interface MealFormValues {
   carbs: string;
   fat: string;
   notes: string;
+  /** Optional vitamin and mineral amounts by nutrient code, as typed. */
+  micros: Record<string, string>;
 }
 
 function emptyForm(): MealFormValues {
-  return { name: "", time: "12:00", servingAmount: "1", servingUnit: DEFAULT_SERVING_UNIT, calories: "", protein: "", fibre: "", carbs: "", fat: "", notes: "" };
+  return { name: "", time: "12:00", servingAmount: "1", servingUnit: DEFAULT_SERVING_UNIT, calories: "", protein: "", fibre: "", carbs: "", fat: "", notes: "", micros: {} };
 }
 
 function mealToForm(m: MealEntry): MealFormValues {
@@ -92,6 +95,7 @@ function mealToForm(m: MealEntry): MealFormValues {
     carbs: m.carbs !== undefined ? String(m.carbs) : "",
     fat: m.fat !== undefined ? String(m.fat) : "",
     notes: m.notes ?? "",
+    micros: Object.fromEntries(Object.entries(m.micros ?? {}).map(([code, n]) => [code, String(n)])),
   };
 }
 
@@ -104,6 +108,8 @@ export default function NutritionPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MealEntry | null>(null);
+  const [targets, setTargets] = useState<NutrientTargetsData | null>(null);
+  const [editRequest, setEditRequest] = useState<string | null>(null);
   const toast = useToast();
 
   function load() {
@@ -112,6 +118,8 @@ export default function NutritionPage() {
     // Recent meals only power the "log again" chips, not a required part of
     // the page — a failure there shouldn't block the page from loading.
     nutritionService.getRecentMeals().then(setRecentMeals).catch(() => {});
+    // Targets are an addition to the page, not a requirement of it: if they fail to load the rest still works.
+    nutritionService.getTargets().then(setTargets).catch(() => {});
   }
 
   useEffect(load, []);
@@ -173,6 +181,12 @@ export default function NutritionPage() {
         errs[field] = `Use at most one decimal place, e.g. 12 or 12.3.`;
       }
     }
+    for (const [code, raw] of Object.entries(values.micros)) {
+      if (raw === "") continue;
+      const num = Number(raw);
+      if (Number.isNaN(num) || num < 0) errs["micro-" + code] = "Can't be negative.";
+      else if (!hasAtMostOneDecimal(num)) errs["micro-" + code] = "Use at most one decimal place.";
+    }
     return errs;
   }
 
@@ -195,6 +209,8 @@ export default function NutritionPage() {
       carbs: form.carbs ? Number(form.carbs) : null,
       fat: form.fat ? Number(form.fat) : null,
       notes: form.notes.trim() || null,
+      // Only the amounts she filled in; none at all clears them on an edit.
+      micros: Object.fromEntries(Object.entries(form.micros).filter(([, v]) => v !== "").map(([code, v]) => [code, Number(v)])),
     };
 
     setSaving(true);
@@ -209,6 +225,7 @@ export default function NutritionPage() {
       // Refetch rather than hand-patch local state: adding/editing a meal
       // changes the protein/fibre totals shown above, not just the list.
       setData(await nutritionService.getToday());
+      nutritionService.getTargets().then(setTargets).catch(() => undefined);
       nutritionService.getRecentMeals().then(setRecentMeals).catch(() => undefined);
       setEditingMeal(null);
     } catch (err) {
@@ -224,6 +241,7 @@ export default function NutritionPage() {
     try {
       await nutritionService.deleteMeal(id);
       setData(await nutritionService.getToday());
+      nutritionService.getTargets().then(setTargets).catch(() => undefined);
       toast.show("Meal deleted");
     } catch (err) {
       toast.show(err instanceof Error ? err.message : "Couldn't delete that meal. Please try again.", { tone: "error" });
@@ -237,6 +255,7 @@ export default function NutritionPage() {
       await nutritionService.logHydration(amountMl);
       const refreshed = await nutritionService.getToday();
       setData(refreshed);
+      nutritionService.getTargets().then(setTargets).catch(() => undefined);
       toast.show(`${amountMl}ml logged`);
     } catch (err) {
       toast.show(err instanceof Error ? err.message : "Couldn't log hydration. Please try again.", { tone: "error" });
@@ -248,11 +267,42 @@ export default function NutritionPage() {
       await nutritionService.logFruitVeg(1);
       const refreshed = await nutritionService.getToday();
       setData(refreshed);
+      nutritionService.getTargets().then(setTargets).catch(() => undefined);
       toast.show("Serving logged");
     } catch (err) {
       toast.show(err instanceof Error ? err.message : "Couldn't log that. Please try again.", { tone: "error" });
     }
   }
+
+  async function saveTarget(code: string, amount: number, mode: "AT_LEAST" | "AT_MOST"): Promise<boolean> {
+    try {
+      await nutritionService.setTarget(code, amount, mode);
+      const [summary, fresh] = await Promise.all([nutritionService.getToday(), nutritionService.getTargets()]);
+      setData(summary);
+      setTargets(fresh);
+      toast.show("Target saved");
+      return true;
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't save that target. Please try again.", { tone: "error" });
+      return false;
+    }
+  }
+
+  async function removeTarget(code: string): Promise<boolean> {
+    try {
+      await nutritionService.removeTarget(code);
+      setTargets(await nutritionService.getTargets());
+      toast.show("Target removed");
+      return true;
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : "Couldn't remove that target. Please try again.", { tone: "error" });
+      return false;
+    }
+  }
+
+  // The vitamins and minerals the meal form can take, in the order the server lists them.
+  const microOptions = [...(targets?.targets ?? []), ...(targets?.available ?? [])].filter((n) => n.group === "micro");
+  const askToChange = (code: string) => setEditRequest(code + ":" + Date.now());
 
   const mealForm = (
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -290,6 +340,27 @@ export default function NutritionPage() {
             <NumberField label="Carbs" suffix="g" optional max={500} step={1} startAt={10} value={form.carbs} onChange={(v) => setForm((f) => ({ ...f, carbs: v }))} error={errors.carbs} />
             <NumberField label="Fat" suffix="g" optional max={500} step={1} startAt={10} value={form.fat} onChange={(v) => setForm((f) => ({ ...f, fat: v }))} error={errors.fat} />
           </div>
+          {microOptions.length > 0 && (
+            <details className="rounded border border-[var(--w360-border)] px-3.5 py-2.5" open={Object.keys(form.micros).length > 0}>
+              <summary className="cursor-pointer text-sm font-medium senior:text-lg">Vitamins and minerals <span className="font-normal text-[var(--w360-text-muted)]">(optional)</span></summary>
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                {microOptions.map((n) => (
+                  <NumberField
+                    key={n.code}
+                    label={n.label}
+                    suffix={n.unit}
+                    optional
+                    max={5000}
+                    step={1}
+                    startAt={1}
+                    value={form.micros[n.code] ?? ""}
+                    onChange={(v) => setForm((f) => ({ ...f, micros: { ...f.micros, [n.code]: v } }))}
+                    error={errors["micro-" + n.code]}
+                  />
+                ))}
+              </div>
+            </details>
+          )}
           <div className="flex flex-col gap-1.5">
             <label htmlFor="meal-notes" className="text-sm font-medium">Notes (optional)</label>
             <textarea
@@ -358,20 +429,20 @@ export default function NutritionPage() {
             <p className="text-[11px] text-[var(--w360-text-muted)] italic mt-1.5">Estimates based on what you log — not lab-measured.</p>
           </CardBody>
         </Card>
-        <MetricCard label="Hydration" value={`${data.hydrationMl}ml`} goal={`of ${data.hydrationGoalMl}ml`} pct={(data.hydrationMl / data.hydrationGoalMl) * 100} icon={<Droplet size={16} />}>
+        <MetricCard label="Hydration" value={`${data.hydrationMl}ml`} goal={`of ${data.hydrationGoalMl}ml`} pct={(data.hydrationMl / data.hydrationGoalMl) * 100} icon={<Droplet size={16} />} onChangeGoal={() => askToChange("water")}>
           <Button variant="secondary" size="sm" className="mt-3 w-fit" onClick={() => logHydration(HYDRATION_STEP_ML)}>
             <Plus size={14} /> {HYDRATION_STEP_ML}ml
           </Button>
         </MetricCard>
-        <MetricCard label="Fruit & veg" value={`${data.fruitVeg}`} goal={`of ${data.fruitVegGoal} servings`} pct={(data.fruitVeg / data.fruitVegGoal) * 100} icon={<Apple size={16} />}>
+        <MetricCard label="Fruit & veg" value={`${data.fruitVeg}`} goal={`of ${data.fruitVegGoal} servings`} pct={(data.fruitVeg / data.fruitVegGoal) * 100} icon={<Apple size={16} />} onChangeGoal={() => askToChange("fruitveg")}>
           <Button variant="secondary" size="sm" className="mt-3 w-fit" onClick={logFruitVeg}>
             <Plus size={14} /> 1 serving
           </Button>
         </MetricCard>
-        <MetricCard label="Protein" value={`${data.proteinG}g`} goal={`of ${data.proteinGoalG}g`} pct={(data.proteinG / data.proteinGoalG) * 100} />
-        <MetricCard label="Fibre" value={`${data.fibreG}g`} goal={`of ${data.fibreGoalG}g`} pct={(data.fibreG / data.fibreGoalG) * 100} />
         <BodyLogCard />
       </div>
+
+      {targets && <NutrientTargets data={targets} onSave={saveTarget} onRemove={removeTarget} editRequest={editRequest} />}
 
       <section>
         <h2 className="font-display text-lg font-semibold mb-3">Today's meals</h2>
@@ -422,13 +493,21 @@ export default function NutritionPage() {
   );
 }
 
-function MetricCard({ label, value, goal, pct, icon, children }: { label: string; value: string; goal: string; pct: number; icon?: ReactNode; children?: ReactNode }) {
+function MetricCard({ label, value, goal, pct, icon, children, onChangeGoal }: { label: string; value: string; goal: string; pct: number; icon?: ReactNode; children?: ReactNode; onChangeGoal?: () => void }) {
   return (
     <Card>
       <CardBody className="pt-5">
         <div className="flex items-center gap-1.5 text-[var(--w360-text-muted)] text-xs mb-1">{icon}{label}</div>
         <p className="text-xl font-display font-semibold tabular-nums">{value}</p>
-        <p className="text-xs text-[var(--w360-text-muted)] mb-2">{goal}</p>
+        <p className="text-xs text-[var(--w360-text-muted)] mb-2">
+          {goal}
+          {onChangeGoal && (
+            <>
+              {" · "}
+              <button type="button" onClick={onChangeGoal} className="font-medium text-maroon-700 dark:text-maroon-200">Change<span className="sr-only"> {label} target</span></button>
+            </>
+          )}
+        </p>
         <ProgressBar value={pct} />
         {children}
       </CardBody>

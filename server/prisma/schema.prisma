@@ -95,6 +95,8 @@ model User {
   emergencyContact        EmergencyContact?
   seniorEssentials        SeniorEssentialPreference[]
   nutritionGoal           NutritionGoal?
+  nutrientTargets         NutrientTarget[]
+  activityTargets         ActivityTarget[]
   activityGoal            ActivityGoal?
   cycleProfile            CycleProfile?
 
@@ -345,6 +347,26 @@ model NutritionGoal {
   fruitVegGoal    Int    @default(5)
 }
 
+// Whether a target is a floor (reach at least this) or a ceiling (stay under this, e.g. sodium).
+enum TargetMode {
+  AT_LEAST
+  AT_MOST
+}
+
+// A daily amount she chose for one nutrient (carbs, fat, iron, calcium...). Protein, fibre, water and fruit and veg
+// keep living in NutritionGoal. There are no suggested amounts: she sets what her doctor or dietitian told her.
+model NutrientTarget {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nutrient  String
+  amount    Float
+  mode      TargetMode @default(AT_LEAST)
+  updatedAt DateTime   @updatedAt
+
+  @@unique([userId, nutrient])
+}
+
 model MealEntry {
   id        String   @id @default(cuid())
   userId    String
@@ -358,6 +380,8 @@ model MealEntry {
   servings  String
   carbsG    Float?
   fatG      Float?
+  // Optional vitamins and minerals for this meal, as { "iron": 2.1, "calcium": 120 } (codes in modules/nutrition/nutrients.ts). Null = none entered.
+  micros    Json?
   notes     String?
   createdAt DateTime @default(now())
 
@@ -404,6 +428,33 @@ model ActivityGoal {
   user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   stepsGoal         Int    @default(8000)
   activeMinutesGoal Int    @default(45)
+}
+
+// What kind of movement a minutes target counts (modules/activity/catalog.ts maps each activity to one).
+enum ActivityCategory {
+  WALKING
+  CARDIO
+  STRENGTH
+  FLEXIBILITY
+  PHYSIO
+}
+
+enum TargetPeriod {
+  DAY
+  WEEK
+}
+
+// A minutes target she chose for one kind of movement: 30 minutes of walking a day, 90 of cardio a week.
+model ActivityTarget {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  ActivityCategory
+  minutes   Int
+  period    TargetPeriod     @default(WEEK)
+  updatedAt DateTime         @updatedAt
+
+  @@unique([userId, category])
 }
 
 model ActivityEntry {
